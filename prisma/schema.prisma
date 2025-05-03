@@ -1,0 +1,70 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Team {
+  id   Int    @unique @default(autoincrement())
+  Name String
+}
+
+model User {
+  id       Int    @unique @default(autoincrement())
+  Name     String
+  Username String
+  Email    String
+  TeamId   Int
+}
+
+model UserPreference {
+  id          Int      @unique @default(autoincrement())
+  UserId      Int
+  Name        String
+  StringValue String
+  NumberValue Int
+  DateValue   DateTime
+}
+
+model Category {
+  id    Int    @unique @default(autoincrement())
+  Name  String
+  Color String
+  Icon  String
+}
+
+model Expense {
+  id          Int      @unique @default(autoincrement())
+  Date        DateTime
+  Amount      Decimal
+  Description String
+  IsRecurring Boolean
+  CategoryId  Int
+  UserId      Int
+}
+
+model PeriodBudget {
+  id         Int     @unique @default(autoincrement())
+  Budget     Decimal
+  Month      Int
+  Year       Int
+  CategoryId Int
+  UserId     Int
+}
+
+model RecentPeriodResult {
+  id         Int     @unique @default(autoincrement())
+  Spent      Decimal
+  BudgetId   Int
+  CategoryId Int
+  UserId     Int
+}
+
+model DateObj {
+  id    Int @unique @default(autoincrement())
+  Year  Int
+  Month Int
+}
