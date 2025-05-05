@@ -1,37 +1,50 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { withCors } from '@/lib/cors'
 
-export const GET = withCors(async (req: NextRequest) => {
+const corsHeaders = {
+    'Access-Control-Allow-Origin': 'http://localhost:8081',
+    'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Credentials': 'true',
+}
+
+// Handle OPTIONS preflight
+export async function OPTIONS() {
+    return new NextResponse(null, {
+        status: 204,
+        headers: corsHeaders,
+    })
+}
+
+// Handle GET
+export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)
-    const teamIdParam = searchParams.get('teamId')
+    const email = searchParams.get('email')
 
-    const corsHeaders = {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    };
+    if (!email) {
+        return NextResponse.json({ error: 'Missing email' }, { status: 400 })
+    }
 
     try {
-        if(teamIdParam){
-            const teamId = parseInt(teamIdParam)
-            if(isNaN(teamId)){
-                return NextResponse.json({ error: 'invalid teamId' }, {status: 400})
-            }
+        const user = await prisma.user.findFirst({
+            where: { Email: email },
+        })
 
-            const users = await prisma.user.findMany({
-                where: {
-                    teamId: teamId
-                }
-            })
-            return NextResponse.json(users)
+        if (!user) {
+            return NextResponse.json({ error: 'User not found' }, { status: 404 })
         }
 
-        const users = await prisma.user.findMany()
-
-        return NextResponse.json(users, { headers: corsHeaders })
+        const response = NextResponse.json(user)
+        Object.entries(corsHeaders).forEach(([key, value]) =>
+            response.headers.set(key, value)
+        )
+        return response
     } catch (err) {
-        console.error('Error fetching team:', err)
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+        console.error('API error:', err)
+        const response = NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
+        Object.entries(corsHeaders).forEach(([key, value]) =>
+            response.headers.set(key, value)
+        )
+        return response
     }
-})
+}

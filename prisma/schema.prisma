@@ -17,7 +17,7 @@ model User {
   id                 Int                  @id @default(autoincrement())
   Name               String
   Username           String
-  Email              String
+  Email              String               @unique
   Team               Team?                @relation(fields: [teamId], references: [id])
   teamId             Int?
   Preferences        UserPreference[]
