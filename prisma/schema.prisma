@@ -8,63 +8,81 @@ generator client {
 }
 
 model Team {
-  id   Int    @unique @default(autoincrement())
-  Name String
+  id    Int    @id @default(autoincrement())
+  Name  String
+  Users User[]
 }
 
 model User {
-  id       Int    @unique @default(autoincrement())
-  Name     String
-  Username String
-  Email    String
-  TeamId   Int
+  id                 Int                  @id @default(autoincrement())
+  Name               String
+  Username           String
+  Email              String
+  Team               Team?                @relation(fields: [teamId], references: [id])
+  teamId             Int?
+  Preferences        UserPreference[]
+  Categories         Category[]
+  Expenses           Expense[]
+  Budgets            PeriodBudget[]
+  RecentPeriodResult RecentPeriodResult[]
 }
 
 model UserPreference {
-  id          Int      @unique @default(autoincrement())
-  UserId      Int
+  id          Int      @id @default(autoincrement())
   Name        String
   StringValue String
   NumberValue Int
   DateValue   DateTime
+  User        User?    @relation(fields: [userId], references: [id])
+  userId      Int?
 }
 
 model Category {
-  id    Int    @unique @default(autoincrement())
-  Name  String
-  Color String
-  Icon  String
+  id       Int                  @id @default(autoincrement())
+  Name     String
+  Color    String
+  Icon     String
+  User     User?                @relation(fields: [userId], references: [id])
+  userId   Int?
+  Expenses Expense[]
+  Budgets  PeriodBudget[]
+  Results  RecentPeriodResult[]
 }
 
 model Expense {
-  id          Int      @unique @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   Date        DateTime
   Amount      Decimal
   Description String
   IsRecurring Boolean
-  CategoryId  Int
-  UserId      Int
+  User        User?     @relation(fields: [userId], references: [id])
+  userId      Int?
+  Category    Category? @relation(fields: [categoryId], references: [id])
+  categoryId  Int?
 }
 
 model PeriodBudget {
-  id         Int     @unique @default(autoincrement())
+  id         Int       @id @default(autoincrement())
   Budget     Decimal
   Month      Int
   Year       Int
-  CategoryId Int
-  UserId     Int
+  User       User?     @relation(fields: [userId], references: [id])
+  userId     Int?
+  Category   Category? @relation(fields: [categoryId], references: [id])
+  categoryId Int?
 }
 
 model RecentPeriodResult {
-  id         Int     @unique @default(autoincrement())
+  id         Int       @id @default(autoincrement())
   Spent      Decimal
-  BudgetId   Int
-  CategoryId Int
-  UserId     Int
+  User       User?     @relation(fields: [userId], references: [id])
+  userId     Int?
+  Category   Category? @relation(fields: [categoryId], references: [id])
+  categoryId Int?
 }
 
 model DateObj {
-  id    Int @unique @default(autoincrement())
+  id    Int @id @default(autoincrement())
   Year  Int
   Month Int
 }
