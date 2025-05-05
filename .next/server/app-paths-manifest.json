@@ -1,4 +1,11 @@
 {
+  "/api/expense/route": "app/api/expense/route.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/api/date/route": "app/api/date/route.js",
+  "/api/team/route": "app/api/team/route.js",
   "/api/category/route": "app/api/category/route.js",
+  "/api/recentperiodresult/route": "app/api/recentperiodresult/route.js",
+  "/api/periodbudget/route": "app/api/periodbudget/route.js",
+  "/api/user/route": "app/api/user/route.js",
   "/page": "app/page.js"
 }
