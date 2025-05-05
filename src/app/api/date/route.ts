@@ -1,13 +1,14 @@
 import { NextResponse, NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { DateObj } from '@/models/dateObj'
+import {Expense} from "@/models/expense";
 
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)
     const categoryName = searchParams.get('categoryName')
 
     try {
-        let expenses
+        let expenses : any[] = []
 
         if (categoryName) {
             const category = await prisma.category.findFirst({
@@ -32,11 +33,14 @@ export async function GET(req: NextRequest) {
         const seen = new Set<string>()
         const result: DateObj[] = []
 
-        expenses.forEach((e, index) => {
-            const date = new Date(e.Date)
+        expenses.forEach((e: Expense, index) => {
+            // Fix: Use correct Date constructor: year, monthIndex (0-based), day
+            const date = new Date(e.date.year, e.date.month - 1, e.date.day)
+
             const month = date.getMonth() + 1
             const year = date.getFullYear()
             const day = date.getDate()
+
             const key = `${month}-${year}`
 
             if (!seen.has(key)) {
