@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { withCors } from '@/lib/cors'
 
-export async function GET(req: NextRequest) {
+export const GET = withCors(async (req: NextRequest) => {
     const { searchParams } = new URL(req.url)
     const teamIdParam = searchParams.get('teamId')
 
@@ -26,4 +27,4 @@ export async function GET(req: NextRequest) {
         console.error('Error fetching team:', err)
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
-}
+})

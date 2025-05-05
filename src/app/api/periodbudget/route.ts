@@ -1,7 +1,8 @@
 import { NextResponse, NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import {withCors} from "@/lib/cors";
 
-export async function GET(req: NextRequest) {
+export const GET = withCors(async (req: NextRequest) => {
     const { searchParams } = new URL(req.url)
 
     const userIdParam = searchParams.get('userId')
@@ -44,9 +45,9 @@ export async function GET(req: NextRequest) {
         console.error('Error fetching expenses:', error)
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
-}
+})
 
-export async function POST(req: NextRequest) {
+export const POST = withCors(async (req: NextRequest) => {
     const periodBudget = await req.json()
 
     try{
@@ -56,9 +57,9 @@ export async function POST(req: NextRequest) {
         console.log('create error:', err)
         return NextResponse.json({ error: 'Failed to periodBudget category', status: 500 })
     }
-}
+})
 
-export async function DELETE(req: NextRequest) {
+export const DELETE = withCors(async (req: NextRequest) => {
     const { searchParams } = new URL(req.url)
     const PeriodBudgetId = Number.parseInt(searchParams.get('periodBudgetId') || '');
 
@@ -68,9 +69,9 @@ export async function DELETE(req: NextRequest) {
 
     const result = await prisma.periodBudget.deleteMany({ where: { id: PeriodBudgetId } })
     return NextResponse.json(result.count > 0)
-}
+})
 
-export async function PATCH(req: NextRequest) {
+export const PATCH = withCors(async (req: NextRequest) => {
     const data = await req.json()
     if (!data.id) {
         return NextResponse.json({ error: 'Missing periodBudget ID' }, { status: 400 })
@@ -81,4 +82,4 @@ export async function PATCH(req: NextRequest) {
         data,
     })
     return NextResponse.json(!!updated)
-}
+})

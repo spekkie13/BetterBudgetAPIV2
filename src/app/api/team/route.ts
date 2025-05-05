@@ -1,7 +1,8 @@
-import { NextResponse } from 'next/server'
+import {NextResponse} from 'next/server'
 import { prisma } from '@/lib/prisma'
+import {withCors} from "@/lib/cors";
 
-export async function GET() {
+export const GET = withCors(async () => {
     try {
         const teams = await prisma.team.findMany()
 
@@ -10,4 +11,4 @@ export async function GET() {
         console.error('Error fetching team:', err)
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
-}
+})
