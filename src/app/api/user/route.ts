@@ -6,9 +6,11 @@ export const GET = withCors(async (req: NextRequest) => {
     const { searchParams } = new URL(req.url)
     const teamIdParam = searchParams.get('teamId')
 
-    req.headers.set('Access-Control-Allow-Origin', '*');
-    req.headers.set('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
-    req.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    const corsHeaders = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    };
 
     try {
         if(teamIdParam){
@@ -26,7 +28,8 @@ export const GET = withCors(async (req: NextRequest) => {
         }
 
         const users = await prisma.user.findMany()
-        return NextResponse.json(users)
+
+        return NextResponse.json(users, { headers: corsHeaders })
     } catch (err) {
         console.error('Error fetching team:', err)
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
