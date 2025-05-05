@@ -1,72 +1,67 @@
 import { NextResponse, NextRequest } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { withCors } from "@/lib/cors";
+import { corsHeaders } from '@/lib/cors'
+import { getCategoriesByFilters, createCategory, deleteCategoryById, updateCategory } from '@/lib/services/categoryService'
 
-export const GET = withCors(async (req: NextRequest) => {
-    const { searchParams } = new URL(req.url);
-    const UserIdParam = searchParams.get('userId');
-    const CategoryIdParam = searchParams.get('categoryId');
+export async function GET(req: NextRequest) {
+    const { searchParams } = new URL(req.url)
+    const userIdParam = searchParams.get('userId')
+    const categoryIdParam = searchParams.get('categoryId')
 
-    const UserId = UserIdParam ? Number.parseInt(UserIdParam) : undefined;
-    const CategoryId = CategoryIdParam ? Number.parseInt(CategoryIdParam) : undefined;
+    const userId = userIdParam ? Number.parseInt(userIdParam) : undefined
+    const categoryId = categoryIdParam ? Number.parseInt(categoryIdParam) : undefined
 
-    if ((UserId && isNaN(UserId)) || (CategoryId && isNaN(CategoryId))) {
-        return NextResponse.json({ error: 'invalid input' }, { status: 400 });
-    }
-
-    const where: any = {};
-
-    if (typeof UserId === 'number') {
-        where.userId = UserId;
-    }
-
-    if (typeof CategoryId === 'number') {
-        where.id = CategoryId;
+    if ((userId && isNaN(userId)) || (categoryId && isNaN(categoryId))) {
+        return NextResponse.json({ error: 'invalid input' }, { status: 400 })
     }
 
     try {
-        const categories = await prisma.category.findMany({ where });
-        return NextResponse.json(categories);
-    } catch (err) {
-        console.error('Error fetching categories:', err);
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-    }
-});
+        const categories = await getCategoriesByFilters(userId, categoryId)
 
-export const POST = withCors(async (req: NextRequest) => {
+        if (!categories || categories.length === 0) {
+            return NextResponse.json({ error: 'Categories not found' }, { status: 404 })
+        }
+
+        const response = NextResponse.json(categories)
+        Object.entries(corsHeaders).forEach(([k, v]) => response.headers.set(k, v))
+        return response
+    } catch (err) {
+        console.error('API error:', err)
+        const response = NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
+        Object.entries(corsHeaders).forEach(([k, v]) => response.headers.set(k, v))
+        return response
+    }
+}
+
+export async function POST (req: NextRequest) {
     const category = await req.json()
 
-    try{
-        const created = await prisma.category.create({data: category})
+    try {
+        const created = await createCategory(category)
         return NextResponse.json(created.id)
-    }catch(err){
-        console.log('create error:', err)
+    } catch (err) {
+        console.error('create error:', err)
         return NextResponse.json({ error: 'Failed to insert category', status: 500 })
     }
-})
+}
 
-export const DELETE = withCors(async (req: NextRequest) => {
+export async function DELETE (req: NextRequest) {
     const { searchParams } = new URL(req.url)
-    const CategoryId = Number.parseInt(searchParams.get('categoryId') || '');
+    const categoryId = Number.parseInt(searchParams.get('categoryId') || '')
 
-    if(isNaN(CategoryId)){
-        return NextResponse.json({ error: 'invalid IDs'}, {status: 400})
+    if (isNaN(categoryId)) {
+        return NextResponse.json({ error: 'invalid IDs' }, { status: 400 })
     }
 
-    const result = await prisma.category.deleteMany({ where: { id: CategoryId } })
-
+    const result = await deleteCategoryById(categoryId)
     return NextResponse.json(result.count > 0)
-})
+}
 
-export const PATCH = withCors(async (req: NextRequest) => {
+export async function PATCH (req: NextRequest) {
     const data = await req.json()
     if (!data.id) {
         return NextResponse.json({ error: 'Missing category ID' }, { status: 400 })
     }
 
-    const updated = await prisma.category.update({
-        where: { id: data.id },
-        data,
-    })
+    const updated = await updateCategory(data)
     return NextResponse.json(!!updated)
-})
+}
