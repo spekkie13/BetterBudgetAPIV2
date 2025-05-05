@@ -15,7 +15,6 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: 'invalid input'}, { status: 400})
     }
 
-    //TODO: Adjust so no userId => invalid return
     const where : any = {}
 
     if (typeof UserId === 'number'){
