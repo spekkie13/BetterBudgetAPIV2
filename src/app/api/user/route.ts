@@ -6,6 +6,10 @@ export const GET = withCors(async (req: NextRequest) => {
     const { searchParams } = new URL(req.url)
     const teamIdParam = searchParams.get('teamId')
 
+    req.headers.set('Access-Control-Allow-Origin', '*');
+    req.headers.set('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+    req.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
     try {
         if(teamIdParam){
             const teamId = parseInt(teamIdParam)
