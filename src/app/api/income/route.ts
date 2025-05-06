@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
         if (isNaN(id)) return jsonWithCors({ error: 'Invalid income ID' }, 400)
 
         const income = await getIncomeById(id)
-        return jsonWithCors(income ?? { error: 'Income not found' }, income ? 200 : 404)
+        return jsonWithCors(income)
     }
 
     const incomes = await getAllIncomes()

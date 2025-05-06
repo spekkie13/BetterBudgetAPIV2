@@ -25,6 +25,7 @@ model User {
   Expenses           Expense[]
   Budgets            PeriodBudget[]
   RecentPeriodResult RecentPeriodResult[]
+  Incomes            Income[]
 }
 
 model UserPreference {
@@ -47,6 +48,7 @@ model Category {
   Expenses Expense[]
   Budgets  PeriodBudget[]
   Results  RecentPeriodResult[]
+  Income   Income[]
 }
 
 model Expense {
@@ -85,4 +87,19 @@ model DateObj {
   id    Int @id @default(autoincrement())
   Year  Int
   Month Int
+}
+
+model Income {
+  id           Int      @id @default(autoincrement())
+  amount       Float
+  description  String
+  description2 String
+  incomeDate   DateTime
+  isRecurring  Boolean
+
+  categoryId Int
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  userId Int?
+  user   User? @relation(fields: [userId], references: [id])
 }

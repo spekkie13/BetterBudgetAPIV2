@@ -11,14 +11,6 @@ export const corsHeaders = {
     'Access-Control-Allow-Credentials': 'true',
 }
 
-// Handle OPTIONS preflight
-export async function OPTIONS() {
-    return new NextResponse(null, {
-        status: 204,
-        headers: corsHeaders,
-    })
-}
-
 export function jsonWithCors(data: any, status: number = 200) {
     const response = NextResponse.json(data, { status })
     Object.entries(corsHeaders).forEach(([key, value]) => {
