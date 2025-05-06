@@ -6,7 +6,7 @@ import {
     getBudgetByFilter,
     updateBudget
 } from "@/lib/services/periodbudgetService";
-import {corsHeaders} from "@/lib/cors";
+import {corsHeaders, jsonWithCors} from "@/lib/cors";
 
 export async function OPTIONS() {
     return new NextResponse(null, {
@@ -24,19 +24,19 @@ export async function GET (req: NextRequest) {
 
     const userId = parseInt(userIdParam || '')
     if (isNaN(userId)) {
-        return NextResponse.json({ error: 'userId is required and must be a number' }, { status: 400 })
+        return jsonWithCors({error: 'usedId is required and must be a number'}, 400)
     }
 
     try {
         const where = await buildBudgetFilters(userId, categoryIdParam, monthAndYearParam)
         if(where === 'invalid') {
-            return NextResponse.json({ error: 'invalid input' }, {status: 500 })
+            return jsonWithCors({error: 'invalid input'}, 500)
         }
         const expenses = await getBudgetByFilter(where)
         return NextResponse.json(expenses)
     } catch (error) {
         console.error('Error fetching budgets:', error)
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+        return jsonWithCors({error: 'Internal server error'}, 500)
     }
 }
 
@@ -45,10 +45,10 @@ export async function POST (req: NextRequest) {
 
     try{
         const created = await createBudget(periodBudget)
-        return NextResponse.json(created.id)
+        return jsonWithCors(created.id)
     }catch(err){
         console.log('create error:', err)
-        return NextResponse.json({ error: 'Failed to create period budget' }, { status: 500 })
+        return jsonWithCors({error: 'Failed to create period budget'}, 500)
     }
 }
 
@@ -57,19 +57,19 @@ export async function DELETE (req: NextRequest) {
     const PeriodBudgetId = Number.parseInt(searchParams.get('periodBudgetId') || '');
 
     if(isNaN(PeriodBudgetId)){
-        return NextResponse.json({ error: 'invalid IDs'}, {status: 400})
+        return jsonWithCors({error: 'invalid periodBudgetId'}, 400)
     }
 
     const result = await deleteManyBudgets(PeriodBudgetId)
-    return NextResponse.json(result.count > 0)
+    return jsonWithCors(result.count > 0)
 }
 
 export async function PATCH (req: NextRequest) {
     const data = await req.json()
     if (!data.id) {
-        return NextResponse.json({ error: 'Missing periodBudget ID' }, { status: 400 })
+        return jsonWithCors({error: 'Missing periodBudget ID'}, 400)
     }
 
     const updated = await updateBudget(data)
-    return NextResponse.json(!!updated)
+    return jsonWithCors(!!updated)
 }

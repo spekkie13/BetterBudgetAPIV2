@@ -6,7 +6,7 @@ import {
     deleteExpenseById,
     updateExpense,
 } from '@/lib/services/expenseService'
-import {corsHeaders} from "@/lib/cors";
+import {corsHeaders, jsonWithCors} from "@/lib/cors";
 
 export async function OPTIONS() {
     return new NextResponse(null, {
@@ -23,16 +23,16 @@ export async function GET(req: NextRequest) {
 
     const userId = parseInt(userIdParam || '')
     if (isNaN(userId)) {
-        return NextResponse.json({ error: 'userId is required and must be a number' }, { status: 400 })
+        return jsonWithCors({ error: 'Missing user id'}, 400)
     }
 
     try {
         const where = buildExpenseFilters(userId, categoryIdParam, monthAndYearParam)
         const expenses = await getExpensesByFilter(where)
-        return NextResponse.json(expenses)
+        return jsonWithCors(expenses)
     } catch (error) {
         console.error('Error fetching expenses:', error)
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+        return jsonWithCors({ error: 'Internal server error' }, 500)
     }
 }
 
@@ -41,10 +41,10 @@ export async function POST(req: NextRequest) {
 
     try {
         const created = await createExpense(expense)
-        return NextResponse.json(created.id)
+        return jsonWithCors(created.id)
     } catch (err) {
         console.error('create error:', err)
-        return NextResponse.json({ error: 'Failed to insert expense', status: 500 })
+        return jsonWithCors({ error: 'Failed to insert expense' }, 500)
     }
 }
 
@@ -53,20 +53,20 @@ export async function DELETE(req: NextRequest) {
     const expenseId = Number.parseInt(searchParams.get('expenseId') || '')
 
     if (isNaN(expenseId)) {
-        return NextResponse.json({ error: 'invalid ID' }, { status: 400 })
+        return jsonWithCors({ error: 'Missing or invalid expense id'}, 400)
     }
 
     const result = await deleteExpenseById(expenseId)
-    return NextResponse.json(result.count > 0)
+    return jsonWithCors(result.count > 0)
 }
 
 export async function PATCH(req: NextRequest) {
     const data = await req.json()
 
     if (!data.id) {
-        return NextResponse.json({ error: 'Missing expense ID' }, { status: 400 })
+        return jsonWithCors({ error: 'Missing or invalid expense id'}, 400)
     }
 
     const updated = await updateExpense(data)
-    return NextResponse.json(!!updated)
+    return jsonWithCors(!!updated)
 }

@@ -1,6 +1,6 @@
 import {NextResponse} from 'next/server'
 import {findTeam} from "@/lib/services/teamService";
-import {corsHeaders} from "@/lib/cors";
+import {corsHeaders, jsonWithCors} from "@/lib/cors";
 
 export async function OPTIONS() {
     return new NextResponse(null, {
@@ -13,9 +13,9 @@ export async function GET (){
     try {
         const teams = await findTeam()
 
-        return NextResponse.json(teams)
+        return jsonWithCors(teams)
     } catch (err) {
         console.error('Error fetching team:', err)
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+        return jsonWithCors({error: 'Internal Server Error'}, 500)
     }
 }

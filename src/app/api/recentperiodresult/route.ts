@@ -5,7 +5,7 @@ import {
     deletePeriodResults, findPeriodResultsByFilter,
     updatePeriodResult
 } from "@/lib/services/recentperiodresultService";
-import {corsHeaders} from "@/lib/cors";
+import {corsHeaders, jsonWithCors} from "@/lib/cors";
 
 export async function OPTIONS() {
     return new NextResponse(null, {
@@ -24,16 +24,16 @@ export async function GET (req: NextRequest) {
 
     if ((UserId && isNaN(UserId)) || (CategoryId && isNaN(CategoryId)))
     {
-        return NextResponse.json({ error: 'invalid input'}, { status: 400})
+        return jsonWithCors({error: 'invalid input'}, 400)
     }
 
     try{
         const where = await buildPeriodFilters(UserId, CategoryId)
         const categories = await findPeriodResultsByFilter(where)
-        return NextResponse.json(categories)
+        return jsonWithCors(categories)
     }catch(err){
         console.error('Error fetching categories:', err)
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+        return jsonWithCors({error: 'Internal server error'}, 500)
     }
 }
 
@@ -42,10 +42,10 @@ export async function POST (req: NextRequest) {
 
     try{
         const created = await createNewPeriodResult(recentperiodresult)
-        return NextResponse.json(created.id)
+        return jsonWithCors(created.id)
     }catch(err){
         console.log('create error:', err)
-        return NextResponse.json({ error: 'Failed to insert category', status: 500 })
+        return jsonWithCors({error: 'Failed to insert category'}, 500)
     }
 }
 
@@ -54,20 +54,20 @@ export async function DELETE (req: NextRequest) {
     const RecentPeriodResultId = Number.parseInt(searchParams.get('recentperiodresultid') || '');
 
     if(isNaN(RecentPeriodResultId)){
-        return NextResponse.json({ error: 'invalid IDs'}, {status: 400})
+        return jsonWithCors({error: 'invalid IDs'}, 400)
     }
 
     const result = await deletePeriodResults(RecentPeriodResultId)
 
-    return NextResponse.json(result.count > 0)
+    return jsonWithCors(result.count > 0)
 }
 
 export async function PATCH (req: NextRequest) {
     const data = await req.json()
     if (!data.id) {
-        return NextResponse.json({ error: 'Missing recent period result ID' }, { status: 400 })
+        return jsonWithCors({ error: 'Missing recent period result ID'}, 400)
     }
 
     const updated = await updatePeriodResult(data)
-    return NextResponse.json(!!updated)
+    return jsonWithCors(!!updated)
 }
