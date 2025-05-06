@@ -6,6 +6,14 @@ import {
     deleteExpenseById,
     updateExpense,
 } from '@/lib/services/expenseService'
+import {corsHeaders} from "@/lib/cors";
+
+export async function OPTIONS() {
+    return new NextResponse(null, {
+        status: 204,
+        headers: corsHeaders,
+    })
+}
 
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)

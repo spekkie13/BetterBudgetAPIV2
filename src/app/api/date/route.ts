@@ -9,6 +9,13 @@ import {
     updateDate,
 } from '@/lib/services/dateService'
 
+export async function OPTIONS() {
+    return new NextResponse(null, {
+        status: 204,
+        headers: corsHeaders,
+    })
+}
+
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)
     const categoryName = searchParams.get('categoryName') ?? undefined

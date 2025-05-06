@@ -2,6 +2,13 @@ import { NextResponse, NextRequest } from 'next/server'
 import { corsHeaders } from '@/lib/cors'
 import { getCategoriesByFilters, createCategory, deleteCategoryById, updateCategory } from '@/lib/services/categoryService'
 
+export async function OPTIONS() {
+    return new NextResponse(null, {
+        status: 204,
+        headers: corsHeaders,
+    })
+}
+
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)
     const userIdParam = searchParams.get('userId')

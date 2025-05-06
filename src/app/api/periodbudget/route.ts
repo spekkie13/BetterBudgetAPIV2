@@ -1,5 +1,4 @@
 import { NextResponse, NextRequest } from 'next/server'
-
 import {
     buildBudgetFilters,
     createBudget,
@@ -7,6 +6,14 @@ import {
     getBudgetByFilter,
     updateBudget
 } from "@/lib/services/periodbudgetService";
+import {corsHeaders} from "@/lib/cors";
+
+export async function OPTIONS() {
+    return new NextResponse(null, {
+        status: 204,
+        headers: corsHeaders,
+    })
+}
 
 export async function GET (req: NextRequest) {
     const { searchParams } = new URL(req.url)

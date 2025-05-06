@@ -1,11 +1,18 @@
 import { NextResponse, NextRequest } from 'next/server'
-
 import {
     buildPeriodFilters,
     createNewPeriodResult,
     deletePeriodResults, findPeriodResultsByFilter,
     updatePeriodResult
 } from "@/lib/services/recentperiodresultService";
+import {corsHeaders} from "@/lib/cors";
+
+export async function OPTIONS() {
+    return new NextResponse(null, {
+        status: 204,
+        headers: corsHeaders,
+    })
+}
 
 export async function GET (req: NextRequest) {
     const { searchParams } = new URL(req.url)
