@@ -1,6 +1,14 @@
-import { NextRequest } from 'next/server'
+import {NextRequest, NextResponse} from 'next/server'
 import { getUserByEmail } from '@/lib/services/userService'
-import {jsonWithCors} from '@/lib/cors'
+import {corsHeaders, jsonWithCors} from '@/lib/cors'
+
+// Handle OPTIONS preflight
+export async function OPTIONS() {
+    return new NextResponse(null, {
+        status: 204,
+        headers: corsHeaders,
+    })
+}
 
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)

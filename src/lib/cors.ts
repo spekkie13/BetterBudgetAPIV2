@@ -24,7 +24,6 @@ export function jsonWithCors(data: any, status: number = 200) {
     Object.entries(corsHeaders).forEach(([key, value]) => {
         response.headers.set(key, value)
     })
-    console.log(response)
     return response
 }
 
