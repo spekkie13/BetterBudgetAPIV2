@@ -4,22 +4,42 @@ import {
     getIncomeById,
     createIncome,
     updateIncome,
-    deleteIncomeById,
+    deleteIncomeById, getIncomesByUserId,
 } from '@/lib/services/incomeService'
-import { jsonWithCors, corsHeaders } from '@/lib/cors'
+import {corsHeaders, jsonWithCors} from "@/lib/cors";
 
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)
     const idParam = searchParams.get('id')
+    const userIdParam = searchParams.get('userId')
 
+    // Handle ?id=123 → get single income
     if (idParam) {
         const id = parseInt(idParam)
-        if (isNaN(id)) return jsonWithCors({ error: 'Invalid income ID' }, 400)
+        if (isNaN(id)) {
+            return jsonWithCors({ error: 'Invalid income ID' }, 400)
+        }
 
         const income = await getIncomeById(id)
+        if (!income) {
+            return jsonWithCors({ error: 'Income not found' }, 404)
+        }
+
         return jsonWithCors(income)
     }
 
+    // Handle ?userId=456 → get all incomes for user
+    if (userIdParam) {
+        const userId = parseInt(userIdParam)
+        if (isNaN(userId)) {
+            return jsonWithCors({ error: 'Invalid user ID' }, 400)
+        }
+
+        const incomes = await getIncomesByUserId(userId)
+        return jsonWithCors(incomes)
+    }
+
+    // Default → return all incomes
     const incomes = await getAllIncomes()
     return jsonWithCors(incomes)
 }
