@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
         if (isNaN(id)) return jsonWithCors({ error: 'Invalid ID' }, 400)
 
         const pref = await getUserPreferenceById(id)
-        return jsonWithCors(pref ?? { error: 'Not found' }, pref ? 200 : 404)
+        return jsonWithCors(pref)
     }
 
     if (userIdParam) {
