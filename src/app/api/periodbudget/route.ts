@@ -33,7 +33,7 @@ export async function GET (req: NextRequest) {
             return jsonWithCors({error: 'invalid input'}, 500)
         }
         const expenses = await getBudgetByFilter(where)
-        return NextResponse.json(expenses)
+        return jsonWithCors(expenses)
     } catch (error) {
         console.error('Error fetching budgets:', error)
         return jsonWithCors({error: 'Internal server error'}, 500)
