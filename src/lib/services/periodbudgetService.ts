@@ -26,7 +26,7 @@ export async function buildBudgetFilters(userId: number, categoryIdParam: string
 }
 
 export async function getBudgetByFilter(where: any){
-    return await prisma.periodBudget.findMany({ where })
+    return await prisma.periodBudget.findFirst({ where })
 }
 
 export async function createBudget(budget: any){
