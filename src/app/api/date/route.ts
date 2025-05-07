@@ -45,14 +45,12 @@ export async function GET(req: NextRequest) {
     }
 
     try {
-        const { error, result } = await getExpensesGroupedByMonthYear(userId, categoryId)
-        if (error) {
-            return jsonWithCors({error} ,404)
+        const expenses = await getExpensesGroupedByMonthYear(userId, categoryId)
+        if (expenses.length === 0) {
+            return jsonWithCors({error: 'no expenses found'} ,404)
         }
 
-        const res = NextResponse.json(result)
-        Object.entries(corsHeaders).forEach(([k, v]) => res.headers.set(k, v))
-        return res
+        return jsonWithCors(expenses)
     } catch (err) {
         console.error('Date fetch error:', err)
         const res = NextResponse.json({ error: 'Failed to retrieve date data' }, { status: 500 })

@@ -1,45 +1,52 @@
 // lib/services/dateService.ts
 import { prisma } from '@/lib/prisma'
-import {DateObj} from "@/models/dateObj";
+import { DateObj } from '@/models/dateObj'
 
-export async function getExpensesGroupedByMonthYear(categoryName?: string) {
-    let expenses: any[] = []
+export async function getExpensesGroupedByMonthYear(userId?: number, categoryId?: number): Promise<DateObj[]> {
+    try {
+        const where: any = {}
 
-    if (categoryName) {
-        const category = await prisma.category.findFirst({
-            where: { Name: categoryName },
-        })
-        if (!category) return { error: 'Category not found', expenses: null }
-
-        expenses = await prisma.expense.findMany({
-            where: { categoryId: category.id },
-            select: { Date: true },
-        })
-    } else {
-        expenses = await prisma.expense.findMany({
-            select: { Date: true },
-        })
-    }
-
-    const seen = new Set<string>()
-    const result: DateObj[] = []
-
-    expenses.forEach((e: any, index: number) => {
-        const date = new Date(e.Date.year, e.Date.month - 1, e.Date.day)
-        const month = date.getMonth() + 1
-        const year = date.getFullYear()
-        const day = date.getDate()
-        const key = `${month}-${year}`
-
-        if (!seen.has(key)) {
-            seen.add(key)
-            result.push({ day, month, year, id: index })
+        if (userId !== undefined) {
+            where.userId = userId
         }
-    })
 
-    result.sort((a, b) => (a.year !== b.year ? a.year - b.year : a.month - b.month))
+        if (categoryId !== undefined) {
+            const category = await prisma.category.findFirst({
+                where: { id: categoryId },
+            })
+            if (!category) return []
 
-    return { result }
+            where.categoryId = category.id
+        }
+
+        const expenses = await prisma.expense.findMany({
+            where,
+            select: { Date: true },
+        })
+
+        const seen = new Set<string>()
+        const result: DateObj[] = []
+
+        expenses.forEach((e, index) => {
+            const date = new Date(e.Date)
+            const month = date.getMonth() + 1
+            const year = date.getFullYear()
+            const day = date.getDate()
+            const key = `${month}-${year}`
+
+            if (!seen.has(key)) {
+                seen.add(key)
+                result.push(new DateObj({ day, month, year, id: index }))
+            }
+        })
+
+        result.sort((a, b) => (a.year !== b.year ? a.year - b.year : a.month - b.month))
+
+        return result
+    } catch (error) {
+        console.error('getExpensesGroupedByMonthYear error:', error)
+        return []
+    }
 }
 
 export async function createDate(data: any) {
