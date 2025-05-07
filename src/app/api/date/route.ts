@@ -18,10 +18,34 @@ export async function OPTIONS() {
 
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)
-    const categoryName = searchParams.get('categoryName') ?? undefined
+    const userIdParam = searchParams.get('userId')
+    const categoryIdParam = searchParams.get('categoryId')
+
+    let userId = userIdParam ? parseInt(userIdParam) : undefined
+    let categoryId = categoryIdParam ? parseInt(categoryIdParam) : undefined
+
+    if (userIdParam !== null) {
+        const parsed = parseInt(userIdParam)
+        if (isNaN(parsed)) {
+            const res = NextResponse.json({ error: 'Invalid userId' }, { status: 400 })
+            Object.entries(corsHeaders).forEach(([k, v]) => res.headers.set(k, v))
+            return res
+        }
+        userId = parsed
+    }
+
+    if (categoryIdParam !== null) {
+        const parsed = parseInt(categoryIdParam)
+        if (isNaN(parsed)) {
+            const res = NextResponse.json({ error: 'Invalid categoryId' }, { status: 400 })
+            Object.entries(corsHeaders).forEach(([k, v]) => res.headers.set(k, v))
+            return res
+        }
+        categoryId = parsed
+    }
 
     try {
-        const { error, result } = await getExpensesGroupedByMonthYear(categoryName)
+        const { error, result } = await getExpensesGroupedByMonthYear(userId, categoryId)
 
         if (error) {
             const res = NextResponse.json({ error }, { status: 404 })
@@ -33,7 +57,7 @@ export async function GET(req: NextRequest) {
         Object.entries(corsHeaders).forEach(([k, v]) => res.headers.set(k, v))
         return res
     } catch (err) {
-        console.error(err)
+        console.error('Date fetch error:', err)
         const res = NextResponse.json({ error: 'Failed to retrieve date data' }, { status: 500 })
         Object.entries(corsHeaders).forEach(([k, v]) => res.headers.set(k, v))
         return res

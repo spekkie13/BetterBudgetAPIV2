@@ -36,6 +36,7 @@ export async function GET(req: NextRequest) {
         }
 
         const incomes = await getIncomesByUserId(userId)
+        console.log(incomes)
         return jsonWithCors(incomes)
     }
 
