@@ -24,7 +24,7 @@ export async function GET (req: NextRequest) {
 
     const userId = parseInt(userIdParam || '')
     if (isNaN(userId)) {
-        return jsonWithCors({error: 'usedId is required and must be a number'}, 400)
+        return jsonWithCors({error: 'userId is required and must be a number'}, 400)
     }
 
     try {

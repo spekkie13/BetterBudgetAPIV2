@@ -11,8 +11,8 @@ export async function buildBudgetFilters(userId: number, categoryIdParam: string
             return "invalid"
         }
 
-        where.month = month
-        where.year = year
+        where.Month = month
+        where.Year = year
     }
 
     if (categoryIdParam) {
