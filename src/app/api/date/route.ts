@@ -46,7 +46,6 @@ export async function GET(req: NextRequest) {
 
     try {
         const { error, result } = await getExpensesGroupedByMonthYear(userId, categoryId)
-
         if (error) {
             const res = NextResponse.json({ error }, { status: 404 })
             Object.entries(corsHeaders).forEach(([k, v]) => res.headers.set(k, v))
