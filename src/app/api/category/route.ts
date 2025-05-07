@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server'
-import { corsHeaders } from '@/lib/cors'
+import {corsHeaders, jsonWithCors} from '@/lib/cors'
 import { getCategoriesByFilters, createCategory, deleteCategoryById, updateCategory } from '@/lib/services/categoryService'
 
 export async function OPTIONS() {
@@ -18,24 +18,19 @@ export async function GET(req: NextRequest) {
     const categoryId = categoryIdParam ? Number.parseInt(categoryIdParam) : undefined
 
     if ((userId && isNaN(userId)) || (categoryId && isNaN(categoryId))) {
-        return NextResponse.json({ error: 'invalid input' }, { status: 400 })
+        return jsonWithCors({ error: 'invalid input'}, 400)
     }
 
     try {
         const categories = await getCategoriesByFilters(userId, categoryId)
-
         if (!categories || categories.length === 0) {
-            return NextResponse.json({ error: 'Categories not found' }, { status: 404 })
+            return jsonWithCors({ error: 'Categories not found' }, 404)
         }
 
-        const response = NextResponse.json(categories)
-        Object.entries(corsHeaders).forEach(([k, v]) => response.headers.set(k, v))
-        return response
+        return jsonWithCors(categories)
     } catch (err) {
         console.error('API error:', err)
-        const response = NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
-        Object.entries(corsHeaders).forEach(([k, v]) => response.headers.set(k, v))
-        return response
+        return jsonWithCors({ error: 'API error'}, 500)
     }
 }
 
@@ -44,10 +39,10 @@ export async function POST (req: NextRequest) {
 
     try {
         const created = await createCategory(category)
-        return NextResponse.json(created.id)
+        return jsonWithCors(created.id)
     } catch (err) {
         console.error('create error:', err)
-        return NextResponse.json({ error: 'Failed to insert category', status: 500 })
+        return jsonWithCors({ error: 'Failed to insert category' }, 500)
     }
 }
 
@@ -56,19 +51,19 @@ export async function DELETE (req: NextRequest) {
     const categoryId = Number.parseInt(searchParams.get('categoryId') || '')
 
     if (isNaN(categoryId)) {
-        return NextResponse.json({ error: 'invalid IDs' }, { status: 400 })
+        return jsonWithCors({ error: 'invalid IDs'}, 400)
     }
 
     const result = await deleteCategoryById(categoryId)
-    return NextResponse.json(result.count > 0)
+    return jsonWithCors(result.count > 0)
 }
 
 export async function PATCH (req: NextRequest) {
     const data = await req.json()
     if (!data.id) {
-        return NextResponse.json({ error: 'Missing category ID' }, { status: 400 })
+        return jsonWithCors({ error: 'Missing categoryID' }, 400)
     }
 
     const updated = await updateCategory(data)
-    return NextResponse.json(!!updated)
+    return jsonWithCors(!!updated)
 }
