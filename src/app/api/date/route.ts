@@ -1,7 +1,7 @@
 // app/api/date/route.ts
 
 import { NextRequest, NextResponse } from 'next/server'
-import { corsHeaders } from '@/lib/cors'
+import {corsHeaders, jsonWithCors} from '@/lib/cors'
 import {
     getExpensesGroupedByMonthYear,
     createDate,
@@ -47,9 +47,7 @@ export async function GET(req: NextRequest) {
     try {
         const { error, result } = await getExpensesGroupedByMonthYear(userId, categoryId)
         if (error) {
-            const res = NextResponse.json({ error }, { status: 404 })
-            Object.entries(corsHeaders).forEach(([k, v]) => res.headers.set(k, v))
-            return res
+            return jsonWithCors({error} ,404)
         }
 
         const res = NextResponse.json(result)
