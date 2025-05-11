@@ -17,22 +17,25 @@ export async function OPTIONS() {
 
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)
+
     const userIdParam = searchParams.get('userId') ?? ""
     const categoryIdParam = searchParams.get('id') ?? ""
     const monthAndYearParam = searchParams.get('monthAndYear') ?? ""
-
-    const userId = parseInt(userIdParam || '')
+    console.log('month and year param: ', monthAndYearParam)
+    const userId = parseInt(userIdParam)
     if (isNaN(userId)) {
-        return jsonWithCors({ error: 'Missing user id'}, 400)
+        return jsonWithCors({ error: 'Missing or invalid userId' }, 400)
     }
 
     try {
         const where = buildExpenseFilters(userId, categoryIdParam, monthAndYearParam)
+        console.log('filtering on: ', where)
         const expenses = await getExpensesByFilter(where)
         return jsonWithCors(expenses)
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error fetching expenses:', error)
-        return jsonWithCors({ error: 'Internal server error' }, 500)
+        const errorMessage = error instanceof Error ? error.message : 'Internal server error'
+        return jsonWithCors({ error: errorMessage }, 400)
     }
 }
 
