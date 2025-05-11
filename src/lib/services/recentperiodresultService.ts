@@ -1,11 +1,20 @@
 import {prisma} from "@/lib/prisma";
 
-export async function buildPeriodFilters(userId: number, categoryId: number){
-    const where : any = {}
-    where.userId = userId;
-    where.id = categoryId
+export function buildPeriodFilters(userId: number, categoryId?: number, from?: Date, to?: Date) {
+    const where: any = { userId };
 
-    return where
+    if (categoryId) {
+        where.categoryId = categoryId;
+    }
+
+    if (from && to) {
+        where.Date = {
+            gte: from,
+            lt: to,
+        };
+    }
+
+    return where;
 }
 
 export async function findPeriodResultsByFilter(where: any){
