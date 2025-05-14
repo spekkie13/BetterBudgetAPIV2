@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
             if (isNaN(budgetId)) return jsonWithCors({ error: 'Invalid budgetId' }, 400);
 
             const budget = await getBudgetById(budgetId);
-            return jsonWithCors(budget ? [budget] : []);
+            return jsonWithCors(budget ? budget : {});
         }
 
         if (categoryIdParam) {

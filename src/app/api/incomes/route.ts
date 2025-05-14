@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
 
             const period = await getPeriodById(periodId);
 
-            if (!period) return jsonWithCors([]);
+            if (!period) return jsonWithCors({});
 
             const incomes = getIncomesByPeriod(period)
 

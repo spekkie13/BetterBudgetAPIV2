@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
 
             const period = await dateService.getExpensesGroupedByMonthYear();
             const single = period.find(p => p.id === periodId);
-            return jsonWithCors(single ? [single] : []);
+            return jsonWithCors(single ? single : {});
         }
 
         const allPeriods = await dateService.getExpensesGroupedByMonthYear();

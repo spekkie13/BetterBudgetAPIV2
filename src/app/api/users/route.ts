@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
                 include: { team: true },
             });
 
-            return jsonWithCors(user ? [user] : []);
+            return jsonWithCors(user ? user : {});
         }
 
         if (teamIdParam) {

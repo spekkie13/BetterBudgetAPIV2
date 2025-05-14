@@ -30,22 +30,20 @@ export async function GET(req: NextRequest) {
 
             const preference = await getUserPreferenceById(preferenceId)
 
-            return jsonWithCors(preference ? [preference] : []);
+            return jsonWithCors(preference ? preference : {});
         }
         if (userIdParam) {
             const userId = parseInt(userIdParam);
             if (isNaN(userId)) return jsonWithCors({ error: 'Invalid userId' }, 400);
             if(preferenceName){
-                console.log(preferenceName);
                 const preference = await getUserPreferenceByName(preferenceName, userId);
-                console.log(preference);
                 if(!preference){
                     return jsonWithCors({ error: 'Invalid preference name' }, 400);
                 }
                 return jsonWithCors(preference);
             }else {
                 const preference = await getUserPreferencesByUserId(userId);
-                return jsonWithCors(preference ? [preference] : []);
+                return jsonWithCors(preference ? preference : {});
             }
         }
 

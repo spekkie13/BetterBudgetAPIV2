@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
             if (isNaN(teamId)) return jsonWithCors({ error: 'Invalid teamId' }, 400);
 
             const team = await findTeam(teamId)
-            return jsonWithCors(team ? [team] : []);
+            return jsonWithCors(team ? team : {});
         }
 
         const allTeams = await getTeams()

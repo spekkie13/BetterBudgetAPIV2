@@ -15,12 +15,12 @@ export async function GET(req: NextRequest) {
             if (isNaN(id)) return jsonWithCors({ error: 'Invalid id' }, 400);
 
             const category = await categoryService.getCategoryById(id);
-            return jsonWithCors(category ? [category] : []);
+            return jsonWithCors(category ? category : {});
         }
 
         if (nameParam) {
             const category = await categoryService.getCategoryByName(nameParam);
-            return jsonWithCors(category ? [category] : []);
+            return jsonWithCors(category ? category : {});
         }
 
         const allCategories = await categoryService.getAllCategories();

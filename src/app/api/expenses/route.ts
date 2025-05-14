@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
             if (isNaN(id)) return jsonWithCors({ error: 'Invalid id' }, 400);
 
             const expense = await getExpenseById(id)
-            return jsonWithCors(expense ? [expense] : []);
+            return jsonWithCors(expense ? expense : {});
         }
 
         if (categoryIdParam) {
@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
 
             const period = await getPeriodById(periodId);
 
-            if (!period) return jsonWithCors([]);
+            if (!period) return jsonWithCors({});
 
             const expenses = await getExpenseByPeriodId(period);
 
