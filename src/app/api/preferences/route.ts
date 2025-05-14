@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
             return jsonWithCors(preference ? [preference] : []);
         }
         if (preferenceName){
-            const preference = await getUserPreferenceByName(preferenceName)
+            const preference = await getUserPreferenceByName(preferenceName.toLowerCase());
             if(!preference){
                 return jsonWithCors({ error: 'Invalid preference name' }, 400);
             }
