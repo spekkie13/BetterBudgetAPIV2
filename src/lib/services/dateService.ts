@@ -1,8 +1,16 @@
 // lib/services/dateService.ts
 import { prisma } from '@/lib/prisma'
-import { DateObj } from '@/models/dateObj'
+import { Period } from '@prisma/client'
 
-export async function getExpensesGroupedByMonthYear(userId?: number, categoryId?: number): Promise<DateObj[]> {
+export async function getPeriodById(id: number){
+    return await prisma.period.findFirst({
+        where: {
+            id: id
+        }
+    })
+}
+
+export async function getExpensesGroupedByMonthYear(userId?: number, categoryId?: number): Promise<Period[]> {
     try {
         const where: any = {}
 
@@ -21,27 +29,31 @@ export async function getExpensesGroupedByMonthYear(userId?: number, categoryId?
 
         const expenses = await prisma.expense.findMany({
             where,
-            select: { Date: true },
+            select: { date: true },
         })
 
         const seen = new Set<string>()
-        const result: DateObj[] = []
+        const result: Period[] = []
 
-        expenses.forEach((e, index) => {
-            const date = new Date(e.Date)
-            const month = date.getMonth() + 1
+        expenses.forEach((e) => {
+            const date = new Date(e.date)
+            const month = date.getMonth()
             const year = date.getFullYear()
-            const day = date.getDate()
-            const key = `${month}-${year}`
+            const startDate = new Date(Date.UTC(year, month, 1))
+            const endDate = new Date(Date.UTC(year, month + 1, 1))
+            const key = `${year}-${month}`
 
             if (!seen.has(key)) {
                 seen.add(key)
-                result.push(new DateObj({ day, month, year, id: index }))
+                result.push({
+                    id: 0, // placeholder, as we're not fetching real IDs
+                    startDate,
+                    endDate,
+                } as Period)
             }
         })
 
-        result.sort((a, b) => (a.year !== b.year ? a.year - b.year : a.month - b.month))
-
+        result.sort((a, b) => a.startDate.getTime() - b.startDate.getTime())
         return result
     } catch (error) {
         console.error('getExpensesGroupedByMonthYear error:', error)
@@ -50,15 +62,15 @@ export async function getExpensesGroupedByMonthYear(userId?: number, categoryId?
 }
 
 export async function createDate(data: any) {
-    return await prisma.dateObj.create({ data })
+    return await prisma.period.create({ data })
 }
 
 export async function deleteDateById(id: number) {
-    return await prisma.dateObj.deleteMany({ where: { id } })
+    return await prisma.period.deleteMany({ where: { id } })
 }
 
 export async function updateDate(data: any) {
-    return await prisma.dateObj.update({
+    return await prisma.period.update({
         where: { id: data.id },
         data,
     })
