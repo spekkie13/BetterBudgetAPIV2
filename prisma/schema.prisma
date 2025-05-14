@@ -5,101 +5,112 @@ datasource db {
 
 generator client {
   provider = "prisma-client-js"
+  output   = "./node_modules/@prisma/client"
+}
+
+model User {
+  id          Int              @id @default(autoincrement())
+  email       String           @unique
+  username    String           @unique
+  name        String
+  teamId      Int?
+  team        Team?            @relation(fields: [teamId], references: [id])
+  categories  Category[]
+  expenses    Expense[]
+  incomes     Income[]
+  budgets     Budget[]
+  results     Result[]
+  preferences UserPreference[]
 }
 
 model Team {
   id    Int    @id @default(autoincrement())
-  Name  String
-  Users User[]
-}
-
-model User {
-  id                 Int                  @id @default(autoincrement())
-  Name               String
-  Username           String
-  Email              String               @unique
-  Team               Team?                @relation(fields: [teamId], references: [id])
-  teamId             Int?
-  Preferences        UserPreference[]
-  Categories         Category[]
-  Expenses           Expense[]
-  Budgets            PeriodBudget[]
-  RecentPeriodResult RecentPeriodResult[]
-  Incomes            Income[]
-}
-
-model UserPreference {
-  id          Int      @id @default(autoincrement())
-  Name        String
-  StringValue String
-  NumberValue Int
-  DateValue   DateTime
-  User        User?    @relation(fields: [userId], references: [id])
-  userId      Int?
+  name  String
+  users User[]
+  // Future: users     User[] (many-to-many via a join table)
 }
 
 model Category {
-  id       Int                  @id @default(autoincrement())
-  Name     String
-  Color    String
-  Icon     String
-  User     User?                @relation(fields: [userId], references: [id])
-  userId   Int?
-  Expenses Expense[]
-  Budgets  PeriodBudget[]
-  Results  RecentPeriodResult[]
-  Income   Income[]
+  id    Int    @id @default(autoincrement())
+  name  String
+  color String
+  icon  String
+
+  user   User @relation(fields: [userId], references: [id])
+  userId Int
+
+  expenses Expense[]
+  budgets  Budget[]
+  results  Result[]
 }
 
 model Expense {
-  id          Int       @id @default(autoincrement())
-  Date        DateTime
-  Amount      Decimal
-  Description String
-  IsRecurring Boolean
-  User        User?     @relation(fields: [userId], references: [id])
-  userId      Int?
-  Category    Category? @relation(fields: [categoryId], references: [id])
-  categoryId  Int?
-}
+  id          Int      @id @default(autoincrement())
+  description String
+  amount      Decimal  @db.Decimal(10, 2)
+  date        DateTime
 
-model PeriodBudget {
-  id         Int       @id @default(autoincrement())
-  Budget     Decimal
-  Month      Int
-  Year       Int
-  User       User?     @relation(fields: [userId], references: [id])
-  userId     Int?
-  Category   Category? @relation(fields: [categoryId], references: [id])
-  categoryId Int?
-}
+  user   User @relation(fields: [userId], references: [id])
+  userId Int
 
-model RecentPeriodResult {
-  id         Int       @id @default(autoincrement())
-  Spent      Decimal
-  User       User?     @relation(fields: [userId], references: [id])
-  userId     Int?
-  Category   Category? @relation(fields: [categoryId], references: [id])
-  categoryId Int?
-}
-
-model DateObj {
-  id    Int @id @default(autoincrement())
-  Year  Int
-  Month Int
+  category   Category @relation(fields: [categoryId], references: [id])
+  categoryId Int
 }
 
 model Income {
-  id           Int      @id @default(autoincrement())
-  amount       Float
-  description  String
-  description2 String
-  incomeDate   DateTime
-  isRecurring  Boolean
+  id     Int      @id @default(autoincrement())
+  amount Decimal  @db.Decimal(10, 2)
+  date   DateTime
 
-  categoryId Int
+  user   User @relation(fields: [userId], references: [id])
+  userId Int
+}
+
+model Period {
+  id        Int      @id @default(autoincrement())
+  startDate DateTime
+  endDate   DateTime
+
+  budgets Budget[]
+  results Result[]
+}
+
+model Budget {
+  id     Int     @id @default(autoincrement())
+  amount Decimal @db.Decimal(10, 2)
+
+  user   User @relation(fields: [userId], references: [id])
+  userId Int
+
   category   Category @relation(fields: [categoryId], references: [id])
+  categoryId Int
 
-  userId Int?
-  user   User? @relation(fields: [userId], references: [id])
+  period   Period @relation(fields: [periodId], references: [id])
+  periodId Int
+}
+
+model Result {
+  id              Int     @id @default(autoincrement())
+  totalSpent      Decimal @db.Decimal(10, 2)
+  percentageSpent Decimal @db.Decimal(5, 2)
+
+  user   User @relation(fields: [userId], references: [id])
+  userId Int
+
+  category   Category @relation(fields: [categoryId], references: [id])
+  categoryId Int
+
+  period   Period @relation(fields: [periodId], references: [id])
+  periodId Int
+}
+
+model UserPreference {
+  id          Int       @id @default(autoincrement())
+  name        String
+  stringValue String? // optional values for flexibility
+  numberValue Float?
+  dateValue   DateTime?
+
+  user   User @relation(fields: [userId], references: [id])
+  userId Int
 }

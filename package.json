@@ -16,10 +16,10 @@
     "next": "15.3.1",
     "next-auth": "^4.24.11",
     "nodemailer": "^6.10.1",
+    "prisma": "^6.7.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "swr": "^2.3.3",
-    "prisma": "^6.7.0"
+    "swr": "^2.3.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
