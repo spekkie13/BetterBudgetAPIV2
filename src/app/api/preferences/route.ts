@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma';
 import {corsHeaders, jsonWithCors} from "@/lib/cors";
 import {
     createUserPreference,
-    getUserPreferenceById,
+    getUserPreferenceById, getUserPreferenceByName,
     getUserPreferencesByUserId
 } from "@/lib/services/userpreferenceService";
 
@@ -21,6 +21,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const preferenceIdParam = searchParams.get('preferenceId');
     const userIdParam = searchParams.get('userId');
+    const preferenceName = searchParams.get('preferenceName');
 
     try {
         if (preferenceIdParam) {
@@ -36,6 +37,13 @@ export async function GET(req: NextRequest) {
             if (isNaN(userId)) return jsonWithCors({ error: 'Invalid userId' }, 400);
             const preference = await getUserPreferencesByUserId(userId);
             return jsonWithCors(preference ? [preference] : []);
+        }
+        if (preferenceName){
+            const preference = await getUserPreferenceByName(preferenceName)
+            if(!preference){
+                return jsonWithCors({ error: 'Invalid preference name' }, 400);
+            }
+            return jsonWithCors(preference);
         }
 
         const allPreferences = await prisma.userPreference.findMany();

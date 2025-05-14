@@ -1,6 +1,6 @@
 // lib/services/dateService.ts
 import { prisma } from '@/lib/prisma'
-import { Period } from '@prisma/client'
+import {Period} from "@prisma/client";
 
 export async function getPeriodById(id: number){
     return await prisma.period.findFirst({

@@ -12,6 +12,12 @@ export async function getUserPreferenceById(id: number) {
     })
 }
 
+export async function getUserPreferenceByName(name: string) {
+    return await prisma.userPreference.findFirst({
+        where: { name: name },
+    })
+}
+
 export async function createUserPreference(data: any) {
     return await prisma.userPreference.create({
         data,
