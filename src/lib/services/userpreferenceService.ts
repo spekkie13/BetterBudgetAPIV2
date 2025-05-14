@@ -12,9 +12,15 @@ export async function getUserPreferenceById(id: number) {
     })
 }
 
-export async function getUserPreferenceByName(name: string) {
+export async function getUserPreferenceByName(name: string, userId: number) {
     return await prisma.userPreference.findFirst({
-        where: { name: name },
+        where: {
+            userId: userId,
+            name: {
+                equals: name,
+                mode: 'insensitive'
+            },
+        },
     })
 }
 

@@ -35,15 +35,18 @@ export async function GET(req: NextRequest) {
         if (userIdParam) {
             const userId = parseInt(userIdParam);
             if (isNaN(userId)) return jsonWithCors({ error: 'Invalid userId' }, 400);
-            const preference = await getUserPreferencesByUserId(userId);
-            return jsonWithCors(preference ? [preference] : []);
-        }
-        if (preferenceName){
-            const preference = await getUserPreferenceByName(preferenceName.toLowerCase());
-            if(!preference){
-                return jsonWithCors({ error: 'Invalid preference name' }, 400);
+            if(preferenceName){
+                console.log(preferenceName);
+                const preference = await getUserPreferenceByName(preferenceName, userId);
+                console.log(preference);
+                if(!preference){
+                    return jsonWithCors({ error: 'Invalid preference name' }, 400);
+                }
+                return jsonWithCors(preference);
+            }else {
+                const preference = await getUserPreferencesByUserId(userId);
+                return jsonWithCors(preference ? [preference] : []);
             }
-            return jsonWithCors(preference);
         }
 
         const allPreferences = await prisma.userPreference.findMany();
