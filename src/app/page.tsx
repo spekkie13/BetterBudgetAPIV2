@@ -13,7 +13,7 @@ export default function Home() {
 
     // 2. Use SWR to fetch data
     const { data: users, error, mutate } = useSWR<User[]>(
-        '/api [old]/user?email=tspek9@gmail.com',
+        '/api/users?email=tspek9@gmail.com',
         fetcher
     )
 
