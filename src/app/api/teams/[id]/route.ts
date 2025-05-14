@@ -1,6 +1,6 @@
 import {NextRequest, NextResponse} from "next/server";
 import {corsHeaders, jsonWithCors} from "@/lib/cors";
-import { prisma } from "@/lib/prisma";
+import {deleteTeam, findTeam, updateTeam} from "@/lib/services/teamService";
 
 // Handle OPTIONS preflight
 export async function OPTIONS() {
@@ -18,11 +18,7 @@ export async function GET(req: NextRequest) {
         const id = parseInt(idParam);
         if (isNaN(id)) return jsonWithCors({ error: 'Invalid ID' }, 400);
 
-        const team = await prisma.team.findUnique({
-            where: { id },
-            include: { users: true },
-        });
-
+        const team = await findTeam(id)
         return jsonWithCors(team || {}, team ? 200 : 404);
 
     }
@@ -36,11 +32,7 @@ export async function PUT(req: NextRequest) {
         if (isNaN(id)) return jsonWithCors({ error: 'Invalid ID' }, 400);
         const body = await req.json();
 
-        const updatedTeam = await prisma.team.update({
-            where: { id },
-            data: body,
-        });
-
+        const updatedTeam = await updateTeam(body)
         return jsonWithCors(updatedTeam);
     }
 }
@@ -51,7 +43,7 @@ export async function DELETE(req: NextRequest) {
     if (idParam) {
         const id = parseInt(idParam);
         if (isNaN(id)) return jsonWithCors({ error: 'Invalid ID' }, 400);
-        await prisma.team.delete({ where: { id } });
+        await deleteTeam(id)
         return jsonWithCors({ message: 'Team deleted' });
 
     }

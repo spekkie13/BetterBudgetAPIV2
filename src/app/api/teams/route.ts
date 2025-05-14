@@ -1,8 +1,7 @@
 // File: /app/api/teams/route.ts
 import {NextRequest, NextResponse} from 'next/server';
-import { prisma } from '@/lib/prisma';
 import {corsHeaders, jsonWithCors} from "@/lib/cors";
-import {findTeam} from "@/lib/services/teamService";
+import {createTeam, findTeam, getTeams} from "@/lib/services/teamService";
 
 // Handle OPTIONS preflight
 export async function OPTIONS() {
@@ -26,10 +25,7 @@ export async function GET(req: NextRequest) {
             return jsonWithCors(team ? [team] : []);
         }
 
-        const allTeams = await prisma.team.findMany({
-            include: { users: true },
-        });
-
+        const allTeams = await getTeams()
         return jsonWithCors(allTeams);
     } catch (error) {
         console.error('Error fetching teams:', error);
@@ -41,11 +37,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const newTeam = await prisma.team.create({
-            data: {
-                name: body.name,
-            },
-        });
+        const newTeam = await createTeam(body)
 
         return jsonWithCors(newTeam, 201);
     } catch (error) {
