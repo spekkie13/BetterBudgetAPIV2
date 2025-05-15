@@ -10,9 +10,9 @@ export async function getPeriodById(id: number){
     })
 }
 
-export async function getExpensesGroupedByMonthYear(userId?: number, categoryId?: number): Promise<Period[]> {
+export async function getExpensesGroupedByMonthYear(userId?: number, categoryId?: number) {
     try {
-        const where: any = {}
+        const where: any = []
 
         if (userId !== undefined) {
             where.userId = userId

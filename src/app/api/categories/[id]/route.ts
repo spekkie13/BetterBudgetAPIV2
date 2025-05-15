@@ -3,20 +3,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { corsHeaders, jsonWithCors } from '@/lib/cors';
 import * as categoryService from '@/lib/services/categoryService';
 
-export async function GET(req: NextRequest) {
-    const { searchParams } = new URL(req.url);
-    const idParam = searchParams.get('id');
-    if (idParam){
-        const id = parseInt(idParam);
-        if (isNaN(id)) return jsonWithCors({ error: 'Invalid ID' }, 400);
-
-        const category = await categoryService.getCategoryById(id);
-        return jsonWithCors(category || {}, category ? 200 : 404);
-    }
-
-    return jsonWithCors({ error: 'Invalid ID' }, 400);
-}
-
 export async function PUT(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const idParam = searchParams.get('id');

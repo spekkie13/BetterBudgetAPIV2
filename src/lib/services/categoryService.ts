@@ -1,19 +1,29 @@
 import { prisma } from '@/lib/prisma'
 
-export async function getCategoryById(categoryId: number) {
+export async function getCategoryById(categoryId: number, userId: number) {
     return await prisma.category.findUnique({
-        where: { id: categoryId },
+        where: {
+            userId,
+            id: categoryId
+        },
     })
 }
 
-export async function getCategoryByName(name: string) {
+export async function getCategoryByName(name: string, userId: number) {
     return await prisma.category.findFirst({
-        where: { name },
+        where: {
+            name,
+            userId
+        },
     })
 }
 
-export async function getAllCategories() {
-    return await prisma.category.findMany()
+export async function getAllCategories(userId: number) {
+    return await prisma.category.findMany({
+        where: {
+            userId
+        }
+    })
 }
 
 export async function createCategory(data: {
