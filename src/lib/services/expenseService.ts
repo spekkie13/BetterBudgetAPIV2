@@ -28,6 +28,18 @@ export async function getAllExpenses(){
     return await prisma.expense.findMany();
 }
 
+export async function getMostRecentExpense(userId: number, categoryId: number){
+    return await prisma.expense.findFirst({
+        where: {
+            userId,
+            categoryId,
+        },
+        orderBy: {
+            date: 'desc'
+        }
+    })
+}
+
 export async function createExpense(data: any) {
     return await prisma.expense.create({ data })
 }
