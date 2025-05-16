@@ -32,17 +32,30 @@ export async function GET(req: NextRequest) {
                     return jsonWithCors({ error: 'Invalid categoryId' }, 400);
                 }
                 if (req.url.includes('/recent')){
-                    const expense = await getMostRecentExpense(userId, categoryId);
-                    const period = await getPeriodByExpenseDate(expense?.date);
-                    return jsonWithCors(period);
+                    if (req.url.includes('/recent')) {
+                        const expense = await getMostRecentExpense(userId, categoryId);
+                        if (!expense) {
+                            return jsonWithCors({ error: 'No expenses found for this category/user' }, 404);
+                        }
+
+                        const period = await getPeriodByExpenseDate(expense.date);
+                        if (!period) {
+                            return jsonWithCors({ error: 'No matching period found for latest expense date' }, 404);
+                        }
+
+                        return jsonWithCors(period);
+                    }
                 } else {
                     const expenses = await getDistinctExpensePeriods(userId, categoryId)
+                    const seen = new Set<number>();
                     let dates = []
                     for (const expense of expenses) {
-                        dates.push(await getPeriodByExpenseDate(expense.date))
+                        const period = await getPeriodByExpenseDate(expense.date);
+                        if (period && !seen.has(period.id)) {
+                            seen.add(period.id);
+                            dates.push(period);
+                        }
                     }
-
-                    return jsonWithCors(dates);
                 }
 
             }

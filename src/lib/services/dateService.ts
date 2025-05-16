@@ -15,6 +15,9 @@ export async function getPeriodByExpenseDate(expenseDate?: Date){
         where: {
             startDate: { lte: expenseDate },
             endDate: { gte: expenseDate },
+        },
+        orderBy: {
+            endDate: 'desc',
         }
     })
 }
