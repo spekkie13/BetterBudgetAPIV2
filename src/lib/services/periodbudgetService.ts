@@ -1,20 +1,39 @@
 import {prisma} from "@/lib/prisma";
 
-export async function getBudgetById(id: number){
+export async function getBudgetById(userId: number, id: number){
     return prisma.budget.findUnique({
-        where: { id: id },
+        where: {
+            id: id,
+            userId: userId,
+        },
     })
 }
 
-export async function getBudgetsByCategoryId(categoryId: number){
-    return await prisma.budget.findMany({
-        where: { categoryId }
+export async function getBudgetByPeriodAndCategory(userId: number, periodId: number, categoryId: number){
+    return await prisma.budget.findFirst({
+        where: {
+            userId: userId,
+            periodId: periodId,
+            categoryId: categoryId,
+        }
     })
 }
 
-export async function getBudgetsByPeriodId(periodId: number){
+export async function getBudgetsByCategoryId(userId: number, categoryId: number){
     return await prisma.budget.findMany({
-        where: { periodId },
+        where: {
+            categoryId: categoryId,
+            userId: userId,
+        }
+    })
+}
+
+export async function getBudgetsByPeriodId(userId: number, periodId: number){
+    return await prisma.budget.findMany({
+        where: {
+            periodId: periodId,
+            userId: userId,
+        },
     })
 }
 

@@ -1,21 +1,28 @@
 import { prisma } from '@/lib/prisma'
 import {Period} from "@prisma/client";
 
-export async function getExpenseById(id: number) {
+export async function getExpenseById(userId: number, id: number) {
     return await prisma.expense.findUnique({
-        where: {id: id}
+        where: {
+            userId: userId,
+            id: id
+        }
     })
 }
 
-export async function getExpenseByCategoryId(categoryId: number) {
-    return await prisma.expense.findMany({
-        where: {categoryId: categoryId}
-    })
-}
-
-export async function getExpenseByPeriodId(period: Period) {
+export async function getExpenseByCategoryId(userId: number, categoryId: number) {
     return await prisma.expense.findMany({
         where: {
+            userId: userId,
+            categoryId: categoryId
+        }
+    })
+}
+
+export async function getExpenseByPeriodId(userId: number, period: Period) {
+    return await prisma.expense.findMany({
+        where: {
+            userId: userId,
             date: {
                 gte: period.startDate,
                 lt: period.endDate,
@@ -24,8 +31,12 @@ export async function getExpenseByPeriodId(period: Period) {
     });
 }
 
-export async function getAllExpenses(){
-    return await prisma.expense.findMany();
+export async function getAllExpenses(userId: number){
+    return await prisma.expense.findMany({
+        where: {
+            userId: userId
+        }
+    });
 }
 
 export async function getMostRecentExpense(userId: number, categoryId: number){
@@ -36,6 +47,15 @@ export async function getMostRecentExpense(userId: number, categoryId: number){
         },
         orderBy: {
             date: 'desc'
+        }
+    })
+}
+
+export async function getDistinctExpensePeriods(userId: number, categoryId: number){
+    return await prisma.expense.findMany({
+        where: {
+            userId: userId,
+            categoryId: categoryId
         }
     })
 }

@@ -3,7 +3,7 @@ import {NextRequest, NextResponse} from 'next/server';
 import {corsHeaders, jsonWithCors} from "@/lib/cors";
 import {
     createBudget,
-    getBudgetById,
+    getBudgetById, getBudgetByPeriodAndCategory,
     getBudgetsByCategoryId,
     getBudgetsByPeriodId
 } from "@/lib/services/periodbudgetService";
@@ -11,34 +11,66 @@ import {
 // GET /api/periodbudgets?budgetId=... or ?categoryId=... or ?periodId=...
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
+    const userIdParam = searchParams.get("userId");
     const budgetIdParam = searchParams.get('budgetId');
     const categoryIdParam = searchParams.get('categoryId');
     const periodIdParam = searchParams.get('periodId');
 
     try {
+        //categoryID => []
+        //categoryID + PeriodId => 1
+        //PeriodId => []
+        if(!userIdParam){
+            return jsonWithCors({ error: 'User ID is required'}, 400)
+        }
+
+        const userId = parseInt(userIdParam)
+        if(isNaN(userId)){
+            return jsonWithCors({ error: 'User ID is invalid'}, 400)
+        }
+
+        if (categoryIdParam && periodIdParam){
+            const categoryId = parseInt(categoryIdParam)
+            const periodId = parseInt(periodIdParam)
+
+            if(isNaN(periodId) || isNaN(categoryId)){
+                return jsonWithCors({ error: 'invalid input'}, 400)
+            }
+
+            const period = await getBudgetByPeriodAndCategory(userId, periodId, categoryId);
+            if(!period){
+                return jsonWithCors({ error: 'could not find period'}, 404)
+            }
+
+            return jsonWithCors(period)
+        }
+        if (categoryIdParam) {
+            const categoryId = parseInt(categoryIdParam);
+            if (isNaN(categoryId)) return jsonWithCors({ error: 'Invalid categoryId' }, 400);
+            const budgets = await getBudgetsByCategoryId(userId, categoryId);
+            if(!budgets){
+                return jsonWithCors({ error: 'could not find budgets'}, 404)
+            }
+            return jsonWithCors(budgets);
+        }
+        if (periodIdParam) {
+            const periodId = parseInt(periodIdParam)
+            if (isNaN(periodId)) return jsonWithCors({ error: 'Invalid periodId' }, 400)
+            const budgets = await getBudgetsByPeriodId(userId, periodId);
+            if(!budgets){
+                return jsonWithCors({ error: 'could not find budgets'}, 404)
+            }
+            return jsonWithCors(budgets);
+        }
         if (budgetIdParam) {
             const budgetId = parseInt(budgetIdParam);
             if (isNaN(budgetId)) return jsonWithCors({ error: 'Invalid budgetId' }, 400);
 
-            const budget = await getBudgetById(budgetId);
+            const budget = await getBudgetById(userId, budgetId);
+            if(!budget){
+                return jsonWithCors({ error: 'could not find budget'}, 404)
+            }
             return jsonWithCors(budget ? budget : {});
-        }
-
-        if (categoryIdParam) {
-            const categoryId = parseInt(categoryIdParam);
-            if (isNaN(categoryId)) return jsonWithCors({ error: 'Invalid categoryId' }, 400);
-
-            const budgets = await getBudgetsByCategoryId(categoryId);
-            return jsonWithCors(budgets);
-        }
-
-        if (periodIdParam) {
-            const periodId = parseInt(periodIdParam);
-            if (isNaN(periodId)) return jsonWithCors({ error: 'Invalid periodId' }, 400);
-
-            const budgets = await getBudgetsByPeriodId(periodId)
-
-            return jsonWithCors(budgets);
         }
 
         return jsonWithCors({ error: 'Must provide budgetId, categoryId, or periodId' }, 400);

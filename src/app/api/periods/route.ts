@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { corsHeaders, jsonWithCors } from '@/lib/cors';
 import {createDate, getExpensesGroupedByMonthYear, getPeriodByExpenseDate} from "@/lib/services/dateService";
-import {getMostRecentExpense} from "@/lib/services/expenseService";
+import {getDistinctExpensePeriods, getMostRecentExpense} from "@/lib/services/expenseService";
 
 // GET /api/periods or /api/periods?periodId=...
 export async function GET(req: NextRequest) {
@@ -31,9 +31,20 @@ export async function GET(req: NextRequest) {
                 if (isNaN(categoryId)) {
                     return jsonWithCors({ error: 'Invalid categoryId' }, 400);
                 }
-                const expense = await getMostRecentExpense(userId, categoryId);
-                const period = await getPeriodByExpenseDate(expense?.date);
-                return jsonWithCors(period);
+                if (req.url.includes('/recent')){
+                    const expense = await getMostRecentExpense(userId, categoryId);
+                    const period = await getPeriodByExpenseDate(expense?.date);
+                    return jsonWithCors(period);
+                } else {
+                    const expenses = await getDistinctExpensePeriods(userId, categoryId)
+                    let dates = []
+                    for (const expense of expenses) {
+                        dates.push(await getPeriodByExpenseDate(expense.date))
+                    }
+
+                    return jsonWithCors(dates);
+                }
+
             }
             const allPeriods = await getExpensesGroupedByMonthYear();
             return jsonWithCors(allPeriods);
