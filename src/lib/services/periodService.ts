@@ -11,7 +11,7 @@ export async function getPeriodById(id: number){
 }
 
 export async function getPeriodByExpenseDate(expenseDate?: Date){
-    return await prisma.period.findFirst({
+    const period = await prisma.period.findFirst({
         where: {
             startDate: { lte: expenseDate },
             endDate: { gte: expenseDate },
@@ -20,6 +20,8 @@ export async function getPeriodByExpenseDate(expenseDate?: Date){
             endDate: 'desc',
         }
     })
+    console.log(period);
+    return period;
 }
 
 export async function getExpensesGroupedByMonthYear(userId?: number, categoryId?: number) {

@@ -31,13 +31,12 @@ export async function GET(req: NextRequest) {
             if (isNaN(categoryId)) return jsonWithCors({ error: 'Invalid categoryId' }, 400);
 
             const latestExpense = await getMostRecentExpense(userId, categoryId);
-
+            console.log(latestExpense);
             if (!latestExpense) {
                 return jsonWithCors({ error: 'No expenses found for this user and category' }, 404);
             }
 
             const period = await getPeriodByExpenseDate(latestExpense.date);
-
             return jsonWithCors(period ?? {});
         }
 
