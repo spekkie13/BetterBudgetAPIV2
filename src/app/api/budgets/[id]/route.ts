@@ -1,30 +1,39 @@
-// File: /app/api/budgets/[id]/route.ts
-import {NextRequest, NextResponse} from 'next/server';
-import {corsHeaders, jsonWithCors} from "@/lib/cors";
-import {deleteManyBudgets, updateBudget} from "@/lib/services/budgetService";
+import { NextRequest, NextResponse } from 'next/server';
+import { corsHeaders, jsonWithCors } from '@/lib/cors';
+import { updateBudget, deleteBudgetById } from '@/lib/services/budgetService';
 
 export async function PUT(req: NextRequest) {
-    const body = await req.json();
-
-    const updated = await updateBudget(body)
-    return jsonWithCors(updated);
+    try {
+        const body = await req.json();
+        const updated = await updateBudget(body);
+        return jsonWithCors(updated);
+    } catch (error) {
+        console.error('Error updating budget:', error);
+        return jsonWithCors({ error: 'Failed to update budget' }, 400);
+    }
 }
 
 export async function DELETE(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const idParam = searchParams.get('id');
 
-    if (idParam) {
-        const id = parseInt(idParam);
-        await deleteManyBudgets(id)
-        return jsonWithCors({ message: 'Period budget deleted' });
+    if (!idParam) return jsonWithCors({ error: 'ID is required' }, 400);
+
+    const id = parseInt(idParam);
+    if (isNaN(id)) return jsonWithCors({ error: 'Invalid ID' }, 400);
+
+    try {
+        await deleteBudgetById(id);
+        return jsonWithCors({ message: 'Budget deleted' });
+    } catch (error) {
+        console.error('Error deleting budget:', error);
+        return jsonWithCors({ error: 'Failed to delete budget' }, 400);
     }
 }
 
-// Handle OPTIONS preflight
 export async function OPTIONS() {
     return new NextResponse(null, {
         status: 204,
         headers: corsHeaders,
-    })
+    });
 }

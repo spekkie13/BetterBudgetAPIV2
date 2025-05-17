@@ -1,42 +1,51 @@
 import { prisma } from '@/lib/prisma'
 
+// 🟢 1. Use `findFirst` with compound `where` for `getCategoryById`
 export async function getCategoryById(categoryId: number, userId: number) {
-    return await prisma.category.findUnique({
+    return prisma.category.findFirst({
         where: {
+            id: categoryId,
             userId,
-            id: categoryId
         },
     })
 }
 
+// 🟢 2. Case-insensitive match support
 export async function getCategoryByName(name: string, userId: number) {
-    return await prisma.category.findFirst({
+    return prisma.category.findFirst({
         where: {
-            name,
-            userId
+            userId,
+            name: {
+                equals: name,
+                mode: 'insensitive',
+            },
         },
     })
 }
 
 export async function getAllCategories(userId: number) {
-    return await prisma.category.findMany({
-        where: {
-            userId
-        }
+    return prisma.category.findMany({
+        where: { userId },
+        orderBy: { id: 'asc' }, // ✅ Optional: consistent ordering
     })
 }
 
+// 🟢 3. Add `select` to limit returned fields (optional)
 export async function createCategory(data: {
     name: string
     color: string
     icon: string
     userId: number
 }) {
-    return await prisma.category.create({ data })
+    return prisma.category.create({
+        data,
+        select: { id: true, name: true, color: true, icon: true, userId: true },
+    })
 }
 
+// 🟢 4. Use `delete` with unique ID instead of `deleteMany`
 export async function deleteCategoryById(categoryId: number) {
-    return await prisma.category.deleteMany({
+    return prisma.category.delete({
         where: { id: categoryId },
     })
 }
@@ -48,7 +57,7 @@ export async function updateCategory(data: {
     icon?: string
     userId?: number
 }) {
-    return await prisma.category.update({
+    return prisma.category.update({
         where: { id: data.id },
         data,
     })

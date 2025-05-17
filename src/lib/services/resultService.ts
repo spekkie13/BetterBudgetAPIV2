@@ -1,41 +1,55 @@
 import { prisma } from '@/lib/prisma';
 
-export async function getResultById(resultId: number){
+/**
+ * Fetch a single result by its unique ID.
+ */
+export async function getResultById(id: number) {
     return await prisma.result.findUnique({
-        where: {
-            id: resultId,
-        }
-    })
+        where: { id },
+    });
 }
 
-export async function getResultByCategoryAndPeriod(categoryId: number, periodId: number){
+/**
+ * Fetch a result by categoryId and periodId.
+ */
+export async function getResultByCategoryAndPeriod(userId: number, categoryId: number, periodId: number) {
     return await prisma.result.findFirst({
         where: {
-            categoryId: categoryId,
-            periodId: periodId,
-        }
-    })
+            userId,
+            categoryId,
+            periodId,
+        },
+    });
 }
 
-export async function getResultsByCategory(categoryId: number){
+/**
+ * Fetch all results for a specific category.
+ */
+export async function getResultsByCategory(userId: number, categoryId: number) {
     return await prisma.result.findMany({
         where: {
-            categoryId: categoryId,
-        }
-    })
+            userId,
+            categoryId,
+        },
+    });
 }
 
-export async function getResultsByPeriod(periodId: number){
+/**
+ * Fetch all results for a specific period.
+ */
+export async function getResultsByPeriod(userId: number, periodId: number) {
     return await prisma.result.findMany({
         where: {
-            periodId: periodId,
-        }
-    })
+            userId,
+            periodId,
+        },
+    });
 }
 
-
-// Fetch multiple RecentPeriodResults by filters
-export async function findPeriodResultsByFilter(where: any) {
+/**
+ * Fetch results using dynamic filters with optional relation includes.
+ */
+export async function findResultsByFilter(where: any) {
     return await prisma.result.findMany({
         where,
         include: {
@@ -45,8 +59,10 @@ export async function findPeriodResultsByFilter(where: any) {
     });
 }
 
-// Create a new RecentPeriodResult
-export async function createNewPeriodResult(data: {
+/**
+ * Create a new result record.
+ */
+export async function createResult(data: {
     totalSpent: number;
     percentageSpent: number;
     userId: number;
@@ -56,15 +72,19 @@ export async function createNewPeriodResult(data: {
     return await prisma.result.create({ data });
 }
 
-// Delete RecentPeriodResult by ID
-export async function deletePeriodResults(id: number) {
+/**
+ * Delete a result record by ID.
+ */
+export async function deleteResultById(id: number) {
     return await prisma.result.delete({
         where: { id },
     });
 }
 
-// Update an existing RecentPeriodResult
-export async function updatePeriodResult(data: {
+/**
+ * Update an existing result record.
+ */
+export async function updateResult(data: {
     id: number;
     totalSpent?: number;
     percentageSpent?: number;

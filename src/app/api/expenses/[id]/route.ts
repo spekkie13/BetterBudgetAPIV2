@@ -1,6 +1,6 @@
-import {NextRequest, NextResponse} from "next/server";
-import {corsHeaders, jsonWithCors} from "@/lib/cors";
-import {deleteExpenseById, updateExpense} from "@/lib/services/expenseService";
+import { NextRequest, NextResponse } from 'next/server';
+import { corsHeaders, jsonWithCors } from '@/lib/cors';
+import { deleteExpenseById, updateExpense } from '@/lib/services/expenseService';
 
 export async function PUT(req: NextRequest) {
     try {
@@ -8,8 +8,7 @@ export async function PUT(req: NextRequest) {
         const id = body.id;
         if (!id || isNaN(id)) return jsonWithCors({ error: 'Missing or invalid ID' }, 400);
 
-        const updated = await updateExpense(body)
-
+        const updated = await updateExpense(body);
         return jsonWithCors(updated);
     } catch (error) {
         console.error('Error updating expense:', error);
@@ -22,7 +21,7 @@ export async function DELETE(req: NextRequest) {
         const { id } = await req.json();
         if (!id || isNaN(id)) return jsonWithCors({ error: 'Missing or invalid ID' }, 400);
 
-        await deleteExpenseById(id)
+        await deleteExpenseById(id);
         return jsonWithCors({ message: 'Expense deleted' });
     } catch (error) {
         console.error('Error deleting expense:', error);
@@ -30,10 +29,9 @@ export async function DELETE(req: NextRequest) {
     }
 }
 
-// Handle OPTIONS preflight
 export async function OPTIONS() {
     return new NextResponse(null, {
         status: 204,
         headers: corsHeaders,
-    })
+    });
 }

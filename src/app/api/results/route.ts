@@ -1,12 +1,12 @@
-// File: /app/api/results/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { corsHeaders, jsonWithCors } from '@/lib/cors';
 import {
-    createNewPeriodResult,
-    getResultByCategoryAndPeriod,
     getResultById,
-    getResultsByCategory, getResultsByPeriod
-} from "@/lib/services/resultService";
+    getResultByCategoryAndPeriod,
+    getResultsByCategory,
+    getResultsByPeriod,
+    createResult
+} from '@/lib/services/resultService';
 
 // GET /api/results?resultId=... or ?categoryId=... or ?periodId=...
 export async function GET(req: NextRequest) {
@@ -17,71 +17,53 @@ export async function GET(req: NextRequest) {
     const userIdParam = searchParams.get('userId');
 
     try {
-        if(!userIdParam){
-            return jsonWithCors({ error: 'User ID is required'}, 400)
+        if (!userIdParam) {
+            return jsonWithCors({ error: 'User ID is required' }, 400);
         }
+
         const userId = parseInt(userIdParam);
-        if(isNaN(userId)){
-            return jsonWithCors({ error: 'User ID is invalid'}, 400)
+        if (isNaN(userId)) {
+            return jsonWithCors({ error: 'User ID is invalid' }, 400);
         }
 
         if (resultIdParam) {
             const resultId = parseInt(resultIdParam);
-            if(isNaN(resultId)){
-                return jsonWithCors({ error: 'Result ID is invalid'}, 400)
-            }
+            if (isNaN(resultId)) return jsonWithCors({ error: 'Invalid resultId' }, 400);
+
             const result = await getResultById(resultId);
-            if(!result){
-                return jsonWithCors({ error: 'Could not find result for the specified ID'}, 404)
-            }
-
-            return jsonWithCors(result)
+            return jsonWithCors(result ?? {}, result ? 200 : 404);
         }
 
-        if (categoryIdParam && periodIdParam){
-            const periodId = parseInt(periodIdParam);
+        if (categoryIdParam && periodIdParam) {
             const categoryId = parseInt(categoryIdParam);
-            if(isNaN(periodId) || isNaN(categoryId)){
-                return jsonWithCors({ error: 'invalid input'}, 400)
-            }
-
-            const result = await getResultByCategoryAndPeriod(categoryId, periodId);
-            if(!result){
-                jsonWithCors({error: 'Could not find a result for the specified input'}, 404)
-            }
-
-            return jsonWithCors(result)
-        }
-
-        if (categoryIdParam){
-            const categoryId = parseInt(categoryIdParam);
-            if(isNaN(categoryId)){
-                return jsonWithCors({ error: 'invalid category ID'}, 400)
-            }
-
-            const results = await getResultsByCategory(categoryId);
-            if(!results){
-                return jsonWithCors({error: 'Could not find results for the specified category'}, 404)
-            }
-
-            return jsonWithCors(results)
-        }
-
-        if (periodIdParam){
             const periodId = parseInt(periodIdParam);
-            if(isNaN(periodId)){
-                return jsonWithCors({ error: 'invalid input'}, 400)
+            if (isNaN(categoryId) || isNaN(periodId)) {
+                return jsonWithCors({ error: 'Invalid categoryId or periodId' }, 400);
             }
 
-            const results = await getResultsByPeriod(periodId);
-            if(!results){
-                return jsonWithCors({error: 'Could not find results for the specified period'}, 404)
-            }
-
-            return jsonWithCors(results)
+            const result = await getResultByCategoryAndPeriod(userId, categoryId, periodId);
+            return jsonWithCors(result ?? {}, result ? 200 : 404);
         }
+
+        if (categoryIdParam) {
+            const categoryId = parseInt(categoryIdParam);
+            if (isNaN(categoryId)) return jsonWithCors({ error: 'Invalid categoryId' }, 400);
+
+            const results = await getResultsByCategory(userId, categoryId);
+            return jsonWithCors(results);
+        }
+
+        if (periodIdParam) {
+            const periodId = parseInt(periodIdParam);
+            if (isNaN(periodId)) return jsonWithCors({ error: 'Invalid periodId' }, 400);
+
+            const results = await getResultsByPeriod(userId, periodId);
+            return jsonWithCors(results);
+        }
+
+        return jsonWithCors({ error: 'Provide resultId, categoryId or periodId' }, 400);
     } catch (error) {
-        console.error('Error fetching period results:', error);
+        console.error('Error fetching results:', error);
         return jsonWithCors({ error: 'Internal server error' }, 500);
     }
 }
@@ -90,7 +72,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const newResult = await createNewPeriodResult({
+        const newResult = await createResult({
             totalSpent: body.totalSpent,
             percentageSpent: body.percentageSpent,
             userId: body.userId,
@@ -100,12 +82,12 @@ export async function POST(req: NextRequest) {
 
         return jsonWithCors(newResult, 201);
     } catch (error) {
-        console.error('Error creating period result:', error);
-        return jsonWithCors({ error: 'Failed to create period result' }, 400);
+        console.error('Error creating result:', error);
+        return jsonWithCors({ error: 'Failed to create result' }, 400);
     }
 }
 
-// Handle OPTIONS preflight
+// Handle OPTIONS
 export async function OPTIONS() {
     return new NextResponse(null, {
         status: 204,

@@ -1,14 +1,12 @@
-// File: /app/api/teams/route.ts
-import {NextRequest, NextResponse} from 'next/server';
-import {corsHeaders, jsonWithCors} from "@/lib/cors";
-import {createTeam, findTeam, getTeams} from "@/lib/services/teamService";
+import { NextRequest, NextResponse } from 'next/server';
+import { corsHeaders, jsonWithCors } from '@/lib/cors';
+import { createTeam, getTeamById, getTeams } from '@/lib/services/teamService';
 
-// Handle OPTIONS preflight
 export async function OPTIONS() {
     return new NextResponse(null, {
         status: 204,
         headers: corsHeaders,
-    })
+    });
 }
 
 // GET /api/teams or /api/teams?teamId=...
@@ -21,11 +19,11 @@ export async function GET(req: NextRequest) {
             const teamId = parseInt(teamIdParam);
             if (isNaN(teamId)) return jsonWithCors({ error: 'Invalid teamId' }, 400);
 
-            const team = await findTeam(teamId)
-            return jsonWithCors(team ? team : {});
+            const team = await getTeamById(teamId);
+            return jsonWithCors(team ?? {});
         }
 
-        const allTeams = await getTeams()
+        const allTeams = await getTeams();
         return jsonWithCors(allTeams);
     } catch (error) {
         console.error('Error fetching teams:', error);
@@ -37,8 +35,11 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const newTeam = await createTeam(body)
+        if (!body.name) {
+            return jsonWithCors({ error: 'Missing team name' }, 400);
+        }
 
+        const newTeam = await createTeam({ name: body.name });
         return jsonWithCors(newTeam, 201);
     } catch (error) {
         console.error('Error creating team:', error);

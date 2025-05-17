@@ -1,52 +1,49 @@
-// File: /app/api/incomes/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import {corsHeaders, jsonWithCors} from "@/lib/cors";
-import {getPeriodById} from "@/lib/services/periodService";
+import { corsHeaders, jsonWithCors } from '@/lib/cors';
 import {
     createIncome,
+    getAllIncomes,
     getIncomeById,
     getIncomesByPeriod,
-    getIncomesByUserId
-} from "@/lib/services/incomeService";
+} from '@/lib/services/incomeService';
+import { getPeriodById } from '@/lib/services/periodService';
 
-// GET /api/incomes?periodId=...
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
-    const periodIdParam = searchParams.get('periodId');
-    const idParam = searchParams.get('id');
     const userIdParam = searchParams.get('userId');
+    const idParam = searchParams.get('id');
+    const periodIdParam = searchParams.get('periodId');
 
     try {
-        if(!userIdParam) {
-            return jsonWithCors({ error: "user ID is required" }, 400);
+        if (!userIdParam) {
+            return jsonWithCors({ error: 'User ID is required' }, 400);
         }
-        const userId = parseInt(userIdParam)
-        if(isNaN(userId)) {
-            return jsonWithCors({ error: "user ID is invalid" }, 400);
+        const userId = parseInt(userIdParam);
+        if (isNaN(userId)) {
+            return jsonWithCors({ error: 'User ID is invalid' }, 400);
         }
 
-        if(periodIdParam){
+        if (idParam) {
+            const id = parseInt(idParam);
+            if (isNaN(id)) return jsonWithCors({ error: 'Invalid income ID' }, 400);
+
+            const income = await getIncomeById(userId, id);
+            return jsonWithCors(income ? income : {});
+        }
+
+        if (periodIdParam) {
             const periodId = parseInt(periodIdParam);
             if (isNaN(periodId)) return jsonWithCors({ error: 'Invalid periodId' }, 400);
 
             const period = await getPeriodById(periodId);
-
             if (!period) return jsonWithCors({});
 
-            const incomes = getIncomesByPeriod(period)
-
-            return jsonWithCors(incomes);
-        }
-        if(idParam){
-            const id = parseInt(idParam)
-            if (isNaN(id)) return jsonWithCors({ error: 'Invalid Id' }, 400);
-
-            const incomes = await getIncomeById(id)
+            const incomes = await getIncomesByPeriod(userId, period);
             return jsonWithCors(incomes);
         }
 
-        const incomes = await getIncomesByUserId(userId)
-        return jsonWithCors(incomes);
+        const allIncomes = await getAllIncomes(userId);
+        return jsonWithCors(allIncomes);
     } catch (error) {
         console.error('Error fetching incomes:', error);
         return jsonWithCors({ error: 'Internal server error' }, 500);
@@ -65,10 +62,9 @@ export async function POST(req: NextRequest) {
     }
 }
 
-// Handle OPTIONS preflight
 export async function OPTIONS() {
     return new NextResponse(null, {
         status: 204,
         headers: corsHeaders,
-    })
+    });
 }

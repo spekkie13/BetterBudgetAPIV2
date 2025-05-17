@@ -1,44 +1,50 @@
-import { prisma } from '@/lib/prisma'
+import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 
+// Fetch all preferences for a user
 export async function getUserPreferencesByUserId(userId: number) {
-    return await prisma.userPreference.findMany({
+    return prisma.userPreference.findMany({
         where: { userId },
-    })
+    });
 }
 
+// Fetch preference by its unique ID
 export async function getUserPreferenceById(id: number) {
-    return await prisma.userPreference.findUnique({
+    return prisma.userPreference.findUnique({
         where: { id },
-    })
+    });
 }
 
+// Fetch a single preference by name and user (case-insensitive)
 export async function getUserPreferenceByName(name: string, userId: number) {
-    return await prisma.userPreference.findFirst({
+    return prisma.userPreference.findFirst({
         where: {
-            userId: userId,
+            userId,
             name: {
                 equals: name,
-                mode: 'insensitive'
+                mode: 'insensitive',
             },
         },
-    })
+    });
 }
 
-export async function createUserPreference(data: any) {
-    return await prisma.userPreference.create({
-        data,
-    })
+// Create a new user preference
+export async function createUserPreference(data: Prisma.UserPreferenceCreateInput) {
+    return prisma.userPreference.create({ data });
 }
 
-export async function updateUserPreference(data: any) {
-    return await prisma.userPreference.update({
-        where: { id: data.id },
-        data,
-    })
-}
-
-export async function deleteUserPreferenceById(id: number) {
-    return await prisma.userPreference.delete({
+// Update an existing user preference
+export async function updateUserPreference(data: Prisma.UserPreferenceUpdateInput & { id: number }) {
+    const { id, ...updateData } = data;
+    return prisma.userPreference.update({
         where: { id },
-    })
+        data: updateData,
+    });
+}
+
+// Delete a preference by ID
+export async function deleteUserPreferenceById(id: number) {
+    return prisma.userPreference.delete({
+        where: { id },
+    });
 }
