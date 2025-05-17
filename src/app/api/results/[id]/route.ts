@@ -1,7 +1,7 @@
-// File: /app/api/periodresults/[id]/route.ts
+// File: /app/api/results/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { corsHeaders, jsonWithCors } from '@/lib/cors';
-import * as periodResultService from '@/lib/services/recentperiodresultService';
+import * as periodResultService from '@/lib/services/resultService';
 
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);

@@ -1,7 +1,7 @@
 // File: /app/api/periods/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { corsHeaders, jsonWithCors } from '@/lib/cors';
-import * as dateService from '@/lib/services/dateService';
+import * as dateService from '@/lib/services/periodService';
 
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);

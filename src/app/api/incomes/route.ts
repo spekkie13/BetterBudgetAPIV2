@@ -1,10 +1,9 @@
 // File: /app/api/incomes/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import {corsHeaders, jsonWithCors} from "@/lib/cors";
-import {getPeriodById} from "@/lib/services/dateService";
+import {getPeriodById} from "@/lib/services/periodService";
 import {
     createIncome,
-    getAllIncomes,
     getIncomeById,
     getIncomesByPeriod,
     getIncomesByUserId
@@ -14,10 +13,18 @@ import {
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const periodIdParam = searchParams.get('periodId');
-    const IdParam = searchParams.get('Id');
-    const UserIdParam = searchParams.get('UserId');
+    const idParam = searchParams.get('id');
+    const userIdParam = searchParams.get('userId');
 
     try {
+        if(!userIdParam) {
+            return jsonWithCors({ error: "user ID is required" }, 400);
+        }
+        const userId = parseInt(userIdParam)
+        if(isNaN(userId)) {
+            return jsonWithCors({ error: "user ID is invalid" }, 400);
+        }
+
         if(periodIdParam){
             const periodId = parseInt(periodIdParam);
             if (isNaN(periodId)) return jsonWithCors({ error: 'Invalid periodId' }, 400);
@@ -30,23 +37,16 @@ export async function GET(req: NextRequest) {
 
             return jsonWithCors(incomes);
         }
-        if(IdParam){
-            const id = parseInt(IdParam)
+        if(idParam){
+            const id = parseInt(idParam)
             if (isNaN(id)) return jsonWithCors({ error: 'Invalid Id' }, 400);
 
             const incomes = await getIncomeById(id)
             return jsonWithCors(incomes);
         }
-        if(UserIdParam){
-            const userId = parseInt(UserIdParam)
-            if (isNaN(userId)) return jsonWithCors({ error: 'Invalid User' }, 400);
 
-            const incomes = await getIncomesByUserId(userId)
-            return jsonWithCors(incomes);
-        }
-
-        const allIncomes = await getAllIncomes();
-        return jsonWithCors(allIncomes);
+        const incomes = await getIncomesByUserId(userId)
+        return jsonWithCors(incomes);
     } catch (error) {
         console.error('Error fetching incomes:', error);
         return jsonWithCors({ error: 'Internal server error' }, 500);

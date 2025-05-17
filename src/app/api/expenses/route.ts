@@ -2,7 +2,7 @@
 import {NextRequest, NextResponse} from 'next/server';
 import {corsHeaders, jsonWithCors} from "@/lib/cors";
 import { createExpense, getAllExpenses, getExpenseByCategoryId, getExpenseById, getExpenseByPeriodId } from "@/lib/services/expenseService";
-import {getPeriodById} from "@/lib/services/dateService";
+import {getPeriodById} from "@/lib/services/periodService";
 
 // GET /api/expenses or ?id=... or ?categoryId=... or ?periodId=...
 export async function GET(req: NextRequest) {

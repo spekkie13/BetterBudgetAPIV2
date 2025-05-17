@@ -1,25 +1,38 @@
 import { prisma } from '@/lib/prisma';
 
-// Build filter object to be used with Prisma queries
-export function buildPeriodFilters(userId: number, categoryId?: number, from?: Date, to?: Date) {
-    const where: any = {
-        userId,
-    };
-
-    if (categoryId) {
-        where.categoryId = categoryId;
-    }
-
-    // Filter via the related Period
-    if (from && to) {
-        where.period = {
-            startDate: { gte: from },
-            endDate: { lt: to },
-        };
-    }
-
-    return where;
+export async function getResultById(resultId: number){
+    return await prisma.result.findUnique({
+        where: {
+            id: resultId,
+        }
+    })
 }
+
+export async function getResultByCategoryAndPeriod(categoryId: number, periodId: number){
+    return await prisma.result.findFirst({
+        where: {
+            categoryId: categoryId,
+            periodId: periodId,
+        }
+    })
+}
+
+export async function getResultsByCategory(categoryId: number){
+    return await prisma.result.findMany({
+        where: {
+            categoryId: categoryId,
+        }
+    })
+}
+
+export async function getResultsByPeriod(periodId: number){
+    return await prisma.result.findMany({
+        where: {
+            periodId: periodId,
+        }
+    })
+}
+
 
 // Fetch multiple RecentPeriodResults by filters
 export async function findPeriodResultsByFilter(where: any) {

@@ -6,7 +6,7 @@ import {
     createUserPreference,
     getUserPreferenceById, getUserPreferenceByName,
     getUserPreferencesByUserId
-} from "@/lib/services/userpreferenceService";
+} from "@/lib/services/preferenceService";
 
 // Handle OPTIONS preflight
 export async function OPTIONS() {

@@ -1,4 +1,4 @@
-// lib/services/dateService.ts
+// lib/services/periodService.ts
 import { prisma } from '@/lib/prisma'
 import {Period} from "@prisma/client";
 

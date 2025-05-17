@@ -5,7 +5,7 @@ import {
     deleteUserPreferenceById,
     getUserPreferenceById,
     updateUserPreference
-} from "@/lib/services/userpreferenceService";
+} from "@/lib/services/preferenceService";
 
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);

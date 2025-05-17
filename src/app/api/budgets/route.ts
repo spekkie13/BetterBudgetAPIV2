@@ -1,4 +1,4 @@
-// File: /app/api/periodbudgets/route.ts
+// File: /app/api/budgets/route.ts
 import {NextRequest, NextResponse} from 'next/server';
 import {corsHeaders, jsonWithCors} from "@/lib/cors";
 import {
@@ -6,9 +6,9 @@ import {
     getBudgetById, getBudgetByPeriodAndCategory,
     getBudgetsByCategoryId,
     getBudgetsByPeriodId
-} from "@/lib/services/periodbudgetService";
+} from "@/lib/services/budgetService";
 
-// GET /api/periodbudgets?budgetId=... or ?categoryId=... or ?periodId=...
+// GET /api/budgets?budgetId=... or ?categoryId=... or ?periodId=...
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const userIdParam = searchParams.get("userId");
@@ -17,9 +17,6 @@ export async function GET(req: NextRequest) {
     const periodIdParam = searchParams.get('periodId');
 
     try {
-        //categoryID => []
-        //categoryID + PeriodId => 1
-        //PeriodId => []
         if(!userIdParam){
             return jsonWithCors({ error: 'User ID is required'}, 400)
         }
@@ -80,7 +77,7 @@ export async function GET(req: NextRequest) {
     }
 }
 
-// POST /api/periodbudgets
+// POST /api/budgets
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();

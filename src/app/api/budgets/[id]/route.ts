@@ -1,7 +1,7 @@
-// File: /app/api/periodbudgets/[id]/route.ts
+// File: /app/api/budgets/[id]/route.ts
 import {NextRequest, NextResponse} from 'next/server';
 import {corsHeaders, jsonWithCors} from "@/lib/cors";
-import {deleteManyBudgets, updateBudget} from "@/lib/services/periodbudgetService";
+import {deleteManyBudgets, updateBudget} from "@/lib/services/budgetService";
 
 export async function PUT(req: NextRequest) {
     const body = await req.json();
