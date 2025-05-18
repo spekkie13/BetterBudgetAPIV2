@@ -8,6 +8,7 @@ export async function GET(req: NextRequest) {
     const userIdParam = searchParams.get('userId');
     const periodIdParam = searchParams.get('periodId');
     const categoryIdParam = searchParams.get('categoryId');
+    const dateParam = searchParams.get('date');
 
     const userId = userIdParam ? parseInt(userIdParam) : NaN;
     if (isNaN(userId)) {
@@ -34,7 +35,7 @@ export async function GET(req: NextRequest) {
                 return jsonWithCors({ error: 'No expenses found for this user and category' }, 404);
             }
 
-            const period = await periodService.getPeriodByExpenseDate(latestExpense.date);
+            const period = await periodService.getPeriodByDate(latestExpense.date);
             return jsonWithCors(period ?? {});
         }
 
@@ -48,7 +49,7 @@ export async function GET(req: NextRequest) {
             const periods: any[] = [];
 
             for (const { date } of expenses) {
-                const period = await periodService.getPeriodByExpenseDate(date);
+                const period = await periodService.getPeriodByDate(date);
                 if (period && !seen.has(period.id)) {
                     seen.add(period.id);
                     periods.push(period);
@@ -56,6 +57,18 @@ export async function GET(req: NextRequest) {
             }
 
             return jsonWithCors(periods);
+        }
+
+        // 4. Pass in a date
+        if (dateParam){
+            const date = new Date(dateParam);
+            const period = await periodService.getPeriodByDate(date);
+
+            if(!period){
+                return jsonWithCors({ error: 'Could not find a period for the given date'}, 404)
+            }
+
+            return jsonWithCors(period)
         }
 
         return jsonWithCors({ error: 'Must provide periodId or categoryId' }, 400);
