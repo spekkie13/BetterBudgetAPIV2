@@ -1,36 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { corsHeaders, jsonWithCors } from '@/lib/cors';
-import {
-    getBudgetById,
-    getBudgetByPeriodAndCategory,
-    getBudgetsByCategoryId,
-    getBudgetsByPeriodId,
-    createBudget
-} from '@/lib/services/budgetService';
+import { getBudgetById, getBudgetByPeriodAndCategory, getBudgetsByCategoryId, getBudgetsByPeriodId, createBudget } from '@/lib/services/budgetService';
+import {isValid} from "@/lib/helpers";
 
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
+
     const userIdParam = searchParams.get('userId');
     const budgetIdParam = searchParams.get('budgetId');
     const categoryIdParam = searchParams.get('categoryId');
     const periodIdParam = searchParams.get('periodId');
 
-    if (!userIdParam) return jsonWithCors({ error: 'User ID is required' }, 400);
+    if (!isValid(userIdParam)) return jsonWithCors({ error: 'User ID is required' }, 400);
 
     const userId = parseInt(userIdParam);
     if (isNaN(userId)) return jsonWithCors({ error: 'User ID is invalid' }, 400);
 
     try {
-        if (categoryIdParam && periodIdParam) {
+        if (isValid(categoryIdParam) && isValid(periodIdParam)) {
             const categoryId = parseInt(categoryIdParam);
             const periodId = parseInt(periodIdParam);
-            if (isNaN(categoryId) || isNaN(periodId)) return jsonWithCors({ error: 'Invalid input' }, 400);
+
+            if (isNaN(categoryId) || isNaN(periodId)) {
+                return jsonWithCors({ error: 'Invalid input' }, 400);
+            }
 
             const budget = await getBudgetByPeriodAndCategory(userId, periodId, categoryId);
             return jsonWithCors(budget ?? {});
         }
 
-        if (categoryIdParam) {
+        if (isValid(categoryIdParam)) {
             const categoryId = parseInt(categoryIdParam);
             if (isNaN(categoryId)) return jsonWithCors({ error: 'Invalid categoryId' }, 400);
 
@@ -38,7 +37,7 @@ export async function GET(req: NextRequest) {
             return jsonWithCors(budgets);
         }
 
-        if (periodIdParam) {
+        if (isValid(periodIdParam)) {
             const periodId = parseInt(periodIdParam);
             if (isNaN(periodId)) return jsonWithCors({ error: 'Invalid periodId' }, 400);
 
@@ -46,7 +45,7 @@ export async function GET(req: NextRequest) {
             return jsonWithCors(budgets);
         }
 
-        if (budgetIdParam) {
+        if (isValid(budgetIdParam)) {
             const budgetId = parseInt(budgetIdParam);
             if (isNaN(budgetId)) return jsonWithCors({ error: 'Invalid budgetId' }, 400);
 
@@ -64,6 +63,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
+        console.log('Received budget data:', body); // 👈 Log input
         const created = await createBudget(body);
         return jsonWithCors(created, 201);
     } catch (error) {
