@@ -1,6 +1,6 @@
 // File: /app/api/periods/find-or-create/route.ts
-import { NextRequest } from 'next/server';
-import { jsonWithCors } from '@/lib/cors';
+import {NextRequest, NextResponse} from 'next/server';
+import {corsHeaders, jsonWithCors} from '@/lib/cors';
 import { prisma } from '@/lib/prisma';
 
 export async function POST(req: NextRequest) {
@@ -30,4 +30,12 @@ export async function POST(req: NextRequest) {
         console.error('Error in find-or-create period:', error);
         return jsonWithCors({ error: 'Internal server error' }, 500);
     }
+}
+
+// Handle OPTIONS preflight
+export async function OPTIONS() {
+    return new NextResponse(null, {
+        status: 204,
+        headers: corsHeaders,
+    })
 }
