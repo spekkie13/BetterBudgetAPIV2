@@ -31,12 +31,7 @@ export async function getAllCategories(userId: number) {
 }
 
 // 🟢 3. Add `select` to limit returned fields (optional)
-export async function createCategory(data: {
-    name: string
-    color: string
-    icon: string
-    userId: number
-}) {
+export async function createCategory(data: { name: string, color: string, icon: string, userId: number }) {
     return prisma.category.create({
         data,
         select: { id: true, name: true, color: true, icon: true, userId: true },
@@ -50,15 +45,44 @@ export async function deleteCategoryById(categoryId: number) {
     })
 }
 
-export async function updateCategory(data: {
-    id: number
-    name?: string
-    color?: string
-    icon?: string
-    userId?: number
-}) {
+export async function updateCategory(data: { id: number, name?: string, color?: string, icon?: string, userId?: number }) {
     return prisma.category.update({
         where: { id: data.id },
         data,
     })
+}
+
+export async function createCategoryWithInitialBudget(data: {
+    category: {
+        name: string
+        color: string
+        icon: string
+        userId: number
+    }
+    budget: {
+        amount: number
+        periodId: number
+        userId: number
+    }
+}) {
+    return prisma.$transaction(async (tx) => {
+        const newCategory = await tx.category.create({
+            data: data.category,
+            select: { id: true, name: true, color: true, icon: true, userId: true },
+        });
+
+        const newBudget = await tx.budget.create({
+            data: {
+                amount: data.budget.amount,
+                periodId: data.budget.periodId,
+                userId: data.budget.userId,
+                categoryId: newCategory.id,
+            },
+        });
+
+        return {
+            category: newCategory,
+            budget: newBudget,
+        };
+    });
 }
