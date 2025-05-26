@@ -75,6 +75,7 @@ export async function createExpense(data: {
     date: Date;
     userId: number;
     categoryId: number;
+    isRecurring: boolean;
 }) {
     return await prisma.expense.create({ data });
 }

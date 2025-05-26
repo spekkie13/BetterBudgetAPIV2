@@ -57,6 +57,7 @@ export async function POST(req: NextRequest) {
         const body = await req.json();
         const expenseData = {
             ...body,
+            isRecurring: body.isRecurring,
             date: new Date(body.date),
             categoryId: Number(body.categoryId),
             userId: Number(body.userId),
