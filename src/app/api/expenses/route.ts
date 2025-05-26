@@ -8,6 +8,7 @@ import {
     getExpensesByPeriod,
 } from '@/lib/services/expenseService';
 import { getPeriodById } from '@/lib/services/periodService';
+import { Decimal } from '@prisma/client/runtime/library';
 
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
@@ -57,6 +58,7 @@ export async function POST(req: NextRequest) {
         const body = await req.json();
         const expenseData = {
             ...body,
+            amount: Decimal(body.amount),
             isRecurring: body.isRecurring,
             date: new Date(body.date),
             categoryId: Number(body.categoryId),
