@@ -55,7 +55,14 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const newExpense = await createExpense(body);
+        const expenseData = {
+            ...body,
+            date: new Date(body.date),
+            categoryId: Number(body.categoryId),
+            userId: Number(body.userId),
+        };
+
+        const newExpense = await createExpense(expenseData);
         return jsonWithCors(newExpense, 201);
     } catch (error) {
         console.error('Error creating expense:', error);
