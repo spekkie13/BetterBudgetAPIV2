@@ -1,7 +1,6 @@
 import {DateObj} from "@/models/dateObj";
 
 export class Expense implements IExpense{
-  id: number
   date: DateObj
   amount: number
   description: string
@@ -12,7 +11,6 @@ export class Expense implements IExpense{
   constructor(
       data: IExpense
   ) {
-    this.id = data.id
     this.date = data.date
     this.amount = data.amount
     this.description = data.description
@@ -22,13 +20,12 @@ export class Expense implements IExpense{
   }
 
   public ToString() : string {
-    return `Expense - Id: ${this.id}, Date: ${this.date}, Amount: ${this.amount}, Description: ${this.description}, CategoryId: ${this.categoryId}, Is recurring: ${this.isRecurring}, User ID: ${this.userId})`
+    return `Expense - Date: ${this.date}, Amount: ${this.amount}, Description: ${this.description}, CategoryId: ${this.categoryId}, Is recurring: ${this.isRecurring}, User ID: ${this.userId})`
   }
 
 }
 
 interface IExpense {
-  id: number,
   date: DateObj,
   amount: number,
   description: string,
