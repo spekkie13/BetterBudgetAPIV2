@@ -55,14 +55,15 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
     try {
-        const body = await req.json();
+        const { day, month, year, ...rest } = await req.json();
+        const date = new Date(year, month - 1, day);
         const expenseData = {
-            ...body,
-            amount: Decimal(body.amount),
-            isRecurring: body.isRecurring,
-            date: new Date(body.date),
-            categoryId: Number(body.categoryId),
-            userId: Number(body.userId),
+            ...rest,
+            amount: Decimal(rest.amount),
+            isRecurring: rest.isRecurring,
+            date: date,
+            categoryId: Number(rest.categoryId),
+            userId: Number(rest.userId),
         };
 
         const newExpense = await createExpense(expenseData);
