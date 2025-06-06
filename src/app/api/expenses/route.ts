@@ -5,7 +5,7 @@ import {
     getAllExpenses,
     getExpenseById,
     getExpensesByCategory,
-    getExpensesByPeriod,
+    getExpensesByUserAndPeriod
 } from '@/lib/services/expenseService';
 import { getPeriodById } from '@/lib/services/periodService';
 import { Decimal } from '@prisma/client/runtime/library';
@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
             if (isNaN(periodId)) return jsonWithCors({ error: 'Invalid periodId' }, 400);
             const period = await getPeriodById(periodId);
             if (!period) return jsonWithCors({});
-            const expenses = await getExpensesByPeriod(userId, period);
+            const expenses = await getExpensesByUserAndPeriod(userId, period);
             return jsonWithCors(expenses);
         }
 
@@ -55,13 +55,15 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
     try {
-        const { day, month, year, ...rest } = await req.json();
-        const date = new Date(year, month - 1, day);
+        const body = await req.json();
+        const { date, ...rest } = body;
+        const parsedDate = new Date(date);
+
         const expenseData = {
             ...rest,
             amount: Decimal(rest.amount),
             isRecurring: rest.isRecurring,
-            date: date,
+            date: parsedDate.toISOString(),  // Use constructed and validated date
             categoryId: Number(rest.categoryId),
             userId: Number(rest.userId),
         };

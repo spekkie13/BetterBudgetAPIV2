@@ -1,83 +1,105 @@
-import { prisma } from '@/lib/prisma'
-import { Period } from '@prisma/client'
+import {db} from "@/lib/db/client";
+import {expenses} from "@/lib/db/schema";
+import {and, desc, eq, gte, lte} from "drizzle-orm";
 
-// Get a single expense by ID and user
 export async function getExpenseById(userId: number, id: number) {
-    return await prisma.expense.findUnique({
-        where: { id },
-        // Filter by userId at runtime (since `findUnique` can only filter by unique constraints)
-    }).then(expense => (expense?.userId === userId ? expense : null))
+    const result = await db
+        .select()
+        .from(expenses)
+        .where(and(eq(expenses.id, id), eq(expenses.userId, userId)))
+        .limit(1)
+
+    return result[0] ?? null;
 }
 
-// Get all expenses for a user
 export async function getAllExpenses(userId: number) {
-    return await prisma.expense.findMany({
-        where: { userId },
-    });
+    const result = await db
+        .select()
+        .from(expenses)
+        .where(eq(expenses.userId, userId))
+
+    return result ?? null;
 }
 
-// Get all expenses by category and user
 export async function getExpensesByCategory(userId: number, categoryId: number) {
-    return await prisma.expense.findMany({
-        where: {
-            userId,
-            categoryId,
-        },
-    });
+    const result = await db
+        .select()
+        .from(expenses)
+        .where(and(eq(expenses.userId, userId), eq(expenses.categoryId, categoryId)))
+
+    return result ?? null;
 }
 
-// Get all expenses for a period range
-export async function getExpensesByPeriod(userId: number, period: Period) {
-    return await prisma.expense.findMany({
-        where: {
-            userId,
-            date: {
-                gte: period.startDate,
-                lt: period.endDate,
-            },
-        },
-    });
+export async function getExpensesByUserAndPeriod(userId: number, period: { startDate: Date, endDate: Date }) {
+    const result = await db
+        .select()
+        .from(expenses)
+        .where(
+            and(
+                eq(expenses.userId, userId),
+                gte(expenses.date, period.startDate),
+                lte(expenses.date, period.endDate)
+            )
+        );
+
+    return result ?? null;
 }
 
-// Get most recent expense for a category
 export async function getMostRecentExpense(userId: number, categoryId: number) {
-    return await prisma.expense.findFirst({
-        where: {
-            userId,
-            categoryId,
-        },
-        orderBy: {
-            date: 'desc',
-        },
-    });
+    const result = await db
+        .select()
+        .from(expenses)
+        .where(and(eq(expenses.userId, userId), eq(expenses.categoryId, categoryId)))
+        .orderBy(desc(expenses.date))
+        .limit(1)
+
+    return result[0] ?? null;
 }
 
 // Get all expenses by category to derive distinct periods (not grouped here)
 export async function getExpenseDatesByCategory(userId: number, categoryId: number) {
-    return await prisma.expense.findMany({
-        where: {
-            userId,
-            categoryId,
-        },
-        select: {
-            date: true,
-        },
-        orderBy: {
-            date: 'desc',
-        },
-    });
+    const result = await db
+        .select()
+        .from(expenses)
+        .where(and(eq(expenses.userId, userId), eq(expenses.categoryId, categoryId)))
+        .orderBy(desc(expenses.date))
+
+    return result ?? null;
 }
 
 // Create an expense
 export async function createExpense(data: {
     description: string;
-    amount: number;
-    date: Date;
+    amount: number | string;
+    date: Date | string;
+    isRecurring: boolean;
     userId: number;
     categoryId: number;
-    isRecurring: boolean;
 }) {
-    return await prisma.expense.create({ data });
+    console.log(data.date)
+    const actualDate = new Date(data.date);
+
+    const [createdExpense] = await db
+        .insert(expenses)
+        .values({
+            description: data.description,
+            amount: data.amount.toString(),
+            date: actualDate,
+            isRecurring: data.isRecurring ? 1 : 0,
+            userId: data.userId,
+            categoryId: data.categoryId,
+        })
+        .returning({
+            id: expenses.id,
+            description: expenses.description,
+            amount: expenses.amount,
+            date: expenses.date,
+            isRecurring: expenses.isRecurring,
+            categoryId: expenses.categoryId,
+            userId: expenses.userId,
+        });
+
+    return createdExpense;
 }
 
 // Update an expense
@@ -89,15 +111,24 @@ export async function updateExpense(data: {
     userId?: number;
     categoryId?: number;
 }) {
-    return await prisma.expense.update({
-        where: { id: data.id },
-        data,
-    });
+    // Build update object dynamically and convert amount to string if needed
+    const updateData: Record<string, any> = {};
+    if (data.description !== undefined) updateData.description = data.description;
+    if (data.amount !== undefined) updateData.amount = data.amount;
+    if (data.date !== undefined) updateData.date = data.date;
+    if (data.userId !== undefined) updateData.userId = data.userId;
+    if (data.categoryId !== undefined) updateData.categoryId = data.categoryId;
+
+    const [updated] = await db
+        .update(expenses)
+        .set(updateData)
+        .where(eq(expenses.id, data.id))
+        .returning();
+
+    return updated;
 }
 
 // Delete an expense by ID
 export async function deleteExpenseById(id: number) {
-    return await prisma.expense.delete({
-        where: { id },
-    });
+    await db.delete(expenses).where(eq(expenses.id, id));
 }

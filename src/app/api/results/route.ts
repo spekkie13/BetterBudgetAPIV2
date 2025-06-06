@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
             const resultId = parseInt(resultIdParam);
             if (isNaN(resultId)) return jsonWithCors({ error: 'Invalid resultId' }, 400);
 
-            const result = await getResultById(resultId);
+            const result = await getResultById(userId, resultId);
             return jsonWithCors(result ?? {}, result ? 200 : 404);
         }
 

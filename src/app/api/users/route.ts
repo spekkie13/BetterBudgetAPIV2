@@ -1,7 +1,7 @@
 // File: /app/api/users/route.ts
 import {NextRequest, NextResponse} from 'next/server';
-import { prisma } from '@/lib/prisma';
 import {corsHeaders, jsonWithCors} from "@/lib/cors";
+import {createUser, getUserByEmail, getUserById, getUsers, getUsersByTeamId} from "@/lib/services/userService";
 
 // Handle OPTIONS preflight
 export async function OPTIONS() {
@@ -16,35 +16,29 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const userIdParam = searchParams.get('userId');
     const teamIdParam = searchParams.get('teamId');
+    const email = searchParams.get('email');
 
     try {
         if (userIdParam) {
             const userId = parseInt(userIdParam);
             if (isNaN(userId)) return jsonWithCors({ error: 'Invalid userId' }, 400);
 
-            const user = await prisma.user.findUnique({
-                where: { id: userId },
-                include: { team: true },
-            });
-
+            const user = await getUserById(userId);
             return jsonWithCors(user ? user : {});
         }
-
         if (teamIdParam) {
             const teamId = parseInt(teamIdParam);
             if (isNaN(teamId)) return jsonWithCors({ error: 'Invalid teamId' }, 400);
 
-            const users = await prisma.user.findMany({
-                where: { teamId },
-                include: { team: true },
-            });
-
+            const users = await getUsersByTeamId(teamId);
             return jsonWithCors(users);
         }
+        if (email) {
+            const user = await getUserByEmail(email);
+            return jsonWithCors(user);
+        }
 
-        const allUsers = await prisma.user.findMany({
-            include: { team: true },
-        });
+        const allUsers = await getUsers()
 
         return jsonWithCors(allUsers);
     } catch (error) {
@@ -57,14 +51,12 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const newUser = await prisma.user.create({
-            data: {
-                email: body.email,
-                username: body.username,
-                name: body.name,
-                teamId: body.teamId || null,
-            },
-        });
+        const newUser = await createUser({
+            email: body.email,
+            username: body.username,
+            name: body.name,
+            teamId: body.teamId || null,
+        })
 
         return jsonWithCors(newUser, 201);
     } catch (error) {

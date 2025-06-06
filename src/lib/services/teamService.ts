@@ -1,40 +1,55 @@
-import { prisma } from "@/lib/prisma";
+import {db} from "@/lib/db/client";
+import {teams, users} from "@/lib/db/schema";
+import {eq} from "drizzle-orm";
 
-// Create a new team
 export async function createTeam(data: { name: string }) {
-    return await prisma.team.create({
-        data: {
+    const [createdTeam] = await db
+        .insert(teams)
+        .values({
             name: data.name,
-        },
-    });
+        })
+        .returning({
+            id: teams.id,
+            name: teams.name
+        });
+
+    return createdTeam;
 }
 
-// Get all teams
 export async function getTeams() {
-    return await prisma.team.findMany();
+    const result = await db
+        .select()
+        .from(teams)
+
+    return result ?? null;
 }
 
-// Get a specific team by ID including its users
 export async function getTeamById(teamId: number) {
-    return await prisma.team.findUnique({
-        where: { id: teamId },
-        include: { users: true },
-    });
+    const teamWithUsers = await db
+        .select({
+            team: teams,
+            user: users,
+        })
+        .from(teams)
+        .leftJoin(users, eq(users.teamId, teams.id))
+        .where(eq(teams.id, teamId));
+
+    return teamWithUsers ?? null;
 }
 
-// Update a team's name
 export async function updateTeam(data: { id: number; name?: string }) {
-    return await prisma.team.update({
-        where: { id: data.id },
-        data: {
-            name: data.name,
-        },
-    });
+    const updateData: Record<string, any> = {};
+    if (data.name !== undefined) updateData.name = data.name;
+
+    const [updated] = await db
+        .update(teams)
+        .set(updateData)
+        .where(eq(teams.id, data.id))
+        .returning();
+
+    return updated;
 }
 
-// Delete a team by ID
 export async function deleteTeam(teamId: number) {
-    return await prisma.team.delete({
-        where: { id: teamId },
-    });
+    await db.delete(teams).where(eq(teams.id, teamId));
 }

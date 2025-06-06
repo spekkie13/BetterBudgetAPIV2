@@ -6,7 +6,6 @@ import {
     getUserPreferenceByName,
     getUserPreferencesByUserId,
 } from '@/lib/services/preferenceService';
-import { prisma } from '@/lib/prisma';
 
 export async function OPTIONS() {
     return new NextResponse(null, {
@@ -43,9 +42,7 @@ export async function GET(req: NextRequest) {
             return jsonWithCors(preferences);
         }
 
-        // fallback: all preferences (should rarely be used)
-        const allPreferences = await prisma.userPreference.findMany();
-        return jsonWithCors(allPreferences);
+        return jsonWithCors({ error: 'Invalid input' }, 400);
     } catch (error) {
         console.error('Error fetching preferences:', error);
         return jsonWithCors({ error: 'Internal server error' }, 500);

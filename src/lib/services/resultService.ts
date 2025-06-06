@@ -1,89 +1,72 @@
-import { prisma } from '@/lib/prisma';
+import {db} from "@/lib/db/client";
+import {results} from "@/lib/db/schema";
+import {and, eq} from "drizzle-orm";
 
-/**
- * Fetch a single result by its unique ID.
- */
-export async function getResultById(id: number) {
-    return await prisma.result.findUnique({
-        where: { id },
-    });
+export async function getResultById(userId: number, id: number) {
+    const result = await db
+        .select()
+        .from(results)
+        .where(and(eq(results.id, id), eq(results.userId, userId)))
+        .limit(1)
+
+    return result[0] ?? null;
 }
 
-/**
- * Fetch a result by categoryId and periodId.
- */
 export async function getResultByCategoryAndPeriod(userId: number, categoryId: number, periodId: number) {
-    return await prisma.result.findFirst({
-        where: {
-            userId,
-            categoryId,
-            periodId,
-        },
-    });
+    const result = await db
+        .select()
+        .from(results)
+        .where(and(eq(results.userId, userId), eq(results.categoryId, categoryId), eq(results.periodId, periodId)))
+        .limit(1)
+
+    return result[0] ?? null;
 }
 
-/**
- * Fetch all results for a specific category.
- */
 export async function getResultsByCategory(userId: number, categoryId: number) {
-    return await prisma.result.findMany({
-        where: {
-            userId,
-            categoryId,
-        },
-    });
+    const result = await db
+        .select()
+        .from(results)
+        .where(and(eq(results.userId, userId), eq(results.categoryId, categoryId)))
+        .limit(1)
+
+    return result[0] ?? null;
 }
 
-/**
- * Fetch all results for a specific period.
- */
 export async function getResultsByPeriod(userId: number, periodId: number) {
-    return await prisma.result.findMany({
-        where: {
-            userId,
-            periodId,
-        },
-    });
+    const result = await db
+        .select()
+        .from(results)
+        .where(and(eq(results.userId, userId), eq(results.periodId, periodId)))
+
+    return result ?? null;
 }
 
-/**
- * Fetch results using dynamic filters with optional relation includes.
- */
-export async function findResultsByFilter(where: any) {
-    return await prisma.result.findMany({
-        where,
-        include: {
-            period: true,
-            category: true,
-        },
-    });
+export async function createResult(data: { totalSpent: number; percentageSpent: number; userId: number; categoryId: number; periodId: number; }) {
+    const [createdResult] = await db
+        .insert(results)
+        .values({
+            totalSpent: data.totalSpent.toString(),
+            percentageSpent: data.percentageSpent.toString(),
+            userId: data.userId,
+            categoryId: data.categoryId,
+            periodId: data.periodId
+        })
+        .returning({
+            id: results.id,
+            totalSpent: results.totalSpent,
+            percentageSpent: results.percentageSpent,
+            userId: results.userId,
+            categoryId: results.categoryId,
+            periodId: results.periodId
+        });
+
+    return createdResult;
 }
 
-/**
- * Create a new result record.
- */
-export async function createResult(data: {
-    totalSpent: number;
-    percentageSpent: number;
-    userId: number;
-    categoryId: number;
-    periodId: number;
-}) {
-    return await prisma.result.create({ data });
-}
-
-/**
- * Delete a result record by ID.
- */
 export async function deleteResultById(id: number) {
-    return await prisma.result.delete({
-        where: { id },
-    });
+    await db.delete(results).where(eq(results.id, id))
 }
 
-/**
- * Update an existing result record.
- */
 export async function updateResult(data: {
     id: number;
     totalSpent?: number;
@@ -92,8 +75,18 @@ export async function updateResult(data: {
     categoryId?: number;
     periodId?: number;
 }) {
-    return await prisma.result.update({
-        where: { id: data.id },
-        data,
-    });
+    const updateData: Record<string, any> = {};
+    if (data.totalSpent !== undefined) updateData.totalSpent = data.totalSpent;
+    if (data.percentageSpent !== undefined) updateData.percentageSpent = data.percentageSpent;
+    if (data.userId !== undefined) updateData.userId = data.userId;
+    if (data.categoryId !== undefined) updateData.categoryId = data.categoryId;
+    if (data.periodId !== undefined) updateData.periodId = data.periodId;
+
+    const [updated] = await db
+        .update(results)
+        .set(updateData)
+        .where(eq(results.id, data.id))
+        .returning();
+
+    return updated;
 }

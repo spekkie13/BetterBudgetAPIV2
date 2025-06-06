@@ -1,84 +1,115 @@
-import { prisma } from '@/lib/prisma'
+import {db} from "@/lib/db/client";
+import {budgets, categories} from "@/lib/db/schema";
+import {and, asc, eq, ilike} from "drizzle-orm";
 
-// 🟢 1. Use `findFirst` with compound `where` for `getCategoryById`
 export async function getCategoryById(categoryId: number, userId: number) {
-    return prisma.category.findFirst({
-        where: {
-            id: categoryId,
-            userId,
-        },
-    })
+    const result = await db
+        .select()
+        .from(categories)
+        .where(and(eq(categories.userId, userId), eq(categories.id, categoryId)))
+        .limit(1);
+
+    return result[0] ?? null;
 }
 
-// 🟢 2. Case-insensitive match support
 export async function getCategoryByName(name: string, userId: number) {
-    return prisma.category.findFirst({
-        where: {
-            userId,
-            name: {
-                equals: name,
-                mode: 'insensitive',
-            },
-        },
-    })
+    const result = await db
+        .select()
+        .from(categories)
+        .where(
+            and(eq(categories.userId, userId),
+            ilike(categories.name, name))
+        )
+        .limit(1);
+
+    return result[0] ?? null;
 }
 
 export async function getAllCategories(userId: number) {
-    return prisma.category.findMany({
-        where: { userId },
-        orderBy: { id: 'asc' }, // ✅ Optional: consistent ordering
-    })
+    const result = await db
+        .select()
+        .from(categories)
+        .where(eq(categories.userId, userId))
+        .orderBy(asc(categories.id))
+
+    return result ?? null;
 }
 
-// 🟢 3. Add `select` to limit returned fields (optional)
 export async function createCategory(data: { name: string, color: string, icon: string, userId: number }) {
-    return prisma.category.create({
-        data,
-        select: { id: true, name: true, color: true, icon: true, userId: true },
-    })
+    const [createdCategory] = await db
+        .insert(categories)
+        .values({
+            name: data.name,
+            color: data.color,
+            icon: data.icon,
+            userId: data.userId,
+        })
+        .returning({
+            id: categories.id,
+            name: categories.name,
+            color: categories.color,
+            icon: categories.icon,
+            userId: categories.userId,
+        });
+
+    return createdCategory;
 }
 
-// 🟢 4. Use `delete` with unique ID instead of `deleteMany`
 export async function deleteCategoryById(categoryId: number) {
-    return prisma.category.delete({
-        where: { id: categoryId },
-    })
+    await db.delete(categories).where(eq(categories.id, categoryId));
 }
 
 export async function updateCategory(data: { id: number, name?: string, color?: string, icon?: string, userId?: number }) {
-    return prisma.category.update({
-        where: { id: data.id },
-        data,
-    })
+    // Build update object dynamically and convert amount to string if needed
+    const updateData: Record<string, any> = {};
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.color !== undefined) updateData.color = data.color;
+    if (data.icon !== undefined) updateData.periodId = data.icon;
+    if (data.userId !== undefined) updateData.userId = data.userId;
+
+    const [updated] = await db
+        .update(categories)
+        .set(updateData)
+        .where(eq(categories.id, data.id))
+        .returning();
+
+    return updated;
 }
 
 export async function createCategoryWithInitialBudget(data: {
     category: {
-        name: string
-        color: string
-        icon: string
-        userId: number
-    }
+        name: string;
+        color: string;
+        icon: string;
+        userId: number;
+    };
     budget: {
-        amount: number
-        periodId: number
-        userId: number
-    }
+        amount: number;
+        periodId: number;
+        userId: number;
+    };
 }) {
-    return prisma.$transaction(async (tx) => {
-        const newCategory = await tx.category.create({
-            data: data.category,
-            select: { id: true, name: true, color: true, icon: true, userId: true },
-        });
+    return await db.transaction(async (tx) => {
+        const [newCategory] = await tx
+            .insert(categories)
+            .values(data.category)
+            .returning({
+                id: categories.id,
+                name: categories.name,
+                color: categories.color,
+                icon: categories.icon,
+                userId: categories.userId,
+            });
 
-        const newBudget = await tx.budget.create({
-            data: {
-                amount: data.budget.amount,
+        const [newBudget] = await tx
+            .insert(budgets)
+            .values({
+                amount: data.budget.amount.toString(), // 🔸 Drizzle stores Decimal as string
                 periodId: data.budget.periodId,
                 userId: data.budget.userId,
                 categoryId: newCategory.id,
-            },
-        });
+            })
+            .returning();
 
         return {
             category: newCategory,

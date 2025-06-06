@@ -1,50 +1,74 @@
-import { prisma } from '@/lib/prisma';
-import { Prisma } from '@prisma/client';
+import {db} from "@/lib/db/client";
+import {userPreferences} from "@/lib/db/schema";
+import {and, eq, ilike} from "drizzle-orm";
 
-// Fetch all preferences for a user
 export async function getUserPreferencesByUserId(userId: number) {
-    return prisma.userPreference.findMany({
-        where: { userId },
-    });
+    const result = await db
+        .select()
+        .from(userPreferences)
+        .where(eq(userPreferences.userId, userId))
+
+    return result ?? null;
 }
 
-// Fetch preference by its unique ID
 export async function getUserPreferenceById(id: number) {
-    return prisma.userPreference.findUnique({
-        where: { id },
-    });
+    const result = await db
+        .select()
+        .from(userPreferences)
+        .where(eq(userPreferences.id, id))
+
+    return result ?? null;
 }
 
-// Fetch a single preference by name and user (case-insensitive)
 export async function getUserPreferenceByName(name: string, userId: number) {
-    return prisma.userPreference.findFirst({
-        where: {
-            userId,
-            name: {
-                equals: name,
-                mode: 'insensitive',
-            },
-        },
-    });
+    const result = await db
+        .select()
+        .from(userPreferences)
+        .where(and(ilike(userPreferences.name, name), eq(userPreferences.userId, userId)))
+        .limit(1)
+
+    return result[0] ?? null;
 }
 
-// Create a new user preference
-export async function createUserPreference(data: Prisma.UserPreferenceCreateInput) {
-    return prisma.userPreference.create({ data });
+export async function createUserPreference(data: { id: number; userId: number; name: string; stringValue: string; numberValue: number; dateValue: Date }) {
+    const [createdPreference] = await db
+        .insert(userPreferences)
+        .values({
+            userId: data.userId,
+            name: data.name,
+            stringValue: data.stringValue,
+            numberValue: data.numberValue,
+            dateValue: data.dateValue,
+        })
+        .returning({
+            id: userPreferences.id,
+            userId: userPreferences.userId,
+            name: userPreferences.name,
+            stringValue: userPreferences.stringValue,
+            numberValue: userPreferences.numberValue,
+            dateValue: userPreferences.dateValue
+        });
+
+    return createdPreference;
 }
 
-// Update an existing user preference
-export async function updateUserPreference(data: Prisma.UserPreferenceUpdateInput & { id: number }) {
-    const { id, ...updateData } = data;
-    return prisma.userPreference.update({
-        where: { id },
-        data: updateData,
-    });
+export async function updateUserPreference(data: { id: number; userId: number; name: string; stringValue: string; numberValue: number; dateValue: Date }) {
+    const updateData: Record<string, any> = {};
+    if (data.userId !== undefined) updateData.userId = data.userId;
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.stringValue !== undefined) updateData.stringValue = data.stringValue;
+    if (data.numberValue !== undefined) updateData.numberValue = data.numberValue;
+    if (data.dateValue !== undefined) updateData.dateValue = data.dateValue;
+
+    const [updated] = await db
+        .update(userPreferences)
+        .set(updateData)
+        .where(eq(userPreferences.id, data.id))
+        .returning();
+
+    return updated;
 }
 
-// Delete a preference by ID
 export async function deleteUserPreferenceById(id: number) {
-    return prisma.userPreference.delete({
-        where: { id },
-    });
+    await db.delete(userPreferences).where(eq(userPreferences.id, id));
 }

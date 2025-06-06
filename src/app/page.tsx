@@ -1,60 +1,70 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import useSWR from 'swr'
-import Image from 'next/image'
-import { User } from '@/models/user'
+import { useState } from 'react'
 
-// 1. Create a fetcher function
-const fetcher = (url: string) => fetch(url).then(res => res.json())
+export default function HomePage() {
+    const [logs, setLogs] = useState<string[]>([])
 
-export default function Home() {
-    const [msg, setMsg] = useState<string | null>(null)
+    const log = (msg: string) => setLogs(prev => [msg, ...prev])
 
-    // 2. Use SWR to fetch data
-    const { data: users, error, mutate } = useSWR<User[]>(
-        '/api/users?email=tspek9@gmail.com',
-        fetcher
-    )
+    const createPeriod = async () => {
+        const startDateStr = "01/07/2025"
+        const [startDay, startMonth, StartYear] = startDateStr.split('/').map(Number);
+        const startDate = new Date(Date.UTC(StartYear, startMonth - 1, startDay));
 
-    useEffect(() => {
-        if (users && users.length === 0) {
-            setMsg('No teams found with that name.')
-        }
-    }, [users])
+        const endDateStr = "31/07/2025"
+        const [endDay, endMonth, endYear] = endDateStr.split('/').map(Number);
+        const endDate = new Date(Date.UTC(endYear, endMonth - 1, endDay));
+
+        const res = await fetch('/api/periods/find-or-create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                startDate,
+                endDate,
+            }),
+        });
+
+        const data = await res.json();
+        log(`Created or fetched period: ${JSON.stringify(data)}`);
+    };
+
+    const createExpense = async () => {
+        const dateStr = "31/07/2025"
+        const [Day, Month, Year] = dateStr.split('/').map(Number);
+        const date = new Date(Date.UTC(Year, Month - 1, Day));
+
+        const res = await fetch('/api/expenses', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                description: 'Test expense',
+                amount: 123.45,
+                date: date,
+                userId: 1,
+                categoryId: 43,
+                isRecurring: false,
+            }),
+        })
+        const data = await res.json()
+        log(`Created expense: ${JSON.stringify(data)}`)
+    }
 
     return (
-        <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-            <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-                <Image
-                    className="dark:invert"
-                    src="/next.svg"
-                    alt="Next.js logo"
-                    width={180}
-                    height={38}
-                    priority
-                />
+        <div className="p-8 space-y-4">
+            <h1 className="text-2xl font-bold">API Test Page</h1>
 
-                {error && (
-                    <p className="text-red-600 text-sm">❌ Failed to load user data.</p>
-                )}
-                {!users && !error && <p className="text-sm">Loading user info…</p>}
+            <div className="space-x-2">
+                <button onClick={createPeriod} className="btn">Create Period</button>
+                <button onClick={createExpense} className="btn">Create Expense</button>
+            </div>
 
-                {msg && <p className="text-yellow-600">{msg}</p>}
-
-                {users && users.length > 0 && (
-                    <div className="text-left">
-                        <h2 className="text-xl font-semibold mb-2">User Info:</h2>
-                        <pre className="bg-gray-100 text-black p-2 rounded text-sm">
-              {JSON.stringify(users, null, 2)}
-            </pre>
-                    </div>
-                )}
-            </main>
-
-            <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-                {/* ... your footer content */}
-            </footer>
+            <div className="mt-8">
+                <h2 className="font-semibold">Logs:</h2>
+                <pre className="bg-gray-100 text-black p-4 max-h-[300px] overflow-auto text-sm">
+          {logs.join('\n\n')}
+        </pre>
+            </div>
         </div>
     )
 }

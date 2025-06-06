@@ -1,8 +1,7 @@
 // File: /app/api/users/[id]/route.ts
-import { prisma } from '@/lib/prisma';
 import {corsHeaders, jsonWithCors} from '@/lib/cors';
 import {NextRequest, NextResponse} from 'next/server';
-import {getUserByEmail, getUserById} from "@/lib/services/userService";
+import {deleteUserById, getUserByEmail, getUserById, updateUser} from "@/lib/services/userService";
 
 // Handle OPTIONS preflight
 export async function OPTIONS() {
@@ -39,11 +38,10 @@ export async function PUT(req: NextRequest) {
         const id = parseInt(idParam);
         const body = await req.json();
 
-        const updatedUser = await prisma.user.update({
-            where: { id },
-            data: body,
+        const updatedUser = await updateUser({
+            id,
+            ...body
         });
-
         return jsonWithCors(updatedUser);
     }
 }
@@ -54,7 +52,7 @@ export async function DELETE(req: NextRequest) {
 
     if (idParam) {
         const id = parseInt(idParam);
-        await prisma.user.delete({ where: { id } });
+        await deleteUserById(id)
         return jsonWithCors({ message: 'User deleted' });
     }
 }

@@ -1,30 +1,20 @@
 // File: /app/api/periods/find-or-create/route.ts
 import {NextRequest, NextResponse} from 'next/server';
 import {corsHeaders, jsonWithCors} from '@/lib/cors';
-import { prisma } from '@/lib/prisma';
+import {createPeriod, getPeriodByStartDate} from "@/lib/services/periodService";
 
 export async function POST(req: NextRequest) {
     try {
         const { startDate, endDate } = await req.json();
-
-        const existing = await prisma.period.findFirst({
-            where: {
-                startDate: new Date(startDate),
-                endDate: new Date(endDate),
-            },
-        });
-
+        console.log(new Date(startDate))
+        console.log(new Date(endDate))
+        const existing = await getPeriodByStartDate(startDate);
         if (existing) {
+            console.log(existing);
             return jsonWithCors(existing);
         }
-
-        const created = await prisma.period.create({
-            data: {
-                startDate: new Date(startDate),
-                endDate: new Date(endDate),
-            },
-        });
-
+        console.log("no existing period found, creating one...")
+        const created = await createPeriod({startDate, endDate});
         return jsonWithCors(created, 201);
     } catch (error) {
         console.error('Error in find-or-create period:', error);

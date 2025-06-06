@@ -1,62 +1,70 @@
-import { prisma } from '@/lib/prisma';
-import { Period } from '@prisma/client';
+import {db} from "@/lib/db/client";
+import {incomes} from "@/lib/db/schema";
+import {and, eq, gte, lt} from "drizzle-orm";
 
-// ✅ Get incomes for a specific period
-export async function getIncomesByPeriod(userId: number, period: Period) {
-    return await prisma.income.findMany({
-        where: {
-            userId,
-            date: {
-                gte: period.startDate,
-                lt: period.endDate,
-            },
-        },
-    });
+export async function getIncomesByPeriod(userId: number, period: { startDate: Date, endDate: Date }) {
+    const result = await db
+        .select()
+        .from(incomes)
+        .where(and(
+            eq(incomes.userId, userId),
+            gte(incomes.date, period.startDate),
+            lt(incomes.date, period.endDate)
+        ))
+
+    return result ?? null;
 }
 
-// ✅ Get all incomes for a user
 export async function getAllIncomes(userId: number) {
-    return await prisma.income.findMany({
-        where: { userId },
-    });
+    const result = await db
+        .select()
+        .from(incomes)
+        .where(eq(incomes.userId, userId))
+
+    return result ?? null;
 }
 
-// ✅ Get a specific income by ID
 export async function getIncomeById(userId: number, id: number) {
-    return await prisma.income.findUnique({
-        where: {
-            id,
-            userId,
-        },
-    });
+    const result = await db
+        .select()
+        .from(incomes)
+        .where(and(eq(incomes.userId, userId), eq(incomes.id, id)))
+        .limit(1)
+
+    return result[0] ?? null;
 }
 
-// ✅ Create a new income
-export async function createIncome(data: {
-    amount: number;
-    date: Date;
-    userId: number;
-}) {
-    return await prisma.income.create({
-        data,
-    });
+export async function createIncome(data: { amount: number; date: Date; userId: number; }) {
+    const [createIncome] = await db
+        .insert(incomes)
+        .values({
+            amount: data.amount.toString(),
+            date: data.date,
+            userId: data.userId
+        })
+        .returning({
+            amount: incomes.amount,
+            date: incomes.date,
+            userId: incomes.userId
+        });
+
+    return createIncome;
 }
 
-// ✅ Update income
-export async function updateIncome(data: {
-    id: number;
-    amount?: number;
-    date?: Date;
-}) {
-    return await prisma.income.update({
-        where: { id: data.id },
-        data,
-    });
+export async function updateIncome(data: { id: number; amount?: number; date?: Date; }) {
+    const updateData: Record<string, any> = {};
+    if (data.amount !== undefined) updateData.amount = data.amount;
+    if (data.date !== undefined) updateData.date = data.date;
+
+    const [updated] = await db
+        .update(incomes)
+        .set(updateData)
+        .where(eq(incomes.id, data.id))
+        .returning();
+
+    return updated;
 }
 
-// ✅ Delete income
 export async function deleteIncomeById(id: number) {
-    return await prisma.income.delete({
-        where: { id },
-    });
+    await db.delete(incomes).where(eq(incomes.id, id));
 }

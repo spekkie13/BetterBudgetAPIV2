@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
                 return jsonWithCors({ error: 'No expenses found for this user and category' }, 404);
             }
 
-            const period = await periodService.getPeriodByDate(latestExpense.date);
+            const period = await periodService.getPeriodByExpenseDate(latestExpense.date);
             return jsonWithCors(period ?? {});
         }
 
@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
             const periods: any[] = [];
 
             for (const { date } of expenses) {
-                const period = await periodService.getPeriodByDate(date);
+                const period = await periodService.getPeriodByExpenseDate(date);
                 if (period && !seen.has(period.id)) {
                     seen.add(period.id);
                     periods.push(period);
@@ -62,7 +62,7 @@ export async function GET(req: NextRequest) {
         // 4. Pass in a date
         if (dateParam){
             const date = new Date(dateParam);
-            const period = await periodService.getPeriodByDate(date);
+            const period = await periodService.getPeriodByExpenseDate(date);
 
             if(!period){
                 return jsonWithCors({ error: 'Could not find a period for the given date'}, 404)

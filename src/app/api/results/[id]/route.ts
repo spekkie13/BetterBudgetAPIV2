@@ -1,22 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { corsHeaders, jsonWithCors } from '@/lib/cors';
 import {
-    findResultsByFilter,
     updateResult,
-    deleteResultById
+    deleteResultById, getResultById
 } from '@/lib/services/resultService';
 
 // GET /api/results/[id]?id=...
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const idParam = searchParams.get('id');
+    const userIdParam = searchParams.get('userId');
 
-    if (idParam) {
+    if (idParam && userIdParam) {
         const id = parseInt(idParam);
+        const userId = parseInt(userIdParam);
         if (isNaN(id)) return jsonWithCors({ error: 'Invalid ID' }, 400);
 
-        const results = await findResultsByFilter({ id });
-        return jsonWithCors(results.length > 0 ? results[0] : {}, results.length > 0 ? 200 : 404);
+        const results = await getResultById(userId, id)
+
+        if (!results){
+            return jsonWithCors({ error: 'No results found'}, 404)
+        }
+
+        return jsonWithCors(results)
     }
 }
 
