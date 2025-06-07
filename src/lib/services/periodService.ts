@@ -1,6 +1,6 @@
 import { db } from "../db/client";
 import {periods} from "@/lib/db/schema";
-import {and, desc, eq, gte, lte} from "drizzle-orm";
+import {desc, eq, lte} from "drizzle-orm";
 
 export async function getPeriodById(id: number) {
     const result = await db
@@ -18,7 +18,7 @@ export async function getPeriodByExpenseDate(expenseDate?: Date) {
     const result = await db
         .select()
         .from(periods)
-        .where(and(lte(periods.endDate, expenseDate), gte(periods.startDate, expenseDate)))
+        .where(lte(periods.endDate, expenseDate))
         .orderBy(desc(periods.endDate))
         .limit(1)
 
