@@ -36,7 +36,6 @@ export async function GET(req: NextRequest) {
             }
 
             const period = await periodService.getPeriodByExpenseDate(latestExpense.date);
-            console.log(period);
             return jsonWithCors(period ?? {});
         }
 

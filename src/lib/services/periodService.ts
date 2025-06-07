@@ -21,7 +21,6 @@ export async function getPeriodByExpenseDate(expenseDate?: Date) {
         .where(lte(periods.startDate, expenseDate))
         .orderBy(desc(periods.endDate))
         .limit(1)
-
     return result[0] ?? null;
 }
 
