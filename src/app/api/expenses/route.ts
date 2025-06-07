@@ -1,12 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { corsHeaders, jsonWithCors } from '@/lib/cors';
-import {
-    createExpense,
-    getAllExpenses,
-    getExpenseById,
-    getExpensesByCategory,
-    getExpensesByUserAndPeriod
-} from '@/lib/services/expenseService';
+import { createExpense, getAllExpenses, getExpenseById, getExpensesByCategory, getExpensesByUserAndCategoryAndPeriod, getExpensesByUserAndPeriod } from '@/lib/services/expenseService';
 import { getPeriodById } from '@/lib/services/periodService';
 import { Decimal } from '@prisma/client/runtime/library';
 
@@ -27,6 +21,19 @@ export async function GET(req: NextRequest) {
             if (isNaN(id)) return jsonWithCors({ error: 'Invalid id' }, 400);
             const expense = await getExpenseById(userId, id);
             return jsonWithCors(expense ?? {});
+        }
+
+        if (categoryIdParam && periodIdParam) {
+            const categoryId = parseInt(categoryIdParam);
+            const periodId = parseInt(periodIdParam);
+            console.log('fetching expenses by category and period')
+            if (isNaN(categoryId)) return jsonWithCors({ error: 'Invalid categoryId' }, 400);
+            if (isNaN(periodId)) return jsonWithCors({ error: 'Invalid periodId' }, 400);
+
+            const period = await getPeriodById(periodId)
+            if (!period) return jsonWithCors({});
+            const expenses = await getExpensesByUserAndCategoryAndPeriod(userId, categoryId, period);
+            return jsonWithCors(expenses);
         }
 
         if (categoryIdParam) {

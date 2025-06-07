@@ -45,6 +45,20 @@ export async function getExpensesByUserAndPeriod(userId: number, period: { start
     return result ?? null;
 }
 
+export async function getExpensesByUserAndCategoryAndPeriod(userId: number, categoryId: number, period: { startDate: Date, endDate: Date}) {
+    const result = await db
+        .select()
+        .from(expenses)
+        .where(and(
+            eq(expenses.userId, userId),
+            eq(expenses.categoryId, categoryId),
+            gte(expenses.date, period.startDate),
+            lte(expenses.date, period.endDate)
+        ))
+
+    return result ?? null;
+}
+
 export async function getMostRecentExpense(userId: number, categoryId: number) {
     const result = await db
         .select()

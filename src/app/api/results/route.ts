@@ -1,12 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { corsHeaders, jsonWithCors } from '@/lib/cors';
-import {
-    getResultById,
-    getResultByCategoryAndPeriod,
-    getResultsByCategory,
-    getResultsByPeriod,
-    createResult
-} from '@/lib/services/resultService';
+import { getResultById, getResultByCategoryAndPeriod, getResultsByCategory, getResultsByPeriod, createResult } from '@/lib/services/resultService';
 
 // GET /api/results?resultId=... or ?categoryId=... or ?periodId=...
 export async function GET(req: NextRequest) {
