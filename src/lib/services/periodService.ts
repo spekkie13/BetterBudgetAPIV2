@@ -18,7 +18,7 @@ export async function getPeriodByExpenseDate(expenseDate?: Date) {
     const result = await db
         .select()
         .from(periods)
-        .where(lte(periods.endDate, expenseDate))
+        .where(lte(periods.startDate, expenseDate))
         .orderBy(desc(periods.endDate))
         .limit(1)
 
