@@ -28,7 +28,6 @@ export async function POST(req: NextRequest) {
                 totalSpent: body.result.totalSpent,
                 percentageSpent: body.result.percentageSpent,
                 userId: body.result.userId,
-                categoryId: body.result.categoryId,
                 periodId: body.result.periodId,
             }
         })

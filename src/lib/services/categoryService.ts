@@ -92,7 +92,6 @@ export async function createCategoryWithInitialBudget(data: {
         totalSpent: number;
         percentageSpent: number;
         userId: number;
-        categoryId: number;
         periodId: number;
     }
 }) {
