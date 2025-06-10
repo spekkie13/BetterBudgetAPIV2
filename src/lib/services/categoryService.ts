@@ -1,5 +1,5 @@
 import {db} from "@/lib/db/client";
-import {budgets, categories} from "@/lib/db/schema";
+import {budgets, categories, results} from "@/lib/db/schema";
 import {and, asc, eq, ilike} from "drizzle-orm";
 
 export async function getCategoryById(categoryId: number, userId: number) {
@@ -88,6 +88,13 @@ export async function createCategoryWithInitialBudget(data: {
         periodId: number;
         userId: number;
     };
+    result: {
+        totalSpent: number;
+        percentageSpent: number;
+        userId: number;
+        categoryId: number;
+        periodId: number;
+    }
 }) {
     return await db.transaction(async (tx) => {
         const [newCategory] = await tx
@@ -111,9 +118,21 @@ export async function createCategoryWithInitialBudget(data: {
             })
             .returning();
 
+        const [newResult] = await tx
+            .insert(results)
+            .values({
+                totalSpent: data.result.totalSpent.toString(),
+                percentageSpent: data.result.percentageSpent.toString(),
+                userId: data.result.userId,
+                categoryId: newCategory.id,
+                periodId: data.result.periodId,
+            })
+            .returning()
+
         return {
             category: newCategory,
             budget: newBudget,
+            result: newResult,
         };
     });
 }

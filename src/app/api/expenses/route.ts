@@ -26,7 +26,6 @@ export async function GET(req: NextRequest) {
         if (categoryIdParam && periodIdParam) {
             const categoryId = parseInt(categoryIdParam);
             const periodId = parseInt(periodIdParam);
-            console.log('fetching expenses by category and period')
             if (isNaN(categoryId)) return jsonWithCors({ error: 'Invalid categoryId' }, 400);
             if (isNaN(periodId)) return jsonWithCors({ error: 'Invalid periodId' }, 400);
 
