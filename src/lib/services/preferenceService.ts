@@ -82,7 +82,7 @@ export async function saveCategorySlots(userId: number, preferences: { name: str
                 numberValue: pref.numberValue,
             })
             .onConflictDoUpdate({
-                target: [userPreferences.id],
+                target: [userPreferences.userId, userPreferences.name],
                 set: { numberValue: pref.numberValue }
             });
     }
