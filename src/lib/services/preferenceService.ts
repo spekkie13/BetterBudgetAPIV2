@@ -73,17 +73,12 @@ export async function deleteUserPreferenceById(id: number) {
     await db.delete(userPreferences).where(eq(userPreferences.id, id));
 }
 
-export async function saveCategorySlots(userId: number, preferences: { name: string, numberValue: number  | null }[]) {
-    for (const pref of preferences) {
-        await db.insert(userPreferences)
-            .values({
-                userId: userId,
-                name: pref.name,
-                numberValue: pref.numberValue,
-            })
-            .onConflictDoUpdate({
-                target: [userPreferences.userId, userPreferences.name],
-                set: { numberValue: pref.numberValue }
-            });
-    }
+export async function saveCategorySlots(userId: number, preferences: { name: string; numberValue: number | null }[]) {
+    await db.transaction(async (tx) => {
+        for (const pref of preferences) {
+            await tx.update(userPreferences)
+                .set({ numberValue: pref.numberValue })
+                .where(and(eq(userPreferences.userId, userId), eq(userPreferences.name, pref.name)));
+        }
+    });
 }
