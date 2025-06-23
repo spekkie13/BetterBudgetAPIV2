@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { corsHeaders, jsonWithCors } from '@/lib/cors';
 import * as periodService from '@/lib/services/periodService';
-import { getMostRecentExpense, getExpenseDatesByCategory } from '@/lib/services/expenseService';
+import { getExpenseDatesByCategory } from '@/lib/services/expenseService';
 
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
@@ -30,12 +30,7 @@ export async function GET(req: NextRequest) {
             const categoryId = parseInt(categoryIdParam);
             if (isNaN(categoryId)) return jsonWithCors({ error: 'Invalid categoryId' }, 400);
 
-            const latestExpense = await getMostRecentExpense(userId, categoryId);
-            if (!latestExpense) {
-                return jsonWithCors({ error: 'No expenses found for this user and category' }, 404);
-            }
-
-            const period = await periodService.getPeriodByExpenseDate(latestExpense.date);
+            const period = await periodService.getPeriodByExpenseDate(new Date());
             return jsonWithCors(period ?? {});
         }
 
