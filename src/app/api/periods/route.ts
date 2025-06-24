@@ -28,14 +28,15 @@ export async function GET(req: NextRequest) {
         // 2. Get most recent period for category
         if (categoryIdParam && req.url.includes('recent')) {
             const categoryId = parseInt(categoryIdParam);
+            let date = new Date()
             if (isNaN(categoryId)) return jsonWithCors({ error: 'Invalid categoryId' }, 400);
 
             const latestExpense = await getMostRecentExpense(userId, categoryId);
-            if (!latestExpense) {
-                return jsonWithCors({ error: 'No expenses found for this user and category' }, 404);
+            if (latestExpense) {
+                date = latestExpense.date;
             }
 
-            const period = await periodService.getPeriodByExpenseDate(latestExpense.date ?? new Date());
+            const period = await periodService.getPeriodByExpenseDate(date);
             return jsonWithCors(period ?? {});
         }
 
