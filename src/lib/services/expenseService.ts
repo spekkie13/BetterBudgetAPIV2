@@ -59,6 +59,7 @@ export async function getExpensesByUserAndCategoryAndPeriod(userId: number, cate
     return result ?? null;
 }
 
+//Get most recent expense for a user and category
 export async function getMostRecentExpense(userId: number, categoryId: number) {
     const result = await db
         .select()
