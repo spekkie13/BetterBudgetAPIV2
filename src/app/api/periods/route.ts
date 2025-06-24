@@ -9,7 +9,6 @@ export async function GET(req: NextRequest) {
     const periodIdParam = searchParams.get('periodId');
     const categoryIdParam = searchParams.get('categoryId');
     const dateParam = searchParams.get('date');
-    console.log(req.url);
 
     const userId = userIdParam ? parseInt(userIdParam) : NaN;
     if (isNaN(userId)) {
@@ -19,7 +18,6 @@ export async function GET(req: NextRequest) {
     try {
         // 1. Get period by ID
         if (periodIdParam) {
-            console.log('fetching period by ID')
             const periodId = parseInt(periodIdParam);
             if (isNaN(periodId)) return jsonWithCors({ error: 'Invalid periodId' }, 400);
 
@@ -28,9 +26,7 @@ export async function GET(req: NextRequest) {
         }
 
         // 2. Get most recent period for category
-        if (categoryIdParam && req.url.includes('/recent')) {
-            console.log('fetching most recent period by categoryID')
-            console.log(req.url);
+        if (categoryIdParam && req.url.includes('recent')) {
             const categoryId = parseInt(categoryIdParam);
             if (isNaN(categoryId)) return jsonWithCors({ error: 'Invalid categoryId' }, 400);
 
@@ -45,7 +41,6 @@ export async function GET(req: NextRequest) {
 
         // 3. Get all periods with expenses for category
         if (categoryIdParam) {
-            console.log('fetching all periods by categoryID')
             const categoryId = parseInt(categoryIdParam);
             if (isNaN(categoryId)) return jsonWithCors({ error: 'Invalid categoryId' }, 400);
 
