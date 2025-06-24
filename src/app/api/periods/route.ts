@@ -29,6 +29,7 @@ export async function GET(req: NextRequest) {
         // 2. Get most recent period for category
         if (categoryIdParam && req.url.includes('/recent')) {
             console.log('fetching most recent period by categoryID')
+            console.log(req.url);
             const categoryId = parseInt(categoryIdParam);
             if (isNaN(categoryId)) return jsonWithCors({ error: 'Invalid categoryId' }, 400);
 
