@@ -9,6 +9,7 @@ export async function GET(req: NextRequest) {
     const periodIdParam = searchParams.get('periodId');
     const categoryIdParam = searchParams.get('categoryId');
     const dateParam = searchParams.get('date');
+    console.log(req.url);
 
     const userId = userIdParam ? parseInt(userIdParam) : NaN;
     if (isNaN(userId)) {
