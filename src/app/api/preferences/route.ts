@@ -4,7 +4,7 @@ import {
     createUserPreference,
     getUserPreferenceById,
     getUserPreferenceByName,
-    getUserPreferencesByUserId,
+    getUserPreferencesByUserId, updateUserPreference,
 } from '@/lib/services/preferenceService';
 
 export async function OPTIONS() {
@@ -57,5 +57,38 @@ export async function POST(req: NextRequest) {
     } catch (error) {
         console.error('Error creating preference:', error);
         return jsonWithCors({ error: 'Failed to create preference' }, 400);
+    }
+}
+
+export async function PUT(req: NextRequest) {
+    try {
+        const body = await req.json();
+
+        if (!body.id || isNaN(body.id)) {
+            return new NextResponse(
+                JSON.stringify({ error: 'Missing or invalid ID' }),
+                {
+                    status: 400,
+                    headers: corsHeaders,
+                }
+            );
+        }
+
+        const updated = await updateUserPreference(body);
+
+        return new NextResponse(JSON.stringify(updated), {
+            status: 200,
+            headers: corsHeaders,
+        });
+    } catch (error) {
+        console.error('Error updating preference:', error);
+
+        return new NextResponse(
+            JSON.stringify({ error: 'Failed to update preference' }),
+            {
+                status: 400,
+                headers: corsHeaders,
+            }
+        );
     }
 }

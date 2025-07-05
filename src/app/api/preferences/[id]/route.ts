@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { corsHeaders, jsonWithCors } from '@/lib/cors';
-import {
-    deleteUserPreferenceById,
-    getUserPreferenceById,
-    updateUserPreference,
-} from '@/lib/services/preferenceService';
+import { deleteUserPreferenceById, getUserPreferenceById } from '@/lib/services/preferenceService';
 
 
 export async function OPTIONS() {
@@ -25,39 +21,6 @@ export async function GET(req: NextRequest) {
 
     const preference = await getUserPreferenceById(id);
     return jsonWithCors(preference || {}, preference ? 200 : 404);
-}
-
-export async function PUT(req: NextRequest) {
-    try {
-        const body = await req.json();
-
-        if (!body.id || isNaN(body.id)) {
-            return new NextResponse(
-                JSON.stringify({ error: 'Missing or invalid ID' }),
-                {
-                    status: 400,
-                    headers: corsHeaders,
-                }
-            );
-        }
-
-        const updated = await updateUserPreference(body);
-
-        return new NextResponse(JSON.stringify(updated), {
-            status: 200,
-            headers: corsHeaders,
-        });
-    } catch (error) {
-        console.error('Error updating preference:', error);
-
-        return new NextResponse(
-            JSON.stringify({ error: 'Failed to update preference' }),
-            {
-                status: 400,
-                headers: corsHeaders,
-            }
-        );
-    }
 }
 
 export async function DELETE(req: NextRequest) {
