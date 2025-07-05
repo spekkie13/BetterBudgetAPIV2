@@ -52,14 +52,13 @@ export async function createUserPreference(data: { id: number; userId: number; n
     return createdPreference;
 }
 
-export async function updateUserPreference(data: { id: number; userId: number; name: string; stringValue: string; numberValue: number; dateValue: Date }) {
+export async function updateUserPreference(data: { id: number; stringValue: string; numberValue: number; dateValue: Date }) {
     const updateData: Record<string, any> = {};
-    if (data.userId !== undefined) updateData.userId = data.userId;
-    if (data.name !== undefined) updateData.name = data.name;
     if (data.stringValue !== undefined) updateData.stringValue = data.stringValue;
     if (data.numberValue !== undefined) updateData.numberValue = data.numberValue;
     if (data.dateValue !== undefined) updateData.dateValue = data.dateValue;
 
+    console.log(updateData)
     const [updated] = await db
         .update(userPreferences)
         .set(updateData)
