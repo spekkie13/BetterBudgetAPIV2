@@ -6,6 +6,7 @@ import {
     updateUserPreference,
 } from '@/lib/services/preferenceService';
 
+
 export async function OPTIONS() {
     return new NextResponse(null, {
         status: 204,
@@ -29,15 +30,33 @@ export async function GET(req: NextRequest) {
 export async function PUT(req: NextRequest) {
     try {
         const body = await req.json();
+
         if (!body.id || isNaN(body.id)) {
-            return jsonWithCors({ error: 'Missing or invalid ID' }, 400);
+            return new NextResponse(
+                JSON.stringify({ error: 'Missing or invalid ID' }),
+                {
+                    status: 400,
+                    headers: corsHeaders,
+                }
+            );
         }
 
         const updated = await updateUserPreference(body);
-        return jsonWithCors(updated);
+
+        return new NextResponse(JSON.stringify(updated), {
+            status: 200,
+            headers: corsHeaders,
+        });
     } catch (error) {
         console.error('Error updating preference:', error);
-        return jsonWithCors({ error: 'Failed to update preference' }, 400);
+
+        return new NextResponse(
+            JSON.stringify({ error: 'Failed to update preference' }),
+            {
+                status: 400,
+                headers: corsHeaders,
+            }
+        );
     }
 }
 
