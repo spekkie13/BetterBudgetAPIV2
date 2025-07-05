@@ -74,8 +74,9 @@ export async function PUT(req: NextRequest) {
             );
         }
 
+        console.log(body);
         const updated = await updateUserPreference(body);
-
+        console.log(updated)
         return new NextResponse(JSON.stringify(updated), {
             status: 200,
             headers: corsHeaders,
