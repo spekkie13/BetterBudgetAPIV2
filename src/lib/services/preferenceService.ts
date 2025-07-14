@@ -53,17 +53,22 @@ export async function createUserPreference(data: { id: number; userId: number; n
     return createdPreference;
 }
 
-export async function updateUserPreference(data: { id: number; stringValue: string; numberValue: number; dateValue: Date }) {
+export async function updateUserPreference(data: { userId: number; name: string; stringValue: string; numberValue: number; dateValue: Date }) {
     const updateData: Record<string, any> = {};
+    if (data.name !== undefined) updateData.name = data.name;
     if (data.stringValue !== undefined) updateData.stringValue = data.stringValue;
     if (data.numberValue !== undefined) updateData.numberValue = data.numberValue;
     if (data.dateValue !== undefined) updateData.dateValue = data.dateValue;
 
-    console.log(updateData)
     const [updated] = await db
         .update(userPreferences)
         .set(updateData)
-        .where(eq(userPreferences.id, data.id))
+        .where(
+            and(
+                eq(userPreferences.userId, updateData.userId),
+                eq(userPreferences.name, updateData.name)
+            )
+        )
         .returning();
 
     return updated;
@@ -76,8 +81,6 @@ export async function deleteUserPreferenceById(id: number) {
 export async function saveCategorySlots(userId: number, preferences: { name: string; numberValue: number | null }[]) {
     await db.transaction(async (tx) => {
         for (const pref of preferences) {
-            console.log(pref);
-            console.log(userId);
             await tx.update(userPreferences)
                 .set({ numberValue: pref.numberValue })
                 .where(and(eq(userPreferences.userId, userId), eq(userPreferences.name, pref.name)));
