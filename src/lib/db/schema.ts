@@ -1,13 +1,4 @@
-import {
-    pgTable,
-    serial,
-    varchar,
-    integer,
-    numeric,
-    timestamp,
-    text,
-    real,
-} from 'drizzle-orm/pg-core';
+import { pgTable, serial, varchar, integer, numeric, timestamp, text, real, primaryKey } from 'drizzle-orm/pg-core';
 
 // ---------------------- User Table ----------------------
 export const users = pgTable('User', {
@@ -80,10 +71,12 @@ export const results = pgTable('Result', {
 
 // ---------------------- User Preference Table ----------------------
 export const userPreferences = pgTable('UserPreference', {
-    id: serial('id').primaryKey(),
+    id: serial('id'),
     name: varchar('name', { length: 255 }).notNull(),
     stringValue: varchar('stringValue', { length: 255 }),
     numberValue: real('numberValue'),
     dateValue: timestamp('dateValue', { withTimezone: true }),
     userId: integer('userId').notNull(),
-});
+}, (table) => [
+    primaryKey({ columns: [table.name, table.userId]})
+]);

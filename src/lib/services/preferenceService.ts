@@ -7,6 +7,7 @@ export async function getUserPreferencesByUserId(userId: number) {
         .select()
         .from(userPreferences)
         .where(eq(userPreferences.userId, userId))
+        .orderBy(userPreferences.id)
 
     return result ?? null;
 }
