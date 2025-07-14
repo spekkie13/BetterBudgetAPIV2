@@ -54,6 +54,7 @@ export async function createUserPreference(data: { id: number; userId: number; n
 }
 
 export async function updateUserPreference(data: { userId: number; name: string; stringValue: string; numberValue: number; dateValue: Date }) {
+    console.log(data)
     const updateData: Record<string, any> = {};
     if (data.name !== undefined) updateData.name = data.name;
     if (data.stringValue !== undefined) updateData.stringValue = data.stringValue;
