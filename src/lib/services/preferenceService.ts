@@ -59,6 +59,7 @@ export async function updateUserPreference(data: { userId: number; name: string;
     if (data.stringValue !== undefined) updateData.stringValue = data.stringValue;
     if (data.numberValue !== undefined) updateData.numberValue = data.numberValue;
     if (data.dateValue !== undefined) updateData.dateValue = data.dateValue;
+    if (data.userId !== undefined) updateData.userId = data.userId;
 
     const [updated] = await db
         .update(userPreferences)
