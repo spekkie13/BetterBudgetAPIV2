@@ -76,6 +76,8 @@ export async function deleteUserPreferenceById(id: number) {
 export async function saveCategorySlots(userId: number, preferences: { name: string; numberValue: number | null }[]) {
     await db.transaction(async (tx) => {
         for (const pref of preferences) {
+            console.log(pref);
+            console.log(userId);
             await tx.update(userPreferences)
                 .set({ numberValue: pref.numberValue })
                 .where(and(eq(userPreferences.userId, userId), eq(userPreferences.name, pref.name)));
