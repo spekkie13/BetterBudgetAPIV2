@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { corsHeaders, jsonWithCors } from '@/lib/cors';
-import { getResultById, getResultByCategoryAndPeriod, getResultsByCategory, getResultsByPeriod, createResult } from '@/lib/services/resultService';
+import {
+    getResultById,
+    getResultByCategoryAndPeriod,
+    getResultsByCategory,
+    getResultsByPeriod,
+    createResult,
+    updateResult
+} from '@/lib/services/resultService';
 
 // GET /api/results?resultId=... or ?categoryId=... or ?periodId=...
 export async function GET(req: NextRequest) {
@@ -78,6 +85,25 @@ export async function POST(req: NextRequest) {
     } catch (error) {
         console.error('Error creating result:', error);
         return jsonWithCors({ error: 'Failed to create result' }, 400);
+    }
+}
+
+// PUT /api/results/[id]?id=...
+export async function PUT(req: NextRequest) {
+    const { searchParams } = new URL(req.url);
+    const idParam = searchParams.get('id');
+
+    if (idParam) {
+        const id = parseInt(idParam);
+        if (isNaN(id)) return jsonWithCors({ error: 'Invalid ID' }, 400);
+        const body = await req.json();
+
+        const updated = await updateResult({
+            id,
+            ...body,
+        });
+
+        return jsonWithCors(updated);
     }
 }
 
