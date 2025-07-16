@@ -28,6 +28,7 @@ export async function PUT(req: NextRequest) {
     try {
         const body = await req.json();
         const updated = await updateResult(body)
+        console.log(updated)
         return jsonWithCors(updated);
     } catch (error) {
         console.error('Error updating result:', error);
