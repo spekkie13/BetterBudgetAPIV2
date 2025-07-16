@@ -78,7 +78,7 @@ export async function deleteResultById(id: number) {
 }
 
 export async function updateResult(data: {
-    id: number;
+    resultId: number;
     totalSpent?: number;
     percentageSpent?: number;
     userId?: number;
@@ -95,7 +95,7 @@ export async function updateResult(data: {
     const [updated] = await db
         .update(results)
         .set(updateData)
-        .where(eq(results.id, data.id))
+        .where(eq(results.id, data.resultId))
         .returning();
 
     return updated;
