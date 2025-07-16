@@ -25,20 +25,13 @@ export async function GET(req: NextRequest) {
 
 // PUT /api/results/[id]?id=...
 export async function PUT(req: NextRequest) {
-    const { searchParams } = new URL(req.url);
-    const idParam = searchParams.get('id');
-
-    if (idParam) {
-        const id = parseInt(idParam);
-        if (isNaN(id)) return jsonWithCors({ error: 'Invalid ID' }, 400);
+    try {
         const body = await req.json();
-
-        const updated = await updateResult({
-            id,
-            ...body,
-        });
-
+        const updated = await updateResult(body)
         return jsonWithCors(updated);
+    } catch (error) {
+        console.error('Error updating result:', error);
+        return jsonWithCors({ error: 'Failed to update result' }, 400);
     }
 }
 

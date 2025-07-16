@@ -50,6 +50,29 @@ export default function HomePage() {
         log(`Created expense: ${JSON.stringify(data)}`)
     }
 
+    const updateResult = async () => {
+        const resultId = 85;
+        const userId = 2;
+
+        const updatedResult = {
+            id: resultId,
+            userId: userId,
+            categoryId: 15,
+            periodId: 5,
+            totalSpent: 250.75,
+            percentageSpent: 55.8,
+        };
+
+        const res = await fetch(`/api/results/${resultId}?id=${resultId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedResult),
+        });
+
+        const data = await res.json();
+        console.log(`Updated result: ${JSON.stringify(data)}`);
+    };
+
     return (
         <div className="p-8 space-y-4">
             <h1 className="text-2xl font-bold">API Test Page</h1>
@@ -57,6 +80,7 @@ export default function HomePage() {
             <div className="space-x-2">
                 <button onClick={createPeriod} className="btn">Create Period</button>
                 <button onClick={createExpense} className="btn">Create Expense</button>
+                <button onClick={updateResult} className="btn">Update Result</button>
             </div>
 
             <div className="mt-8">
