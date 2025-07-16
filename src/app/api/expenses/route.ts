@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
                 userId: Number(rest.userId),
                 categoryId: Number(rest.categoryId),
                 periodId: period.id,
-                amount: 0
+                amount: 1000
             })
             console.log('budget ', budget)
         }
