@@ -91,7 +91,7 @@ export async function updateResult(data: {
     if (data.userId !== undefined) updateData.userId = data.userId;
     if (data.categoryId !== undefined) updateData.categoryId = data.categoryId;
     if (data.periodId !== undefined) updateData.periodId = data.periodId;
-
+    console.log(data)
     const [updated] = await db
         .update(results)
         .set(updateData)
