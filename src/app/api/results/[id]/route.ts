@@ -29,7 +29,7 @@ export async function PUT(req: NextRequest) {
         const body = await req.json();
         const updated = await updateResult(body)
         console.log(updated)
-        return jsonWithCors(updated);
+        return jsonWithCors(updated, 200);
     } catch (error) {
         console.error('Error updating result:', error);
         return jsonWithCors({ error: 'Failed to update result' }, 400);

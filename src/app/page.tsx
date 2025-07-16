@@ -70,7 +70,7 @@ export default function HomePage() {
         });
 
         const data = await res.json();
-        console.log(`Updated result: ${JSON.stringify(data)}`);
+        log(`Updated result: ${JSON.stringify(data)}`);
     };
 
     return (
