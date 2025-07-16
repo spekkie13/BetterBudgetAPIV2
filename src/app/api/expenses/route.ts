@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { corsHeaders, jsonWithCors } from '@/lib/cors';
 import { createExpense, getAllExpenses, getExpenseById, getExpensesByCategory, getExpensesByUserAndCategoryAndPeriod, getExpensesByUserAndPeriod } from '@/lib/services/expenseService';
-import { getPeriodById } from '@/lib/services/periodService';
+import {calculatePeriodRange, createPeriod, getPeriodByExpenseDate, getPeriodById} from '@/lib/services/periodService';
 import { Decimal } from '@prisma/client/runtime/library';
+import {createBudget, getBudgetByPeriodAndCategory} from "@/lib/services/budgetService";
+import {createResult, getResultsByPeriodAndCategory} from "@/lib/services/resultService";
 
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
@@ -64,6 +66,44 @@ export async function POST(req: NextRequest) {
         const body = await req.json();
         const { date, ...rest } = body;
         const parsedDate = new Date(date);
+
+        let period = await getPeriodByExpenseDate(parsedDate)
+
+        if (!period) {
+            const { startDate, endDate } = calculatePeriodRange(parsedDate)
+            period = await createPeriod({startDate, endDate})
+        }
+
+        let budget = await getBudgetByPeriodAndCategory(
+            Number(rest.userId),
+            Number(rest.categoryId),
+            period.id
+        )
+        if (!budget) {
+            budget = await createBudget({
+                userId: Number(rest.userId),
+                categoryId: Number(rest.categoryId),
+                periodId: period.id,
+                amount: 0
+            })
+            console.log('budget ', budget)
+        }
+
+        let result = await getResultsByPeriodAndCategory(
+            Number(rest.userId),
+            Number(rest.categoryId),
+            period.id
+        )
+        if (!result) {
+            result = await createResult({
+                userId: Number(rest.userId),
+                categoryId: Number(rest.categoryId),
+                periodId: period.id,
+                totalSpent: 0,
+                percentageSpent: 0
+            })
+            console.log('created: ', result)
+        }
 
         const expenseData = {
             ...rest,

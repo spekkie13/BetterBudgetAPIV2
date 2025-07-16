@@ -32,6 +32,16 @@ export async function getResultsByCategory(userId: number, categoryId: number) {
     return result[0] ?? null;
 }
 
+export async function getResultsByPeriodAndCategory(userId: number, categoryId: number, periodId: number) {
+    const result = await db
+        .select()
+        .from(results)
+        .where(and(eq(results.userId, userId), eq(results.categoryId, categoryId), eq(results.periodId, periodId)))
+        .limit(1)
+
+    return result[0] ?? null;
+}
+
 export async function getResultsByPeriod(userId: number, periodId: number) {
     const result = await db
         .select()

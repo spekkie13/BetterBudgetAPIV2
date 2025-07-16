@@ -88,3 +88,11 @@ export async function updatePeriod(data: { id: number; startDate?: Date; endDate
 
     return updated;
 }
+
+export function calculatePeriodRange(date: Date) {
+    const year = date.getFullYear()
+    const month = date.getMonth() // 0-11
+    const startDate = new Date(year, month, 1)
+    const endDate = new Date(year, month + 1, 0) // laatste dag van de maand
+    return { startDate, endDate }
+}

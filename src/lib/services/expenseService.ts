@@ -91,7 +91,6 @@ export async function createExpense(data: {
     userId: number;
     categoryId: number;
 }) {
-    console.log(data.date)
     const actualDate = new Date(data.date);
 
     const [createdExpense] = await db
