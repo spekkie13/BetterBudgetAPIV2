@@ -40,15 +40,9 @@ export async function getPeriodByStartDate(startDateInput: Date | string) {
     return result[0] ?? null;
 }
 
-export async function createPeriod(data: { startDate: Date | string; endDate: Date | string }) {
+export async function createPeriod(data: { startDate: Date | string; endDate: Date | string; startingAmount: number}) {
     const start = new Date(data.startDate);
     const end = new Date(data.endDate);
-
-    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-        console.log(start.getTime());
-        console.log(end.getTime());
-        throw new Error('Invalid date input');
-    }
 
     const normalizedStart = new Date(start);
     normalizedStart.setHours(0, 0, 0, 0);
@@ -56,16 +50,19 @@ export async function createPeriod(data: { startDate: Date | string; endDate: Da
     const normalizedEnd = new Date(end);
     normalizedEnd.setHours(23, 59, 59, 999);
 
+    const startingAmountString = data.startingAmount.toString()
     const [createdPeriod] = await db
         .insert(periods)
         .values({
             startDate: normalizedStart,
             endDate: normalizedEnd,
+            startingAmount: startingAmountString,
         })
         .returning({
             id: periods.id,
             startDate: periods.startDate,
             endDate: periods.endDate,
+            startingAmount: periods.startingAmount,
         });
 
     return createdPeriod;

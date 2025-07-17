@@ -1,7 +1,7 @@
-import {DateObj} from "@/models/dateObj";
+import {Period} from "@/models/period";
 
 export class Expense implements IExpense{
-  date: DateObj
+  date: Period
   amount: number
   description: string
   categoryId: number
@@ -26,7 +26,7 @@ export class Expense implements IExpense{
 }
 
 interface IExpense {
-  date: DateObj,
+  date: Period,
   amount: number,
   description: string,
   categoryId: number,

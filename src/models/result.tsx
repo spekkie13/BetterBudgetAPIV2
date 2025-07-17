@@ -1,4 +1,4 @@
-export class RecentPeriodResult implements IRecentPeriodResult{
+export class Result implements IRecentPeriodResult{
     budgetId : number
     categoryId : number
     id : number

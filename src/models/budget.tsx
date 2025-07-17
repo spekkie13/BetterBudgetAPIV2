@@ -1,4 +1,4 @@
-export class PeriodBudget implements IPeriodBudget{
+export class Budget implements IPeriodBudget{
     budget: number
     categoryId: number
     id: number

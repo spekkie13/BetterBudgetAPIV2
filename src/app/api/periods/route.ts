@@ -86,6 +86,7 @@ export async function POST(req: NextRequest) {
         const newPeriod = await periodService.createPeriod({
             startDate: new Date(body.startDate),
             endDate: new Date(body.endDate),
+            startingAmount: parseInt(body.startingAmount),
         });
 
         return jsonWithCors(newPeriod, 201);

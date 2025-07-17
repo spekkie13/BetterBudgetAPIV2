@@ -66,12 +66,13 @@ export async function POST(req: NextRequest) {
         const body = await req.json();
         const { date, ...rest } = body;
         const parsedDate = new Date(date);
+        const startingAmount = rest.startingAmount
 
         let period = await getPeriodByExpenseDate(parsedDate)
 
         if (!period) {
             const { startDate, endDate } = calculatePeriodRange(parsedDate)
-            period = await createPeriod({startDate, endDate})
+            period = await createPeriod({startDate, endDate, startingAmount})
         }
 
         let budget = await getBudgetByPeriodAndCategory(

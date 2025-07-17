@@ -1,4 +1,4 @@
-export class userPreference implements IUserPreference{
+export class preference implements IUserPreference{
     id: number
     userId: number
     name: string

@@ -48,6 +48,7 @@ export const periods = pgTable('Period', {
     id: serial('id').primaryKey(),
     startDate: timestamp('startDate', { withTimezone: true }).notNull(),
     endDate: timestamp('endDate', { withTimezone: true }).notNull(),
+    startingAmount: numeric('startingAmount', { precision: 10, scale: 2 }).notNull(),
 });
 
 // ---------------------- Budget Table ----------------------
@@ -63,7 +64,7 @@ export const budgets = pgTable('Budget', {
 export const results = pgTable('Result', {
     id: serial('id').primaryKey(),
     totalSpent: numeric('totalSpent', { precision: 10, scale: 2 }).notNull(),
-    percentageSpent: numeric('percentageSpent', { precision: 5, scale: 2 }).notNull(),
+    percentageSpent: numeric('percentageSpent', { precision: 7, scale: 2 }).notNull(),
     userId: integer('userId').notNull(),
     categoryId: integer('categoryId').notNull(),
     periodId: integer('periodId').notNull(),

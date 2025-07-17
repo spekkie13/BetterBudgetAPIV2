@@ -1,4 +1,4 @@
-export class DateObj implements IDateObj{
+export class Period implements IDateObj{
     id: number
     year: number
     month: number

@@ -5,19 +5,15 @@ import {createPeriod, getPeriodByStartDate} from "@/lib/services/periodService";
 
 export async function POST(req: NextRequest) {
     try {
-        const { startDate, endDate } = await req.json();
-        console.log(new Date(startDate))
-        console.log(new Date(endDate))
+        const { startDate, endDate, startingAmount } = await req.json();
         const existing = await getPeriodByStartDate(startDate);
         if (existing) {
-            console.log(existing);
             return jsonWithCors(existing);
         }
-        console.log("no existing period found, creating one...")
-        const created = await createPeriod({startDate, endDate});
+
+        const created = await createPeriod({startDate, endDate, startingAmount});
         return jsonWithCors(created, 201);
     } catch (error) {
-        console.error('Error in find-or-create period:', error);
         return jsonWithCors({ error: 'Internal server error' }, 500);
     }
 }
