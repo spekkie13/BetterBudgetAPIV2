@@ -50,6 +50,24 @@ export default function HomePage() {
         log(`Created expense: ${JSON.stringify(data)}`)
     }
 
+    const createIncome = async () => {
+        const dateStr = "31/07/2025"
+        const [Day, Month, Year] = dateStr.split('/').map(Number);
+        const date = new Date(Date.UTC(Year, Month - 1, Day));
+
+        const res = await fetch('/api/incomes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                amount: 123.45,
+                date: date,
+                userId: 1,
+            }),
+        })
+        const data = await res.json()
+        log(`Created income: ${JSON.stringify(data)}`)
+    }
+
     const updateResult = async () => {
         const resultId = 85;
         const userId = 2;
@@ -80,6 +98,7 @@ export default function HomePage() {
             <div className="space-x-2">
                 <button onClick={createPeriod} className="btn">Create Period</button>
                 <button onClick={createExpense} className="btn">Create Expense</button>
+                <button onClick={createIncome} className="btn">Create Income</button>
                 <button onClick={updateResult} className="btn">Update Result</button>
             </div>
 

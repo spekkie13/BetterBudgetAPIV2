@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { corsHeaders, jsonWithCors } from '@/lib/cors';
 import { createIncome, getAllIncomes, getIncomeById, getIncomesByPeriod } from '@/lib/services/incomeService';
-import { createPeriodIfNotExists, getPeriodById } from '@/lib/services/periodService';
-import {createBudgetIfNotExists} from "@/lib/services/budgetService";
-import {createResultIfNotExists} from "@/lib/services/resultService";
+import { getPeriodById } from '@/lib/services/periodService';
+
 
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
@@ -50,13 +49,9 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
+        console.log(body);
         const { date, ...rest } = body;
         const parsedDate = new Date(date);
-        const startingAmount = rest.startingAmount
-
-        let period = await createPeriodIfNotExists(parsedDate, startingAmount);
-        await createBudgetIfNotExists(period, rest)
-        await createResultIfNotExists(period, rest)
 
         const incomeData = {
             amount: Number(rest.amount),
