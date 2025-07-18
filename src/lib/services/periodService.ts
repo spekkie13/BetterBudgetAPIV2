@@ -3,6 +3,16 @@ import {periods} from "@/lib/db/schema";
 import {desc, eq, lte} from "drizzle-orm";
 import {Period} from "@/models/period";
 
+export async function getSecondMostRecentPeriod(){
+    const result = await db
+        .select()
+        .from(periods)
+        .orderBy(desc(periods.endDate))
+        .limit(1)
+
+    return result[0] ?? null;
+}
+
 export async function getPeriodById(id: number) {
     const result = await db
         .select()

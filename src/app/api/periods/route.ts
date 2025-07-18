@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { corsHeaders, jsonWithCors } from '@/lib/cors';
 import * as periodService from '@/lib/services/periodService';
 import { getMostRecentExpense, getExpenseDatesByCategory } from '@/lib/services/expenseService';
+import {getSecondMostRecentPeriod} from "@/lib/services/periodService";
 
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
@@ -72,7 +73,8 @@ export async function GET(req: NextRequest) {
             return jsonWithCors(period)
         }
 
-        return jsonWithCors({ error: 'Must provide periodId or categoryId' }, 400);
+        const period = await getSecondMostRecentPeriod()
+        return jsonWithCors(period, 200);
     } catch (error) {
         console.error('Error fetching periods:', error);
         return jsonWithCors({ error: 'Internal server error' }, 500);
