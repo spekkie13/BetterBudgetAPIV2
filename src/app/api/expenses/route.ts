@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { corsHeaders, jsonWithCors } from '@/lib/cors';
 import { createExpense, getAllExpenses, getExpenseById, getExpensesByCategory, getExpensesByUserAndCategoryAndPeriod, getExpensesByUserAndPeriod } from '@/lib/services/expenseService';
-import {calculatePeriodRange, createPeriod, getPeriodByExpenseDate, getPeriodById} from '@/lib/services/periodService';
+import {
+    createPeriodIfNotExists,
+    getPeriodById
+} from '@/lib/services/periodService';
 import { Decimal } from '@prisma/client/runtime/library';
-import {createBudget, getBudgetByPeriodAndCategory} from "@/lib/services/budgetService";
-import {createResult, getResultsByPeriodAndCategory} from "@/lib/services/resultService";
+import {createBudgetIfNotExists} from "@/lib/services/budgetService";
+import {createResultIfNotExists} from "@/lib/services/resultService";
 
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
@@ -68,43 +71,9 @@ export async function POST(req: NextRequest) {
         const parsedDate = new Date(date);
         const startingAmount = rest.startingAmount
 
-        let period = await getPeriodByExpenseDate(parsedDate)
-
-        if (!period) {
-            const { startDate, endDate } = calculatePeriodRange(parsedDate)
-            period = await createPeriod({startDate, endDate, startingAmount})
-        }
-
-        let budget = await getBudgetByPeriodAndCategory(
-            Number(rest.userId),
-            Number(rest.categoryId),
-            period.id
-        )
-        if (!budget) {
-            budget = await createBudget({
-                userId: Number(rest.userId),
-                categoryId: Number(rest.categoryId),
-                periodId: period.id,
-                amount: 1000
-            })
-            console.log('budget ', budget)
-        }
-
-        let result = await getResultsByPeriodAndCategory(
-            Number(rest.userId),
-            Number(rest.categoryId),
-            period.id
-        )
-        if (!result) {
-            result = await createResult({
-                userId: Number(rest.userId),
-                categoryId: Number(rest.categoryId),
-                periodId: period.id,
-                totalSpent: 0,
-                percentageSpent: 0
-            })
-            console.log('created: ', result)
-        }
+        let period = await createPeriodIfNotExists(parsedDate, startingAmount);
+        await createBudgetIfNotExists(period, rest)
+        await createResultIfNotExists(period, rest)
 
         const expenseData = {
             ...rest,

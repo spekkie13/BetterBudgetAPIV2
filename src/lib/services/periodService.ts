@@ -1,6 +1,7 @@
 import { db } from "../db/client";
 import {periods} from "@/lib/db/schema";
 import {desc, eq, lte} from "drizzle-orm";
+import {Period} from "@/models/period";
 
 export async function getPeriodById(id: number) {
     const result = await db
@@ -12,13 +13,13 @@ export async function getPeriodById(id: number) {
     return result[0] ?? null;
 }
 
-export async function getPeriodByExpenseDate(expenseDate?: Date) {
-    if (!expenseDate) return null
+export async function getPeriodByDate(date?: Date) {
+    if (!date) return null
 
     const result = await db
         .select()
         .from(periods)
-        .where(lte(periods.startDate, expenseDate))
+        .where(lte(periods.startDate, date))
         .orderBy(desc(periods.endDate))
         .limit(1)
     return result[0] ?? null;
@@ -90,6 +91,21 @@ export function calculatePeriodRange(date: Date) {
     const year = date.getFullYear()
     const month = date.getMonth() // 0-11
     const startDate = new Date(year, month, 1)
-    const endDate = new Date(year, month + 1, 0) // laatste dag van de maand
+    const endDate = new Date(year, month + 1, 0)
     return { startDate, endDate }
+}
+
+export async function createPeriodIfNotExists(parsedDate: Date, startingAmount: number){
+    let period = await getPeriodByDate(parsedDate)
+
+    if (!period) {
+        const { startDate, endDate } = calculatePeriodRange(parsedDate)
+        period = await createPeriod({startDate, endDate, startingAmount})
+    }
+
+    const periodData = {
+        ...period,
+        startingAmount: Number(startingAmount),
+    }
+    return new Period(periodData);
 }

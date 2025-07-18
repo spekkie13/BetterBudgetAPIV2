@@ -1,6 +1,7 @@
 import {db} from "@/lib/db/client";
 import {results} from "@/lib/db/schema";
 import {and, eq} from "drizzle-orm";
+import {Period} from "@/models/period";
 
 export async function getResultById(userId: number, id: number) {
     const result = await db
@@ -99,4 +100,24 @@ export async function updateResult(data: {
         .returning();
 
     return updated;
+}
+
+export async function createResultIfNotExists(period: Period, rest: any) {
+    let result = await getResultsByPeriodAndCategory(
+        Number(rest.userId),
+        Number(rest.categoryId),
+        period.id
+    )
+    if (!result) {
+        result = await createResult({
+            userId: Number(rest.userId),
+            categoryId: Number(rest.categoryId),
+            periodId: period.id,
+            totalSpent: 0,
+            percentageSpent: 0
+        })
+        console.log('created: ', result)
+    }
+
+    return result
 }

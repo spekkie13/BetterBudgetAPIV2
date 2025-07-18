@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
                 date = latestExpense.date;
             }
 
-            const period = await periodService.getPeriodByExpenseDate(date);
+            const period = await periodService.getPeriodByDate(date);
             return jsonWithCors(period ?? {});
         }
 
@@ -50,7 +50,7 @@ export async function GET(req: NextRequest) {
             const periods: any[] = [];
 
             for (const { date } of expenses) {
-                const period = await periodService.getPeriodByExpenseDate(date);
+                const period = await periodService.getPeriodByDate(date);
                 if (period && !seen.has(period.id)) {
                     seen.add(period.id);
                     periods.push(period);
@@ -63,7 +63,7 @@ export async function GET(req: NextRequest) {
         // 4. Pass in a date
         if (dateParam){
             const date = new Date(dateParam);
-            const period = await periodService.getPeriodByExpenseDate(date);
+            const period = await periodService.getPeriodByDate(date);
 
             if(!period){
                 return jsonWithCors({ error: 'Could not find a period for the given date'}, 404)

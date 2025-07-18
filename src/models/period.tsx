@@ -1,21 +1,21 @@
-export class Period implements IDateObj{
+export class Period implements IPeriod{
     id: number
-    year: number
-    month: number
-    day: number
+    startDate: Date
+    endDate: Date
+    startingAmount: number
 
-    constructor(data : IDateObj)
+    constructor(data : IPeriod)
     {
         this.id = data.id
-        this.year = data.year
-        this.month = data.month
-        this.day = data.day
+        this.startDate = data.startDate
+        this.endDate = data.endDate
+        this.startingAmount = data.startingAmount
     }
 }
 
-interface IDateObj {
+interface IPeriod {
     id: number,
-    year: number,
-    month: number,
-    day: number,
+    startDate: Date,
+    endDate: Date,
+    startingAmount: number,
 }

@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { corsHeaders, jsonWithCors } from '@/lib/cors';
-import {
-    createIncome,
-    getAllIncomes,
-    getIncomeById,
-    getIncomesByPeriod,
-} from '@/lib/services/incomeService';
-import { getPeriodById } from '@/lib/services/periodService';
+import { createIncome, getAllIncomes, getIncomeById, getIncomesByPeriod } from '@/lib/services/incomeService';
+import { createPeriodIfNotExists, getPeriodById } from '@/lib/services/periodService';
+import {createBudgetIfNotExists} from "@/lib/services/budgetService";
+import {createResultIfNotExists} from "@/lib/services/resultService";
 
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
@@ -53,12 +50,25 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const newIncome = await createIncome(body);
+        const { date, ...rest } = body;
+        const parsedDate = new Date(date);
+        const startingAmount = rest.startingAmount
 
+        let period = await createPeriodIfNotExists(parsedDate, startingAmount);
+        await createBudgetIfNotExists(period, rest)
+        await createResultIfNotExists(period, rest)
+
+        const incomeData = {
+            amount: Number(rest.amount),
+            date: parsedDate.toISOString(),  // Use constructed and validated date
+            userId: Number(rest.userId),
+        };
+
+        const newIncome = await createIncome(incomeData);
         return jsonWithCors(newIncome, 201);
     } catch (error) {
-        console.error('Error creating income:', error);
-        return jsonWithCors({ error: 'Failed to create income' }, 400);
+        console.error('Error creating expense:', error);
+        return jsonWithCors({ error: 'Failed to create expense' }, 400);
     }
 }
 

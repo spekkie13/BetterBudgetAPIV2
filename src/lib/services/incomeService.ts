@@ -34,12 +34,14 @@ export async function getIncomeById(userId: number, id: number) {
     return result[0] ?? null;
 }
 
-export async function createIncome(data: { amount: number; date: Date; userId: number; }) {
+export async function createIncome(data: { amount: number; date: Date | string; userId: number; }) {
+    const actualDate = new Date(data.date);
+
     const [createIncome] = await db
         .insert(incomes)
         .values({
             amount: data.amount.toString(),
-            date: data.date,
+            date: actualDate,
             userId: data.userId
         })
         .returning({
