@@ -8,9 +8,9 @@ export async function getSecondMostRecentPeriod(){
         .select()
         .from(periods)
         .orderBy(desc(periods.endDate))
-        .limit(1)
+        .limit(2)
 
-    return result[0] ?? null;
+    return result[1] ?? null;
 }
 
 export async function getPeriodById(id: number) {
