@@ -14,10 +14,6 @@ export class Budget implements IPeriodBudget{
         this.month = data.month
         this.userId = data.userId
     }
-
-    public ToString() : string{
-        return `PeriodBudget - Id: ${this.id}, Budget: ${this.budget}, Category Id: ${this.categoryId}, Year: ${this.year}, Month: ${this.month}, User ID: ${this.userId}`
-    }
 }
 
 interface IPeriodBudget{

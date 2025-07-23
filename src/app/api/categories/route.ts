@@ -1,42 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { corsHeaders, jsonWithCors } from '@/lib/cors';
+import { corsHeaders } from '@/lib/cors';
+import { ok, fail } from '@/lib/utils/apiResponse'
 import * as categoryService from '@/lib/services/categoryService';
+import {isValid} from "@/lib/helpers";
 
 // GET /api/categories?userId=... or with &id=... or &name=...
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const userIdParam = searchParams.get('userId');
-    const idParam = searchParams.get('id');
-    const nameParam = searchParams.get('name');
+    if (!isValid(userIdParam)) return fail('User ID is required', 400);
+
+    const userId = parseInt(userIdParam!);
+    if (isNaN(userId)) return fail('User ID is invalid', 400);
 
     try {
-        if (!userIdParam) {
-            return jsonWithCors({ error: 'User ID is required' }, 400);
-        }
+        const idParam = searchParams.get('id');
+        const nameParam = searchParams.get('name');
 
-        const userId = parseInt(userIdParam);
-        if (isNaN(userId)) {
-            return jsonWithCors({ error: 'User ID is invalid' }, 400);
-        }
-
-        if (idParam) {
-            const id = parseInt(idParam);
-            if (isNaN(id)) return jsonWithCors({ error: 'Invalid category ID' }, 400);
+        if (isValid(idParam)) {
+            const id = parseInt(idParam!);
+            if (isNaN(id)) return fail('Invalid category ID', 400);
 
             const category = await categoryService.getCategoryById(id, userId);
-            return jsonWithCors(category || {});
+            return ok(category ?? {}, 'Category fetched')
         }
 
-        if (nameParam) {
+        if (isValid(nameParam)) {
             const category = await categoryService.getCategoryByName(nameParam, userId);
-            return jsonWithCors(category || {});
+            return ok(category ?? {}, 'Category fetched')
         }
 
         const allCategories = await categoryService.getAllCategories(userId);
-        return jsonWithCors(allCategories);
+        return ok(allCategories, 'Categories fetched')
     } catch (error) {
         console.error('Error fetching categories:', error);
-        return jsonWithCors({ error: 'Internal server error' }, 500);
+        return fail('Internal server error', 500);
     }
 }
 
@@ -44,17 +42,11 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const newCategory = await categoryService.createCategory({
-            name: body.name,
-            color: body.color,
-            icon: body.icon,
-            userId: body.userId,
-        });
-
-        return jsonWithCors(newCategory, 201);
+        const newCategory = await categoryService.createCategory(body);
+        return ok(newCategory, 'Category created', 201);
     } catch (error) {
         console.error('Error creating category:', error);
-        return jsonWithCors({ error: 'Failed to create category' }, 400);
+        return fail('Failed to create category', 400);
     }
 }
 

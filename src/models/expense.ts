@@ -18,11 +18,6 @@ export class Expense implements IExpense{
     this.isRecurring = data.isRecurring
     this.userId = data.userId
   }
-
-  public ToString() : string {
-    return `Expense - Date: ${this.date}, Amount: ${this.amount}, Description: ${this.description}, CategoryId: ${this.categoryId}, Is recurring: ${this.isRecurring}, User ID: ${this.userId})`
-  }
-
 }
 
 interface IExpense {
