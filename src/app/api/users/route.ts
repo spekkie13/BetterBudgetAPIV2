@@ -1,7 +1,9 @@
 // File: /app/api/users/route.ts
 import {NextRequest, NextResponse} from 'next/server';
-import {corsHeaders, jsonWithCors} from "@/lib/cors";
+import {corsHeaders} from "@/lib/cors";
 import {createUser, getUserByEmail, getUserById, getUsers, getUsersByTeamId} from "@/lib/services/userService";
+import { isValid } from '@/lib/helpers'
+import { ok, fail } from '@/lib/utils/apiResponse'
 
 // Handle OPTIONS preflight
 export async function OPTIONS() {
@@ -19,31 +21,26 @@ export async function GET(req: NextRequest) {
     const email = searchParams.get('email');
 
     try {
-        if (userIdParam) {
-            const userId = parseInt(userIdParam);
-            if (isNaN(userId)) return jsonWithCors({ error: 'Invalid userId' }, 400);
-
+        if (userIdParam && !isNaN(parseInt(userIdParam))) {
+            const userId = parseInt(userIdParam!);
             const user = await getUserById(userId);
-            return jsonWithCors(user ? user : {});
+            return user ? ok(user) : fail('No user with id ' + userId);
         }
-        if (teamIdParam) {
-            const teamId = parseInt(teamIdParam);
-            if (isNaN(teamId)) return jsonWithCors({ error: 'Invalid teamId' }, 400);
-
+        if (teamIdParam && !isNaN(parseInt(teamIdParam))) {
+            const teamId = parseInt(teamIdParam!);
             const users = await getUsersByTeamId(teamId);
-            return jsonWithCors(users);
+            return users ? ok(users) : fail('No users found in team ', teamId);
         }
-        if (email) {
+        if (email && isValid(email)) {
             const user = await getUserByEmail(email);
-            return jsonWithCors(user);
+            return user ? ok(user) : fail('No user with email ' + email);
         }
 
         const allUsers = await getUsers()
-
-        return jsonWithCors(allUsers);
+        return allUsers ? ok(allUsers) : fail('No users found')
     } catch (error) {
         console.error('Error fetching users:', error);
-        return jsonWithCors({ error: 'Internal server error' }, 500);
+        return fail('Internal server error', 500)
     }
 }
 
@@ -58,9 +55,9 @@ export async function POST(req: NextRequest) {
             teamId: body.teamId || null,
         })
 
-        return jsonWithCors(newUser, 201);
+        return ok(newUser, 'New user created successfully', 201)
     } catch (error) {
         console.error('Error creating user:', error);
-        return jsonWithCors({ error: 'Failed to create user' }, 400);
+        return fail('Internal server error', 500)
     }
 }

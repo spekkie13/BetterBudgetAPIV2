@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { corsHeaders, jsonWithCors } from '@/lib/cors';
+import { corsHeaders } from '@/lib/cors';
 import { createIncome, getAllIncomes, getIncomeById, getIncomesByPeriod } from '@/lib/services/incomeService';
 import { getPeriodById } from '@/lib/services/periodService';
+import {isValid} from "@/lib/helpers";
+import { ok, fail } from '@/lib/utils/apiResponse'
 
 
 export async function GET(req: NextRequest) {
@@ -11,38 +13,33 @@ export async function GET(req: NextRequest) {
     const periodIdParam = searchParams.get('periodId');
 
     try {
-        if (!userIdParam) {
-            return jsonWithCors({ error: 'User ID is required' }, 400);
-        }
-        const userId = parseInt(userIdParam);
-        if (isNaN(userId)) {
-            return jsonWithCors({ error: 'User ID is invalid' }, 400);
-        }
+        if (!isValid(userIdParam) || isNaN(parseInt(userIdParam))) return fail('Provide a valid user ID')
+        const userId = parseInt(userIdParam!);
 
         if (idParam) {
-            const id = parseInt(idParam);
-            if (isNaN(id)) return jsonWithCors({ error: 'Invalid income ID' }, 400);
+            const id = parseInt(idParam!);
+            if (isNaN(id)) return fail('Invalid income ID');
 
             const income = await getIncomeById(userId, id);
-            return jsonWithCors(income ? income : {});
+            return income ? ok(income) : fail('No income found', 404)
         }
 
         if (periodIdParam) {
             const periodId = parseInt(periodIdParam);
-            if (isNaN(periodId)) return jsonWithCors({ error: 'Invalid periodId' }, 400);
+            if (isNaN(periodId)) return fail('Invalid periodId');
 
             const period = await getPeriodById(periodId);
-            if (!period) return jsonWithCors({});
+            if (!period) return fail('No period found', 404)
 
             const incomes = await getIncomesByPeriod(userId, period);
-            return jsonWithCors(incomes);
+            return incomes ? ok(incomes) : fail('No incomes found', 404)
         }
 
         const allIncomes = await getAllIncomes(userId);
-        return jsonWithCors(allIncomes);
+        return allIncomes ? ok(allIncomes) : fail('No incomes found for user: ' + userId, 404)
     } catch (error) {
         console.error('Error fetching incomes:', error);
-        return jsonWithCors({ error: 'Internal server error' }, 500);
+        return fail('Failed to fetch incomes')
     }
 }
 
@@ -60,10 +57,10 @@ export async function POST(req: NextRequest) {
         };
 
         const newIncome = await createIncome(incomeData);
-        return jsonWithCors(newIncome, 201);
+        return ok(newIncome, 'Successfully created new income', 201)
     } catch (error) {
         console.error('Error creating expense:', error);
-        return jsonWithCors({ error: 'Failed to create expense' }, 400);
+        return fail('Failed to create income')
     }
 }
 

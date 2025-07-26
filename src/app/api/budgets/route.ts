@@ -6,7 +6,7 @@ import {
     getBudgetByPeriodAndCategory,
     getBudgetsByCategoryId,
     getBudgetsByPeriodId,
-    createBudget
+    createBudget, getAllBudgets
 } from '@/lib/services';
 import { isValid } from '@/lib/helpers';
 
@@ -57,7 +57,8 @@ export async function GET(req: NextRequest) {
             return ok(budget ?? {}, 'Budget fetched by id');
         }
 
-        return fail('Must provide budgetId, categoryId, or periodId', 400);
+        const budgets = await getAllBudgets(userId)
+        return ok(budgets,'Fetched all budgets');
     } catch (error: any) {
         console.error('Error fetching budgets:', error);
         return fail('Internal server error', 500);

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { corsHeaders, jsonWithCors } from '@/lib/cors';
-import * as periodService from '@/lib/services/periodService';
+import { corsHeaders } from '@/lib/cors';
 import { getMostRecentExpense, getExpenseDatesByCategory } from '@/lib/services/expenseService';
-import {getSecondMostRecentPeriod} from "@/lib/services/periodService";
+import {createPeriod, getPeriodByDate, getPeriodById, getSecondMostRecentPeriod} from "@/lib/services/periodService";
+import { ok, fail } from '@/lib/utils/apiResponse'
 
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
@@ -12,72 +12,66 @@ export async function GET(req: NextRequest) {
     const dateParam = searchParams.get('date');
 
     const userId = userIdParam ? parseInt(userIdParam) : NaN;
-    if (isNaN(userId)) {
-        return jsonWithCors({ error: 'userId is required and must be a number' }, 400);
-    }
+    if (isNaN(userId)) return fail('User ID is required and must be a number')
 
     try {
         // 1. Get period by ID
         if (periodIdParam) {
             const periodId = parseInt(periodIdParam);
-            if (isNaN(periodId)) return jsonWithCors({ error: 'Invalid periodId' }, 400);
+            if (isNaN(periodId)) return fail('Period Id is required and must be a number')
 
-            const period = await periodService.getPeriodById(periodId);
-            return jsonWithCors(period ?? {});
+            const period = await getPeriodById(periodId);
+            return period ? ok(period) : fail('Could not find a period', 404)
         }
 
         // 2. Get most recent period for category
         if (categoryIdParam && req.url.includes('recent')) {
             const categoryId = parseInt(categoryIdParam);
             let date = new Date()
-            if (isNaN(categoryId)) return jsonWithCors({ error: 'Invalid categoryId' }, 400);
+            if (isNaN(categoryId)) return fail('Category ID is required and must be a number')
 
             const latestExpense = await getMostRecentExpense(userId, categoryId);
             if (latestExpense) {
                 date = latestExpense.date;
             }
 
-            const period = await periodService.getPeriodByDate(date);
-            return jsonWithCors(period ?? {});
+            const period = await getPeriodByDate(date);
+            return period ? ok(period) : fail('Could not find a period', 404)
         }
 
         // 3. Get all periods with expenses for category
         if (categoryIdParam) {
             const categoryId = parseInt(categoryIdParam);
-            if (isNaN(categoryId)) return jsonWithCors({ error: 'Invalid categoryId' }, 400);
+            if (isNaN(categoryId)) return fail('Category ID is required and must be a number')
 
             const expenses = await getExpenseDatesByCategory(userId, categoryId);
             const seen = new Set<number>();
             const periods: any[] = [];
 
             for (const { date } of expenses) {
-                const period = await periodService.getPeriodByDate(date);
+                const period = await getPeriodByDate(date);
                 if (period && !seen.has(period.id)) {
                     seen.add(period.id);
                     periods.push(period);
                 }
             }
 
-            return jsonWithCors(periods);
+            return periods ? ok(periods) : fail('No periods found', 404)
         }
 
         // 4. Pass in a date
         if (dateParam){
             const date = new Date(dateParam);
-            const period = await periodService.getPeriodByDate(date);
+            const period = getPeriodByDate(date);
 
-            if(!period){
-                return jsonWithCors({ error: 'Could not find a period for the given date'}, 404)
-            }
-
-            return jsonWithCors(period)
+            return period ? ok(period) : fail('Could not find a period', 404)
         }
 
         const period = await getSecondMostRecentPeriod()
-        return jsonWithCors(period, 200);
+        return period ? ok(period) : fail('Invalid period')
     } catch (error) {
         console.error('Error fetching periods:', error);
-        return jsonWithCors({ error: 'Internal server error' }, 500);
+        return fail('Internal server error', 500)
     }
 }
 
@@ -85,16 +79,16 @@ export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
 
-        const newPeriod = await periodService.createPeriod({
+        const newPeriod = await createPeriod({
             startDate: new Date(body.startDate),
             endDate: new Date(body.endDate),
             startingAmount: parseInt(body.startingAmount),
         });
 
-        return jsonWithCors(newPeriod, 201);
+        return ok(newPeriod, 'Successfully created period', 201);
     } catch (error) {
         console.error('Error creating period:', error);
-        return jsonWithCors({ error: 'Failed to create period' }, 400);
+        return fail('Internal server error', 500)
     }
 }
 

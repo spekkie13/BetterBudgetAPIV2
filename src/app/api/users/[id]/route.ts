@@ -1,7 +1,7 @@
-// File: /app/api/users/[id]/route.ts
-import {corsHeaders, jsonWithCors} from '@/lib/cors';
+import {corsHeaders} from '@/lib/cors';
 import {NextRequest, NextResponse} from 'next/server';
 import {deleteUserById, getUserByEmail, getUserById, updateUser} from "@/lib/services/userService";
+import { ok, fail } from '@/lib/utils/apiResponse'
 
 // Handle OPTIONS preflight
 export async function OPTIONS() {
@@ -18,14 +18,14 @@ export async function GET(req: NextRequest) {
 
     if(userIdParam) {
         const userId = parseInt(userIdParam);
-        if (isNaN(userId)) return jsonWithCors({ error: 'invalid UserID'}, 400)
+        if (isNaN(userId)) return fail('Provide a valid user ID')
         const user = await getUserById(userId)
-        return jsonWithCors(user || {}, user ? 200 : 404);
+        return user ? ok(user) : fail('user not found', 404)
     }
 
     if(email){
         const user = await getUserByEmail(email);
-        return jsonWithCors(user || {}, user ? 200 : 404)
+        return user ? ok(user) : fail('user not found', 404);
     }
 
 }
@@ -42,7 +42,7 @@ export async function PUT(req: NextRequest) {
             id,
             ...body
         });
-        return jsonWithCors(updatedUser);
+        return ok(updatedUser);
     }
 }
 
@@ -53,6 +53,6 @@ export async function DELETE(req: NextRequest) {
     if (idParam) {
         const id = parseInt(idParam);
         await deleteUserById(id)
-        return jsonWithCors({ message: 'User deleted' });
+        return ok({}, 'User deleted')
     }
 }

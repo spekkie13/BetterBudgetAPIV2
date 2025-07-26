@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { corsHeaders, jsonWithCors } from '@/lib/cors';
+import { corsHeaders } from '@/lib/cors';
 import { createUserPreference, getUserPreferenceByName, getUserPreferencesByUserId, saveCategorySlots } from '@/lib/services/preferenceService';
+import { ok, fail } from "@/lib/utils/apiResponse";
 
 export async function OPTIONS() {
     return new NextResponse(null, {
@@ -18,17 +19,17 @@ export async function GET(req: NextRequest) {
         if(!isNaN(userId)){
             if(preferenceName){
                 const pref = await getUserPreferenceByName(preferenceName, userId);
-                return jsonWithCors(pref || {}, pref ? 200 : 404);
+                return pref ? ok(pref) : fail('Invalid user preference', 404);
             }
 
             const preferences = await getUserPreferencesByUserId(userId);
-            return jsonWithCors(preferences)
+            return preferences ? ok(preferences) : fail('Invalid user preference', 404);
         }
 
-        return jsonWithCors({ error: 'Invalid query params' }, 400);
+        return fail('Invalid query params', 400)
     } catch (error) {
         console.error('Error fetching preferences:', error);
-        return jsonWithCors({ error: 'Internal server error' }, 500);
+        return fail('Internal server error', 500)
     }
 }
 
@@ -36,10 +37,10 @@ export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
         const created = await createUserPreference(body);
-        return jsonWithCors(created, 201);
+        return ok(created, 'Successfully created user preference', 201);
     } catch (error) {
         console.error('Error creating preference:', error);
-        return jsonWithCors({ error: 'Failed to create preference' }, 400);
+        return fail('Internal server error', 500)
     }
 }
 
@@ -48,13 +49,13 @@ export async function PATCH(req: NextRequest) {
         const { userId, preferences } = await req.json();
 
         if (!userId || !Array.isArray(preferences)) {
-            return jsonWithCors({ error: 'Invalid input' }, 400);
+            return fail('Invalid input', 404);
         }
 
         await saveCategorySlots(userId, preferences);
-        return jsonWithCors({ success: true });
+        return ok({}, 'Successfully updated user preference', 201);
     } catch (e) {
         console.error('PATCH error:', e);
-        return jsonWithCors({ error: 'Failed bulk update' }, 500);
+        return fail('Internal server error', 500)
     }
 }

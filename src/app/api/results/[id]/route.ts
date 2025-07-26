@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { corsHeaders, jsonWithCors } from '@/lib/cors';
+import { corsHeaders } from '@/lib/cors';
 import {deleteResultById, getResultById, updateResult} from '@/lib/services/resultService';
+import { ok, fail } from '@/lib/utils/apiResponse'
+import { isValid } from '@/lib/helpers'
 
 // GET /api/results/[id]?id=...
 export async function GET(req: NextRequest) {
@@ -8,19 +10,15 @@ export async function GET(req: NextRequest) {
     const idParam = searchParams.get('id');
     const userIdParam = searchParams.get('userId');
 
-    if (idParam && userIdParam) {
-        const id = parseInt(idParam);
-        const userId = parseInt(userIdParam);
-        if (isNaN(id)) return jsonWithCors({ error: 'Invalid ID' }, 400);
+    if (!isValid(userIdParam) || !isValid(idParam)) return fail('Provide a valid user ID')
 
-        const results = await getResultById(userId, id)
+    const id = parseInt(idParam!);
+    const userId = parseInt(userIdParam!);
 
-        if (!results){
-            return jsonWithCors({ error: 'No results found'}, 404)
-        }
+    if (isNaN(id)) return fail('Invalid ID', 400);
 
-        return jsonWithCors(results)
-    }
+    const results = await getResultById(userId, id)
+    return results ? ok(results) : fail('No results found', 404)
 }
 
 // PUT /api/results/[id]?id=...
@@ -29,10 +27,10 @@ export async function PUT(req: NextRequest) {
         const body = await req.json();
         const updated = await updateResult(body)
 
-        return jsonWithCors(updated, 200);
+        ok(updated)
     } catch (error) {
         console.error('Error updating result:', error);
-        return jsonWithCors({ error: 'Failed to update result' }, 400);
+        return fail('Failed updating result:');
     }
 }
 
@@ -43,10 +41,10 @@ export async function DELETE(req: NextRequest) {
 
     if (idParam) {
         const id = parseInt(idParam);
-        if (isNaN(id)) return jsonWithCors({ error: 'Invalid ID' }, 400);
+        if (isNaN(id)) return fail('Provide a valid id')
 
         await deleteResultById(id);
-        return jsonWithCors({ message: 'Result deleted' });
+        return ok({}, 'Result deleted')
     }
 }
 

@@ -3,6 +3,14 @@ import {budgets} from '@/lib/db/schema';
 import {and, asc, eq} from "drizzle-orm";
 import {Period} from "@/models/period"; // the schema you defined
 
+export async function getAllBudgets(userId: number){
+    const result = await db
+        .select()
+        .from(budgets)
+        .where(eq(budgets.userId, userId))
+
+    return result ?? null
+}
 // ✅ Get a single budget by ID and userId (using findFirst for compound filter)
 export async function getBudgetById(userId: number, id: number) {
     const result = await db

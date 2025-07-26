@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { corsHeaders, jsonWithCors } from '@/lib/cors'
+import { corsHeaders } from '@/lib/cors'
 import { createCategoryWithInitialBudget } from '@/lib/services/categoryService'
+import { ok, fail } from '@/lib/utils/apiResponse'
 
 // POST /api/categories-with-budget
 export async function POST(req: NextRequest) {
@@ -8,9 +9,7 @@ export async function POST(req: NextRequest) {
         const body = await req.json()
 
         // Basic shape validation (optional: use zod or schema validation here)
-        if (!body.category || !body.budget) {
-            return jsonWithCors({ error: 'Missing category or budget data' }, 400)
-        }
+        if (!body.category || !body.budget) return fail('Missing category or budget data', 400)
 
         const result = await createCategoryWithInitialBudget({
             category: {
@@ -32,10 +31,10 @@ export async function POST(req: NextRequest) {
             }
         })
 
-        return jsonWithCors(result, 201)
+        return ok(result, 'Budget created successfully', 201)
     } catch (error) {
         console.error('Error creating category with budget:', error)
-        return jsonWithCors({ error: 'Failed to create category and budget' }, 400)
+        return fail('Failed to create category and budget', 400)
     }
 }
 

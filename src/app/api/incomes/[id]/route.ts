@@ -1,36 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { corsHeaders, jsonWithCors } from '@/lib/cors';
+import { corsHeaders } from '@/lib/cors';
 import { deleteIncomeById, updateIncome } from '@/lib/services/incomeService';
+import { isValid } from '@/lib/helpers'
+import { ok, fail } from '@/lib/utils/apiResponse'
 
 export async function PUT(req: NextRequest) {
     try {
         const body = await req.json();
         const id = body.id;
 
-        if (!id || isNaN(id)) {
-            return jsonWithCors({ error: 'Missing or invalid ID' }, 400);
-        }
+        if (!isValid(id)) return fail('id is required');
 
         const updated = await updateIncome(body);
-        return jsonWithCors(updated);
+        return ok(updated);
     } catch (error) {
         console.error('Error updating income:', error);
-        return jsonWithCors({ error: 'Failed to update income' }, 400);
+        return fail('Failed to update income')
     }
 }
 
 export async function DELETE(req: NextRequest) {
     try {
         const { id } = await req.json();
-        if (!id || isNaN(id)) {
-            return jsonWithCors({ error: 'Missing or invalid ID' }, 400);
-        }
+        if (!isValid(id)) return fail('Provide a valid ID');
 
-        await deleteIncomeById(id);
-        return jsonWithCors({ message: 'Income deleted' });
+        await deleteIncomeById(parseInt(id));
+        return ok({}, 'Successfully deleted income');
     } catch (error) {
         console.error('Error deleting income:', error);
-        return jsonWithCors({ error: 'Failed to delete income' }, 400);
+        return fail('Failed to delete income')
     }
 }
 
