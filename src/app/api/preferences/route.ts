@@ -16,6 +16,7 @@ export async function GET(req: NextRequest) {
     const preferenceName = searchParams.get('preferenceName');
 
     try {
+        console.log(userId)
         if(!isNaN(userId)){
             if(preferenceName){
                 const pref = await getUserPreferenceByName(preferenceName, userId);
