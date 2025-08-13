@@ -52,7 +52,6 @@ export async function POST(req: NextRequest) {
             email: body.email,
             username: body.username,
             name: body.name,
-            teamId: body.teamId || null,
         })
 
         return ok(newUser, 'New user created successfully', 201)

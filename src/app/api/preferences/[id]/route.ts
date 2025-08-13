@@ -1,50 +1,93 @@
-import {NextRequest, NextResponse} from "next/server";
-import {corsHeaders, jsonWithCors} from "@/lib/cors";
-import {deleteUserPreferenceById, getUserPreferenceById, updateUserPreference} from "@/lib/services/preferenceService";
+// app/api/user-settings/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+import { corsHeaders, jsonWithCors } from '@/lib/cors';
+import {
+    getUserSettingsByUserId,
+    upsertUserSettings,
+    patchUserSettings,
+    // If you didn't add this yet, it's a simple delete-by-userId in the service.
+    deleteUserSettingsByUserId,
+} from '@/lib/services/userSettingsService';
 
-export async function GET(req: NextRequest){
+// GET /api/user-settings?userId=123
+export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
-    const preferenceId = parseInt(searchParams.get('preferenceId') || '');
+    const userId = Number(searchParams.get('userId') ?? NaN);
 
-    try{
-        if (!isNaN(preferenceId)){
-            const pref = await getUserPreferenceById(preferenceId);
-            return jsonWithCors(pref || {}, pref ? 200 : 404);
+    try {
+        if (!Number.isInteger(userId)) {
+            return jsonWithCors({ error: 'Invalid or missing userId' }, 400);
         }
 
-        return jsonWithCors({ error: 'Invalid query params' }, 400);
-    }catch(error){
-        console.error('Error fetching preferences:', error);
+        const settings = await getUserSettingsByUserId(userId);
+        return jsonWithCors(settings ?? {}, settings ? 200 : 404);
+    } catch (error) {
+        console.error('Error fetching user settings:', error);
         return jsonWithCors({ error: 'Internal server error' }, 500);
-
     }
 }
 
+// PUT /api/user-settings
+// Body: { userId: number, theme?: 'light'|'dark'|'system', textSize?: 'S'|'M'|'L', preferences?: Record<string, unknown> }
 export async function PUT(req: NextRequest) {
     try {
         const body = await req.json();
-
-        if (!body.id || isNaN(body.id)) {
-            return jsonWithCors({ error: 'Missing or invalid ID' }, 400);
+        const userId = Number(body?.userId ?? NaN);
+        if (!Number.isInteger(userId)) {
+            return jsonWithCors({ error: 'Missing or invalid userId' }, 400);
         }
 
-        const updated = await updateUserPreference(body);
+        const updated = await upsertUserSettings({
+            userId,
+            theme: body?.theme,
+            textSize: body?.textSize,
+            preferences: body?.preferences,
+        });
+
         return jsonWithCors(updated, 200);
     } catch (error) {
-        console.error('Error updating preference:', error);
-        return jsonWithCors({ error: 'Failed to update preference' }, 400);
+        console.error('Error upserting user settings:', error);
+        return jsonWithCors({ error: 'Failed to upsert settings' }, 400);
     }
 }
 
+// PATCH /api/user-settings
+// Body: { userId: number, theme?: string|null, textSize?: string|null, preferences?: Record<string, unknown>|null }
+export async function PATCH(req: NextRequest) {
+    try {
+        const body = await req.json();
+        const userId = Number(body?.userId ?? NaN);
+        if (!Number.isInteger(userId)) {
+            return jsonWithCors({ error: 'Missing or invalid userId' }, 400);
+        }
+
+        const patched = await patchUserSettings(userId, {
+            theme: body?.theme,
+            textSize: body?.textSize,
+            preferences: body?.preferences,
+        });
+
+        return jsonWithCors(patched, 200);
+    } catch (error) {
+        console.error('Error patching user settings:', error);
+        return jsonWithCors({ error: 'Failed to patch settings' }, 400);
+    }
+}
+
+// DELETE /api/user-settings?userId=123
 export async function DELETE(req: NextRequest) {
     const { searchParams } = new URL(req.url);
-    const id = parseInt(searchParams.get('id') || '');
+    const userId = Number(searchParams.get('userId') ?? NaN);
 
-    if (isNaN(id)) return jsonWithCors({ error: 'Invalid ID' }, 400);
+    if (!Number.isInteger(userId)) {
+        return jsonWithCors({ error: 'Invalid userId' }, 400);
+    }
 
     try {
-        await deleteUserPreferenceById(id);
-        return jsonWithCors({ message: 'Deleted' });
+        // If you prefer not to physically delete, you could instead:
+        // await patchUserSettings(userId, { preferences: {} });
+        await deleteUserSettingsByUserId(userId);
+        return jsonWithCors({ message: 'Deleted' }, 200);
     } catch (e) {
         console.error('DELETE error:', e);
         return jsonWithCors({ error: 'Failed to delete' }, 500);
@@ -52,8 +95,5 @@ export async function DELETE(req: NextRequest) {
 }
 
 export async function OPTIONS() {
-    return new NextResponse(null, {
-        status: 204,
-        headers: corsHeaders,
-    });
+    return new NextResponse(null, { status: 204, headers: corsHeaders });
 }

@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
         if (!isValid(body.name)) return fail('Missing team name')
 
         const newTeam = await createTeam({ name: body.name });
-        ok(newTeam, 'Successfully created new team', 201);
+        return ok(newTeam, 'Successfully created new team', 201);
     } catch (error) {
         console.error('Error creating team:', error);
         return fail('Failed to create team')

@@ -12,7 +12,7 @@ export const corsHeaders = {
 }
 
 export function jsonWithCors(data: any, status: number = 200) {
-    const response = NextResponse.json(data, { status })
+    const response = NextResponse.json(data, { status: status })
     Object.entries(corsHeaders).forEach(([key, value]) => {
         response.headers.set(key, value)
     })

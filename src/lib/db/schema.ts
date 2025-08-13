@@ -1,83 +1,132 @@
-import { pgTable, serial, varchar, integer, numeric, timestamp, text, real, primaryKey } from 'drizzle-orm/pg-core';
+import {
+    pgTable, serial, integer, varchar, text, timestamp, boolean, date, pgEnum,
+    jsonb, primaryKey, uniqueIndex, index, bigserial, bigint
+} from 'drizzle-orm/pg-core';
 
-// ---------------------- User Table ----------------------
-export const users = pgTable('User', {
-    id: serial('id').primaryKey(),
-    email: varchar('email', { length: 255 }).unique().notNull(),
-    username: varchar('username', { length: 255 }).unique().notNull(),
-    name: varchar('name', { length: 255 }).notNull(),
-    teamId: integer('teamId'),
-});
+// ---------- Enums ----------
+export const categoryType = pgEnum('category_type', ['expense','income','transfer']);
+export const currencyCode = pgEnum('currency_code', ['USD','EUR','GBP','JPY','CAD','AUD','NZD']);
 
-// ---------------------- Team Table ----------------------
-export const teams = pgTable('Team', {
+// ---------- Teams & Users ----------
+export const teams = pgTable('team', {
     id: serial('id').primaryKey(),
     name: varchar('name', { length: 255 }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
-// ---------------------- Category Table ----------------------
-export const categories = pgTable('Category', {
+export const users = pgTable('app_user', {
     id: serial('id').primaryKey(),
+    email: varchar('email', { length: 255 }).notNull().unique(),
+    username: varchar('username', { length: 255 }).notNull().unique(),
     name: varchar('name', { length: 255 }).notNull(),
-    color: varchar('color', { length: 255 }).notNull(),
-    icon: varchar('icon', { length: 255 }).notNull(),
-    userId: integer('userId').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
-// ---------------------- Expense Table ----------------------
-export const expenses = pgTable('Expense', {
-    id: serial('id').primaryKey(),
-    description: text('description').notNull(),
-    amount: numeric('amount', { precision: 10, scale: 2 }).notNull(),
-    date: timestamp('date', { withTimezone: true }).notNull(),
-    isRecurring: integer('isRecurring').notNull(),
-    userId: integer('userId').notNull(),
-    categoryId: integer('categoryId').notNull(),
-});
-
-// ---------------------- Income Table ----------------------
-export const incomes = pgTable('Income', {
-    id: serial('id').primaryKey(),
-    amount: numeric('amount', { precision: 10, scale: 2 }).notNull(),
-    date: timestamp('date', { withTimezone: true }).notNull(),
-    userId: integer('userId').notNull(),
-});
-
-// ---------------------- Period Table ----------------------
-export const periods = pgTable('Period', {
-    id: serial('id').primaryKey(),
-    startDate: timestamp('startDate', { withTimezone: true }).notNull(),
-    endDate: timestamp('endDate', { withTimezone: true }).notNull(),
-    startingAmount: numeric('startingAmount', { precision: 10, scale: 2 }).notNull(),
-});
-
-// ---------------------- Budget Table ----------------------
-export const budgets = pgTable('Budget', {
-    id: serial('id').primaryKey(),
-    amount: numeric('amount', { precision: 10, scale: 2 }).notNull(),
-    userId: integer('userId').notNull(),
-    categoryId: integer('categoryId').notNull(),
-    periodId: integer('periodId').notNull(),
-});
-
-// ---------------------- Result Table ----------------------
-export const results = pgTable('Result', {
-    id: serial('id').primaryKey(),
-    totalSpent: numeric('totalSpent', { precision: 10, scale: 2 }).notNull(),
-    percentageSpent: numeric('percentageSpent', { precision: 7, scale: 2 }).notNull(),
-    userId: integer('userId').notNull(),
-    categoryId: integer('categoryId').notNull(),
-    periodId: integer('periodId').notNull(),
-});
-
-// ---------------------- User Preference Table ----------------------
-export const userPreferences = pgTable('UserPreference', {
-    id: serial('id'),
-    name: varchar('name', { length: 255 }).notNull(),
-    stringValue: varchar('stringValue', { length: 255 }),
-    numberValue: real('numberValue'),
-    dateValue: timestamp('dateValue', { withTimezone: true }),
-    userId: integer('userId').notNull(),
-}, (table) => [
-    primaryKey({ columns: [table.name, table.userId]})
+// Many-to-many membership (roles optional)
+export const memberships = pgTable('membership', {
+    userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    teamId: integer('team_id').notNull().references(() => teams.id, { onDelete: 'cascade' }),
+    role: varchar('role', { length: 50 }).default('member').notNull(),
+    joinedAt: timestamp('joined_at', { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [
+    primaryKey({ columns: [t.userId, t.teamId] })
 ]);
+
+// ---------- Accounts ----------
+export const accounts = pgTable('account', {
+    id: serial('id').primaryKey(),
+    teamId: integer('team_id').notNull().references(() => teams.id, { onDelete: 'cascade' }),
+    name: varchar('name', { length: 255 }).notNull(),
+    type: varchar('type', { length: 50 }).notNull(), // 'bank' | 'cash' | 'credit' | ...
+    currency: currencyCode('currency').notNull().default('EUR'),
+    isArchived: boolean('is_archived').notNull().default(false),
+}, (t) => [
+    uniqueIndex('ux_account_team_name').on(t.teamId, t.name),
+    index('ix_account_team').on(t.teamId),
+]);
+
+// ---------- Categories ----------
+export let categories: any; // temporary
+
+categories = pgTable('category', {
+    id: serial('id').primaryKey(),
+    teamId: integer('team_id').notNull().references(() => teams.id, { onDelete: 'cascade' }),
+    name: varchar('name', { length: 255 }).notNull(),
+    type: categoryType('type').notNull().default('expense'),
+    color: varchar('color', { length: 32 }).notNull(),
+    icon: varchar('icon', { length: 64 }).notNull(),
+    parentId: integer('parent_id').references(() => (categories as any).id, { onDelete: 'set null' }),
+});
+
+
+
+// ---------- Transactions (ledger) ----------
+export const transactions = pgTable('txn', {
+    id: bigserial('id', { mode: 'number' }).primaryKey(),
+    teamId: integer('team_id').notNull().references(() => teams.id, { onDelete: 'cascade' }),
+    accountId: integer('account_id').notNull().references(() => accounts.id, { onDelete: 'restrict' }),
+    // signed amount in minor units (e.g., cents). expense < 0, income > 0
+    amountCents: bigint('amount_cents', { mode: 'number' }).notNull(),
+    currency: currencyCode('currency').notNull(), // mirror account.currency at insert time
+    postedAt: timestamp('posted_at', { withTimezone: true }).notNull(), // the date user cares about
+    payee: varchar('payee', { length: 255 }),
+    memo: text('memo'),
+    categoryId: integer('category_id').references(() => categories.id, { onDelete: 'set null' }), // null for transfers or use splits
+    isTransfer: boolean('is_transfer').notNull().default(false),
+    transferGroupId: bigint('transfer_group_id', { mode: 'number' }), // same id on both legs
+    createdBy: integer('created_by').references(() => users.id),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+    deletedAt: timestamp('deleted_at', { withTimezone: true }), // soft delete
+}, (t) => [
+    index('ix_txn_team_posted').on(t.teamId, t.postedAt),
+    index('ix_txn_team_category').on(t.teamId, t.categoryId),
+    index('ix_txn_team_account').on(t.teamId, t.accountId),
+    index('ix_txn_transfer_group').on(t.transferGroupId),
+]);
+
+// ---------- Splits (optional, when splitting one payment across categories) ----------
+export const transactionSplits = pgTable('txn_split', {
+    id: serial('id').primaryKey(),
+    txnId: bigint('txn_id', { mode: 'number' }).notNull().references(() => transactions.id, { onDelete: 'cascade' }),
+    categoryId: integer('category_id').notNull().references(() => categories.id, { onDelete: 'restrict' }),
+    amountCents: bigint('amount_cents', { mode: 'number' }).notNull(), // signed, typically matches txn sign
+}, (t) => [
+    index('ix_split_txn').on(t.txnId),
+]);
+
+// ---------- Budgets (monthly) ----------
+export const budgets = pgTable('budget', {
+    id: serial('id').primaryKey(),
+    teamId: integer('team_id').notNull().references(() => teams.id, { onDelete: 'cascade' }),
+    categoryId: integer('category_id').notNull().references(() => categories.id, { onDelete: 'cascade' }),
+    periodMonth: date('period_month').notNull(), // first day of month, e.g., 2025-08-01
+    amountCents: bigint('amount_cents', { mode: 'number' }).notNull(),
+    rollover: boolean('rollover').notNull().default(false),
+}, (t) => [
+    uniqueIndex('ux_budget_team_cat_month').on(t.teamId, t.categoryId, t.periodMonth),
+    index('ix_budget_team_month').on(t.teamId, t.periodMonth),
+]);
+
+// ---------- Recurring rules ----------
+export const recurringRules = pgTable('recurring_rule', {
+    id: serial('id').primaryKey(),
+    teamId: integer('team_id').notNull().references(() => teams.id, { onDelete: 'cascade' }),
+    accountId: integer('account_id').notNull().references(() => accounts.id, { onDelete: 'restrict' }),
+    templateCategoryId: integer('template_category_id').references(() => categories.id, { onDelete: 'set null' }),
+    templatePayee: varchar('template_payee', { length: 255 }),
+    templateMemo: text('template_memo'),
+    templateAmountCents: bigint('template_amount_cents', { mode: 'number' }).notNull(), // signed
+    rrule: text('rrule').notNull(),
+    nextRunAt: timestamp('next_run_at', { withTimezone: true }).notNull(),
+    lastRunAt: timestamp('last_run_at', { withTimezone: true }),
+    isActive: boolean('is_active').notNull().default(true),
+});
+
+// ---------- User settings ----------
+export const userSettings = pgTable('user_setting', {
+    userId: integer('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
+    theme: varchar('theme', { length: 20 }).default('system'),
+    textSize: varchar('text_size', { length: 10 }).default('M'),
+    preferences: jsonb('preferences').$type<Record<string, unknown>>(), // extras
+});

@@ -1,137 +1,210 @@
-import {db} from "@/lib/db/client";
-import {budgets, categories, results} from "@/lib/db/schema";
-import {and, asc, eq, ilike} from "drizzle-orm";
+// services/categoryService.ts
+import { db } from '@/lib/db/client';
+import { categories, budgets as budget } from '@/lib/db/schema';
+import { and, asc, eq, ilike } from 'drizzle-orm';
 
-export async function getCategoryById(categoryId: number, userId: number) {
-    const result = await db
+// --- helpers ---
+const monthToDate = (yyyyMm: string) => `${yyyyMm}-01`; // "2025-08" -> "2025-08-01"
+const toCents = (amount: number) => Math.round(Number(amount) * 100);
+
+// ---------- Categories ----------
+
+export async function getCategoryByTeamAndCategoryId(categoryId: number, teamId: number) {
+    const rows = await db
         .select()
         .from(categories)
-        .where(and(eq(categories.userId, userId), eq(categories.id, categoryId)))
+        .where(and(eq(categories.teamId, teamId), eq(categories.id, categoryId)))
         .limit(1);
 
-    return result[0] ?? null;
+    return rows[0] ?? null;
 }
 
-export async function getCategoryByName(name: string, userId: number) {
-    const result = await db
+export async function getCategoryByTeam(teamId: number) {
+    const rows = await db
         .select()
         .from(categories)
-        .where(
-            and(eq(categories.userId, userId),
-            ilike(categories.name, name))
-        )
+        .where(eq(categories.teamId, teamId))
+
+    return rows ?? null;
+}
+
+export async function getCategoryByName(name: string, teamId: number) {
+    const rows = await db
+        .select()
+        .from(categories)
+        .where(and(eq(categories.teamId, teamId), ilike(categories.name, name)))
         .limit(1);
 
-    return result[0] ?? null;
+    return rows[0] ?? null;
 }
 
-export async function getAllCategories(userId: number) {
-    const result = await db
+export async function getAllCategories(teamId: number) {
+    return db
         .select()
         .from(categories)
-        .where(eq(categories.userId, userId))
-        .orderBy(asc(categories.id))
-
-    return result ?? null;
+        .where(eq(categories.teamId, teamId))
+        .orderBy(asc(categories.name));
 }
 
-export async function createCategory(data: { name: string, color: string, icon: string, userId: number }) {
-    const [createdCategory] = await db
+export async function createCategory(data: {
+    teamId: number;
+    name: string;
+    color: string;
+    icon: string;
+    type?: 'expense' | 'income' | 'transfer';
+    parentId?: number | null;
+}) {
+    const [created] = await db
         .insert(categories)
         .values({
+            teamId: data.teamId,
             name: data.name,
             color: data.color,
             icon: data.icon,
-            userId: data.userId,
+            type: (data.type ?? 'expense') as any,
+            parentId: data.parentId ?? null,
         })
         .returning({
             id: categories.id,
+            teamId: categories.teamId,
             name: categories.name,
             color: categories.color,
             icon: categories.icon,
-            userId: categories.userId,
+            type: categories.type,
+            parentId: categories.parentId,
         });
 
-    return createdCategory;
+    return created;
 }
 
-export async function deleteCategoryById(categoryId: number) {
-    await db.delete(categories).where(eq(categories.id, categoryId));
+export async function deleteCategoryById(categoryId: number, teamId: number) {
+    await db
+        .delete(categories)
+        .where(and(eq(categories.id, categoryId), eq(categories.teamId, teamId)));
 }
 
-export async function updateCategory(data: { id: number, name?: string, color?: string, icon?: string, userId?: number }) {
-    // Build update object dynamically and convert amount to string if needed
-    const updateData: Record<string, any> = {};
-    if (data.name !== undefined) updateData.name = data.name;
-    if (data.color !== undefined) updateData.color = data.color;
-    if (data.icon !== undefined) updateData.periodId = data.icon;
-    if (data.userId !== undefined) updateData.userId = data.userId;
+export async function updateCategory(data: {
+    id: number;
+    teamId: number;
+    name?: string;
+    color?: string;
+    icon?: string;
+    type?: 'expense' | 'income' | 'transfer';
+    parentId?: number | null;
+}) {
+    const patch: Record<string, any> = {};
+    if (data.name !== undefined) patch.name = data.name;
+    if (data.color !== undefined) patch.color = data.color;
+    if (data.icon !== undefined) patch.icon = data.icon;
+    if (data.type !== undefined) patch.type = data.type;
+    if (data.parentId !== undefined) patch.parentId = data.parentId;
 
     const [updated] = await db
         .update(categories)
-        .set(updateData)
-        .where(eq(categories.id, data.id))
+        .set(patch)
+        .where(and(eq(categories.id, data.id), eq(categories.teamId, data.teamId)))
         .returning();
 
-    return updated;
+    return updated ?? null;
 }
+
+// ---------- Category + initial budget (no results table anymore) ----------
 
 export async function createCategoryWithInitialBudget(data: {
     category: {
+        teamId: number;
         name: string;
         color: string;
         icon: string;
-        userId: number;
+        type?: 'expense' | 'income' | 'transfer';
+        parentId?: number | null;
     };
     budget: {
-        amount: number;
-        periodId: number;
-        userId: number;
+        teamId: number;           // should match category.teamId
+        categoryName?: string;    // optional helper if you don’t have id yet
+        categoryId?: number;      // will be filled from the created category
+        amount: number;           // major units (e.g., 125.50)
+        month: string;            // "YYYY-MM"
+        rollover?: boolean;
     };
-    result: {
-        totalSpent: number;
-        percentageSpent: number;
-        userId: number;
-        periodId: number;
-    }
 }) {
-    return await db.transaction(async (tx) => {
+    return db.transaction(async (tx) => {
+        // 1) Create category
         const [newCategory] = await tx
             .insert(categories)
-            .values(data.category)
+            .values({
+                teamId: data.category.teamId,
+                name: data.category.name,
+                color: data.category.color,
+                icon: data.category.icon,
+                type: (data.category.type ?? 'expense') as any,
+                parentId: data.category.parentId ?? null,
+            })
             .returning({
                 id: categories.id,
+                teamId: categories.teamId,
                 name: categories.name,
                 color: categories.color,
                 icon: categories.icon,
-                userId: categories.userId,
+                type: categories.type,
+                parentId: categories.parentId,
             });
 
+        // 2) Upsert initial monthly budget (composite unique: team+category+month)
+        const periodMonth = monthToDate(data.budget.month);
+        const amountCents = toCents(data.budget.amount);
+
         const [newBudget] = await tx
-            .insert(budgets)
+            .insert(budget)
             .values({
-                amount: data.budget.amount.toString(), // 🔸 Drizzle stores Decimal as string
-                periodId: data.budget.periodId,
-                userId: data.budget.userId,
+                teamId: newCategory.teamId,
                 categoryId: newCategory.id,
+                periodMonth,
+                amountCents,
+                rollover: data.budget.rollover ?? false,
+            })
+            .onConflictDoUpdate({
+                target: [budget.teamId, budget.categoryId, budget.periodMonth],
+                set: {
+                    amountCents,
+                    rollover: data.budget.rollover ?? false,
+                },
             })
             .returning();
 
-        const [newResult] = await tx
-            .insert(results)
-            .values({
-                totalSpent: data.result.totalSpent.toString(),
-                percentageSpent: data.result.percentageSpent.toString(),
-                userId: data.result.userId,
-                categoryId: newCategory.id,
-                periodId: data.result.periodId,
-            })
-            .returning()
-
-        return {
-            category: newCategory,
-            budget: newBudget,
-            result: newResult,
-        };
+        return { category: newCategory, budget: newBudget };
     });
+}
+
+// ---------- Budget upsert standalone (handy for UI) ----------
+
+export async function upsertBudget(data: {
+    teamId: number;
+    categoryId: number;
+    month: string;        // "YYYY-MM"
+    amount: number;       // major units
+    rollover?: boolean;
+}) {
+    const periodMonth = monthToDate(data.month);
+    const amountCents = toCents(data.amount);
+
+    const [row] = await db
+        .insert(budget)
+        .values({
+            teamId: data.teamId,
+            categoryId: data.categoryId,
+            periodMonth,
+            amountCents,
+            rollover: data.rollover ?? false,
+        })
+        .onConflictDoUpdate({
+            target: [budget.teamId, budget.categoryId, budget.periodMonth],
+            set: {
+                amountCents,
+                rollover: data.rollover ?? false,
+            },
+        })
+        .returning();
+
+    return row ?? null;
 }

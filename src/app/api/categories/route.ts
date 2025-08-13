@@ -7,11 +7,11 @@ import {isValid} from "@/lib/helpers";
 // GET /api/categories?userId=... or with &id=... or &name=...
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
-    const userIdParam = searchParams.get('userId');
-    if (!isValid(userIdParam)) return fail('User ID is required', 400);
+    const teamIdParam = searchParams.get('teamId');
+    if (!isValid(teamIdParam)) return fail('Team ID is required', 400);
 
-    const userId = parseInt(userIdParam!);
-    if (isNaN(userId)) return fail('User ID is invalid', 400);
+    const teamId = parseInt(teamIdParam!);
+    if (isNaN(teamId)) return fail('Team ID is invalid', 400);
 
     try {
         const idParam = searchParams.get('id');
@@ -19,18 +19,22 @@ export async function GET(req: NextRequest) {
 
         if (isValid(idParam)) {
             const id = parseInt(idParam!);
-            if (isNaN(id)) return fail('Invalid category ID', 400);
+            if (isNaN(id)) {
+                console.log('Invalid category ID')
+                return fail('Invalid category ID', 400);
+            }
 
-            const category = await categoryService.getCategoryById(id, userId);
+            const category = await categoryService.getCategoryByTeamAndCategoryId(id, teamId);
             return ok(category ?? {}, 'Category fetched')
         }
 
         if (isValid(nameParam)) {
-            const category = await categoryService.getCategoryByName(nameParam, userId);
+            const category = await categoryService.getCategoryByName(nameParam, teamId);
             return ok(category ?? {}, 'Category fetched')
         }
 
-        const allCategories = await categoryService.getAllCategories(userId);
+        const allCategories = await categoryService.getAllCategories(teamId);
+        console.log(allCategories);
         return ok(allCategories, 'Categories fetched')
     } catch (error) {
         console.error('Error fetching categories:', error);

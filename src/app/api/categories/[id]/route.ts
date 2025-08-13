@@ -22,13 +22,17 @@ export async function PUT(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const idParam = searchParams.get('id');
+    const teamIdParam = searchParams.get('teamId');
 
     if (!isValid(idParam)) return fail('Must provide a valid id', 400);
+    if (!isValid(teamIdParam)) return fail('Must provide a valid id', 400);
 
     const id = parseInt(idParam);
+    const teamId = parseInt(teamIdParam);
     if (isNaN(id)) return fail('Invalid ID', 400)
+    if (isNaN(teamId)) return fail('Invalid ID', 400)
 
-    await categoryService.deleteCategoryById(id);
+    await categoryService.deleteCategoryById(id, teamId);
     return ok({}, 'Category deleted successfully', 201);
 }
 

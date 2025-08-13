@@ -1,123 +1,82 @@
-import {db} from "@/lib/db/client";
-import {results} from "@/lib/db/schema";
-import {and, eq} from "drizzle-orm";
-import {Period} from "@/models/period";
+// services/resultService.ts
+import { getMonthSummary } from '@/lib/services/summaryService';
 
-export async function getResultById(userId: number, id: number) {
-    const result = await db
-        .select()
-        .from(results)
-        .where(and(eq(results.id, id), eq(results.userId, userId)))
-        .limit(1)
+// helpers
+const monthToDate = (yyyyMm: string) => `${yyyyMm}-01`;
+const toCents = (n: number) => Math.round(Number(n) * 100);
 
-    return result[0] ?? null;
+type ProgressRow = {
+    team_id: number;
+    category_id: number;
+    period_month: string;       // "YYYY-MM-01"
+    budget_cents: number;       // bigint-ish number (in cents)
+    spent_cents: number;        // positive (abs expenses)
+    remaining_cents: number;    // budget - spent
+    pct_spent: number | null;   // percent or null when budget 0
+};
+
+/** Single category progress for a team & month */
+export async function getResultByCategoryAndMonth(
+    teamId: number,
+    categoryId: number,
+    month: string
+): Promise<ProgressRow | null> {
+    const periodMonth = monthToDate(month);
+    const summary = await getMonthSummary(teamId, month);
+    const row = summary.find(s => s.categoryId === categoryId);
+    if (!row) return null;
+
+    return {
+        team_id: teamId,
+        category_id: categoryId,
+        period_month: periodMonth,
+        budget_cents: toCents(row.budget),
+        spent_cents: toCents(row.spent),
+        remaining_cents: toCents(row.remaining),
+        pct_spent: row.percentSpent, // already number | null
+    };
 }
 
-export async function getResultByCategoryAndPeriod(userId: number, categoryId: number, periodId: number) {
-    const result = await db
-        .select()
-        .from(results)
-        .where(and(eq(results.userId, userId), eq(results.categoryId, categoryId), eq(results.periodId, periodId)))
-        .limit(1)
+/** All category results for a team & month (table data for the Budget screen) */
+export async function getResultsByMonth(teamId: number, month: string): Promise<ProgressRow[]> {
+    const periodMonth = monthToDate(month);
+    const summary = await getMonthSummary(teamId, month);
 
-    return result[0] ?? null;
+    return summary.map(s => ({
+        team_id: teamId,
+        category_id: s.categoryId,
+        period_month: periodMonth,
+        budget_cents: toCents(s.budget),
+        spent_cents: toCents(s.spent),
+        remaining_cents: toCents(s.remaining),
+        pct_spent: s.percentSpent,
+    })).sort((a, b) => a.category_id - b.category_id);
 }
 
-export async function getResultsByCategory(userId: number, categoryId: number) {
-    const result = await db
-        .select()
-        .from(results)
-        .where(and(eq(results.userId, userId), eq(results.categoryId, categoryId)))
-        .limit(1)
+/** Month totals (header summary) */
+export async function getMonthTotals(teamId: number, month: string) {
+    const rows = await getResultsByMonth(teamId, month);
 
-    return result[0] ?? null;
+    const total_budget_cents   = rows.reduce((a, r) => a + r.budget_cents, 0);
+    const total_spent_cents    = rows.reduce((a, r) => a + r.spent_cents, 0);
+    const total_remaining_cents = rows.reduce((a, r) => a + r.remaining_cents, 0);
+
+    return { total_budget_cents, total_spent_cents, total_remaining_cents };
 }
 
-export async function getResultsByPeriodAndCategory(userId: number, categoryId: number, periodId: number) {
-    const result = await db
-        .select()
-        .from(results)
-        .where(and(eq(results.userId, userId), eq(results.categoryId, categoryId), eq(results.periodId, periodId)))
-        .limit(1)
-
-    return result[0] ?? null;
+/** Convenience: results + totals in one call */
+export async function getMonthOverview(teamId: number, month: string) {
+    const [categories, totals] = await Promise.all([
+        getResultsByMonth(teamId, month),
+        getMonthTotals(teamId, month),
+    ]);
+    return { month, totals, categories };
 }
 
-export async function getResultsByPeriod(userId: number, periodId: number) {
-    const result = await db
-        .select()
-        .from(results)
-        .where(and(eq(results.userId, userId), eq(results.periodId, periodId)))
-
-    return result ?? null;
+/** Legacy shims (period → month) */
+export async function getResultsByPeriod(teamId: number, month: string) {
+    return getResultsByMonth(teamId, month);
 }
-
-export async function createResult(data: { totalSpent: number; percentageSpent: number; userId: number; categoryId: number; periodId: number; }) {
-    const [createdResult] = await db
-        .insert(results)
-        .values({
-            totalSpent: data.totalSpent.toString(),
-            percentageSpent: data.percentageSpent.toString(),
-            userId: data.userId,
-            categoryId: data.categoryId,
-            periodId: data.periodId
-        })
-        .returning({
-            id: results.id,
-            totalSpent: results.totalSpent,
-            percentageSpent: results.percentageSpent,
-            userId: results.userId,
-            categoryId: results.categoryId,
-            periodId: results.periodId
-        });
-
-    return createdResult;
-}
-
-export async function deleteResultById(id: number) {
-    await db.delete(results).where(eq(results.id, id))
-}
-
-export async function updateResult(data: {
-    resultId: number;
-    totalSpent?: number;
-    percentageSpent?: number;
-    userId?: number;
-    categoryId?: number;
-    periodId?: number;
-}) {
-    const updateData: Record<string, any> = {};
-    if (data.totalSpent !== undefined) updateData.totalSpent = data.totalSpent;
-    if (data.percentageSpent !== undefined) updateData.percentageSpent = data.percentageSpent;
-    if (data.userId !== undefined) updateData.userId = data.userId;
-    if (data.categoryId !== undefined) updateData.categoryId = data.categoryId;
-    if (data.periodId !== undefined) updateData.periodId = data.periodId;
-
-    const [updated] = await db
-        .update(results)
-        .set(updateData)
-        .where(eq(results.id, data.resultId))
-        .returning();
-
-    return updated;
-}
-
-export async function createResultIfNotExists(period: Period, rest: any) {
-    let result = await getResultsByPeriodAndCategory(
-        Number(rest.userId),
-        Number(rest.categoryId),
-        period.id
-    )
-    if (!result) {
-        result = await createResult({
-            userId: Number(rest.userId),
-            categoryId: Number(rest.categoryId),
-            periodId: period.id,
-            totalSpent: 0,
-            percentageSpent: 0
-        })
-        console.log('created: ', result)
-    }
-
-    return result
+export async function getResultsByPeriodAndCategory(teamId: number, categoryId: number, month: string) {
+    return getResultByCategoryAndMonth(teamId, categoryId, month);
 }

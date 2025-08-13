@@ -18,7 +18,10 @@ export async function GET(req: NextRequest) {
 
     if(userIdParam) {
         const userId = parseInt(userIdParam);
-        if (isNaN(userId)) return fail('Provide a valid user ID')
+        if (isNaN(userId)) {
+            console.log('invalid user ID')
+            return fail('Provide a valid user ID')
+        }
         const user = await getUserById(userId)
         return user ? ok(user) : fail('user not found', 404)
     }
@@ -28,6 +31,8 @@ export async function GET(req: NextRequest) {
         return user ? ok(user) : fail('user not found', 404);
     }
 
+    console.log('No user ID or email provided')
+    return fail('User ID or email is required', 400)
 }
 
 export async function PUT(req: NextRequest) {
@@ -44,6 +49,7 @@ export async function PUT(req: NextRequest) {
         });
         return ok(updatedUser);
     }
+    return fail('User ID is required', 400);
 }
 
 export async function DELETE(req: NextRequest) {
@@ -55,4 +61,5 @@ export async function DELETE(req: NextRequest) {
         await deleteUserById(id)
         return ok({}, 'User deleted')
     }
+    return fail('User ID is required', 400);
 }

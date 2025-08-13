@@ -1,117 +1,179 @@
-import { db } from '@/lib/db/client'; // this is your Drizzle instance
-import {budgets} from '@/lib/db/schema';
-import {and, asc, eq} from "drizzle-orm";
-import {Period} from "@/models/period"; // the schema you defined
+// services/budgetService.ts
+import { db } from '@/lib/db/client';
+import { budgets as budget } from '@/lib/db/schema';
+import { and, asc, eq, InferSelectModel, InferInsertModel } from 'drizzle-orm';
 
-export async function getAllBudgets(userId: number){
-    const result = await db
-        .select()
-        .from(budgets)
-        .where(eq(budgets.userId, userId))
+// ---------- helpers ----------
+const toCents = (n: number | string) => Math.round(Number(n) * 100);
 
-    return result ?? null
+// Accepts "YYYY-MM" or Date and returns "YYYY-MM-01"
+function normalizeMonthInput(input: string | Date): string {
+    if (typeof input === 'string') {
+        // assume "YYYY-MM"
+        return `${input}-01`;
+    }
+    const y = input.getUTCFullYear();
+    const m = String(input.getUTCMonth() + 1).padStart(2, '0');
+    return `${y}-${m}-01`;
 }
-// ✅ Get a single budget by ID and userId (using findFirst for compound filter)
-export async function getBudgetById(userId: number, id: number) {
-    const result = await db
+
+// ---------- types ----------
+export type BudgetRow = InferSelectModel<typeof budget>;
+export type BudgetInsert = InferInsertModel<typeof budget>;
+
+// =============== READS ===============
+
+export async function getAllBudgets(teamId: number): Promise<BudgetRow[]> {
+    return db.select().from(budget).where(eq(budget.teamId, teamId));
+}
+
+export async function getBudgetById(teamId: number, id: number): Promise<BudgetRow | null> {
+    const rows = await db
         .select()
-        .from(budgets)
-        .where(and(eq(budgets.id, id), eq(budgets.userId, userId)))
+        .from(budget)
+        .where(and(eq(budget.id, id), eq(budget.teamId, teamId)))
         .limit(1);
-
-    return result[0] ?? null;
+    return rows[0] ?? null;
 }
 
-// ✅ Get budget for a given category and period for the user
-export async function getBudgetByPeriodAndCategory(userId: number, periodId: number, categoryId: number) {
-    const result = await db
+export async function getBudgetByMonthAndCategory(
+    teamId: number,
+    month: string | Date,
+    categoryId: number
+): Promise<BudgetRow | null> {
+    const periodMonth = normalizeMonthInput(month);
+    const rows = await db
         .select()
-        .from(budgets)
-        .where(and(eq(budgets.userId, userId), eq(budgets.categoryId, categoryId), eq(budgets.periodId, periodId)))
-        .limit(1)
-
-    return result[0] ?? null;
+        .from(budget)
+        .where(and(
+            eq(budget.teamId, teamId),
+            eq(budget.categoryId, categoryId),
+            eq(budget.periodMonth, periodMonth),
+        ))
+        .limit(1);
+    return rows[0] ?? null;
 }
 
-// ✅ Get all budgets by categoryId
-export async function getBudgetsByCategoryId(userId: number, categoryId: number) {
-    const result = await db
+export async function getBudgetsByCategory(teamId: number, categoryId: number): Promise<BudgetRow[]> {
+    return db
         .select()
-        .from(budgets)
-        .where(and(eq(budgets.userId, userId), eq(budgets.categoryId, categoryId)))
-
-    return result ?? null;
+        .from(budget)
+        .where(and(eq(budget.teamId, teamId), eq(budget.categoryId, categoryId)));
 }
 
-// ✅ Get all budgets by periodId
-export async function getBudgetsByPeriodId(userId: number, periodId: number) {
-    const result = await db
+export async function getBudgetsByMonth(teamId: number, month: string | Date): Promise<BudgetRow[]> {
+    const periodMonth = normalizeMonthInput(month);
+    return db
         .select()
-        .from(budgets)
-        .where(and(eq(budgets.userId, userId), eq(budgets.periodId, periodId)))
-        .orderBy(asc(budgets.categoryId))
-
-    return result ?? null;
+        .from(budget)
+        .where(and(eq(budget.teamId, teamId), eq(budget.periodMonth, periodMonth)))
+        .orderBy(asc(budget.categoryId));
 }
 
-export async function createBudget(data: { amount: number; userId: number; categoryId: number; periodId: number; }) {
-    const [createdBudget] = await db
-        .insert(budgets)
+// =============== WRITES ===============
+
+export async function createBudget(data: {
+    teamId: number;
+    categoryId: number;
+    month: string | Date;   // "YYYY-MM" or Date
+    amount: number;         // major units
+    rollover?: boolean;
+}): Promise<BudgetRow> {
+    const periodMonth = normalizeMonthInput(data.month);
+    const [created] = await db
+        .insert(budget)
         .values({
-            amount: data.amount.toString(),
-            userId: data.userId,
+            teamId: data.teamId,
             categoryId: data.categoryId,
-            periodId: data.periodId,
+            periodMonth,
+            amountCents: toCents(data.amount),
+            rollover: data.rollover ?? false,
         })
-        .returning({
-            id: budgets.id,
-            amount: budgets.amount,
-            userId: budgets.userId,
-            categoryId: budgets.categoryId,
-            periodId: budgets.periodId,
-        });
-
-    return createdBudget;
+        .returning();
+    return created;
 }
 
-// ✅ Delete one budget by ID (use delete if id is unique)
-export async function deleteBudgetById(id: number) {
-    await db.delete(budgets).where(eq(budgets.id, id));
-}
+/** Upsert on (team_id, category_id, period_month) */
+export async function upsertBudget(data: {
+    teamId: number;
+    categoryId: number;
+    month: string | Date;  // "YYYY-MM" or Date
+    amount: number;        // major units
+    rollover?: boolean;
+}): Promise<BudgetRow> {
+    const periodMonth = normalizeMonthInput(data.month);
+    const values: BudgetInsert = {
+        teamId: data.teamId,
+        categoryId: data.categoryId,
+        periodMonth,
+        amountCents: toCents(data.amount),
+        rollover: data.rollover ?? false,
+    };
 
-// ✅ Update a budget by ID
-export async function updateBudget(data: { id: number; amount?: number; userId?: number; categoryId?: number; periodId?: number; }) {
-    // Build update object dynamically and convert amount to string if needed
-    const updateData: Record<string, any> = {};
-    if (data.amount !== undefined) updateData.amount = data.amount.toString(); // Convert decimal to string
-    if (data.userId !== undefined) updateData.userId = data.userId;
-    if (data.categoryId !== undefined) updateData.categoryId = data.categoryId;
-    if (data.periodId !== undefined) updateData.periodId = data.periodId;
-
-    const [updated] = await db
-        .update(budgets)
-        .set(updateData)
-        .where(eq(budgets.id, data.id))
+    const [row] = await db
+        .insert(budget)
+        .values(values)
+        .onConflictDoUpdate({
+            target: [budget.teamId, budget.categoryId, budget.periodMonth],
+            set: {
+                amountCents: values.amountCents,
+                rollover: values.rollover ?? false,
+            },
+        })
         .returning();
 
-    return updated;
+    return row;
 }
 
-export async function createBudgetIfNotExists(period : Period, rest: any){
-    let budget = await getBudgetByPeriodAndCategory(
-        Number(rest.userId),
-        Number(rest.categoryId),
-        period.id
-    )
+export async function updateBudget(data: {
+    id: number;
+    teamId: number;          // guard updates by team
+    amount?: number;         // major units
+    month?: string | Date;   // move to another month
+    categoryId?: number;     // reassign to another category
+    rollover?: boolean;
+}): Promise<BudgetRow | null> {
+    const patch: Partial<BudgetInsert> = {};
+    if (data.amount !== undefined) patch.amountCents = toCents(data.amount);
+    if (data.month !== undefined) patch.periodMonth = normalizeMonthInput(data.month);
+    if (data.categoryId !== undefined) patch.categoryId = data.categoryId;
+    if (data.rollover !== undefined) patch.rollover = data.rollover;
 
-    if (!budget) {
-        budget = await createBudget({
-            userId: Number(rest.userId),
-            categoryId: Number(rest.categoryId),
-            periodId: period.id,
-            amount: 1000
-        })
-        console.log('budget ', budget)
-    }
-    return budget;
+    const [updated] = await db
+        .update(budget)
+        .set(patch)
+        .where(and(eq(budget.id, data.id), eq(budget.teamId, data.teamId)))
+        .returning({
+            id: budget.id,
+            teamId: budget.teamId,
+            categoryId: budget.categoryId,
+            periodMonth: budget.periodMonth,
+            amountCents: budget.amountCents,
+            rollover: budget.rollover,
+        });
+
+    return updated ?? null;
+}
+
+export async function deleteBudgetById(teamId: number, id: number): Promise<void> {
+    await db.delete(budget).where(and(eq(budget.id, id), eq(budget.teamId, teamId)));
+}
+
+/** Convenience helper for legacy flow */
+export async function createBudgetIfNotExists(params: {
+    teamId: number;
+    categoryId: number;
+    month: string | Date;   // "YYYY-MM" or Date
+    amount?: number;
+    rollover?: boolean;
+}): Promise<BudgetRow> {
+    const existing = await getBudgetByMonthAndCategory(params.teamId, params.month, params.categoryId);
+    if (existing) return existing;
+    return upsertBudget({
+        teamId: params.teamId,
+        categoryId: params.categoryId,
+        month: params.month,
+        amount: params.amount ?? 0,
+        rollover: params.rollover ?? false,
+    });
 }
