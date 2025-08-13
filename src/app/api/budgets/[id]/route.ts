@@ -3,7 +3,7 @@ import { corsHeaders } from '@/lib/cors'
 import { ok, fail } from '@/lib/utils/apiResponse'
 import { updateBudget, deleteBudgetById } from '@/lib/services/budgetService'
 
-export async function PUT(req: NextRequest, ctx: any) {
+export async function PUT(req: NextRequest, ctx : any) {
     try {
         // ID comes only from the URL path
         const { id } = (ctx as { params: { id: string } }).params;
@@ -32,10 +32,10 @@ export async function PUT(req: NextRequest, ctx: any) {
     }
 }
 
-export async function DELETE(req: NextRequest, { params } : { params: { id: string } }) {
+export async function DELETE(req: NextRequest, ctx : any) {
     try {
         // id must come from the route param
-        const id = Number(params.id);
+        const { id } = (ctx as { params: { id: string } }).params;
         if (!Number.isInteger(id)) return fail('Valid id is required', 400);
 
         // optional body (but we expect teamId in it for auth/guarding)
