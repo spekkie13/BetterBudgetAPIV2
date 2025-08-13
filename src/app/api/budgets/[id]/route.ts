@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { corsHeaders } from '@/lib/cors'
 import { ok, fail } from '@/lib/utils/apiResponse'
 import { updateBudget, deleteBudgetById } from '@/lib/services/budgetService'
+import {Ctx} from "@/models/ctx";
 
-export async function PUT(req: NextRequest, ctx: { params: { id?: string } }) {
+export async function PUT(req: NextRequest, { params } : Ctx) {
     try {
         // ID comes only from the URL path
-        const id = Number(ctx.params?.id);
+        const id = Number(params?.id);
         if (!Number.isInteger(id)) return fail('Valid id is required', 400);
 
         const body = await req.json();
@@ -32,10 +33,10 @@ export async function PUT(req: NextRequest, ctx: { params: { id?: string } }) {
     }
 }
 
-export async function DELETE(req: NextRequest, ctx: { params: { id?: string } }) {
+export async function DELETE(req: NextRequest, { params } : Ctx) {
     try {
         // id must come from the route param
-        const id = Number(ctx.params?.id);
+        const id = Number(params?.id);
         if (!Number.isInteger(id)) return fail('Valid id is required', 400);
 
         // optional body (but we expect teamId in it for auth/guarding)

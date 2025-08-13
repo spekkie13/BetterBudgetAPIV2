@@ -6,6 +6,7 @@ import {
     updateTransaction,     // (payload) -> updated row | null
     deleteTransactionById, // (teamId: number, id: number) -> void
 } from '@/lib/services/transactionService';
+import {Ctx} from "@/models/ctx";
 
 export async function OPTIONS() {
     return new NextResponse(null, { status: 204, headers: corsHeaders });
@@ -27,10 +28,10 @@ export async function OPTIONS() {
  *  }
  */
 // app/api/transactions/[id]/route.ts
-export async function PUT(req: NextRequest, ctx: { params: { id?: string } }) {
+export async function PUT(req: NextRequest, { params } : Ctx) {
     try {
         const body = await req.json();
-        const idStr = ctx.params?.id ?? new URL(req.url).searchParams.get('id');
+        const idStr = params?.id ?? new URL(req.url).searchParams.get('id');
         const id = Number(idStr);
         const teamId = Number(body?.teamId ?? new URL(req.url).searchParams.get('teamId'));
 
@@ -62,10 +63,10 @@ export async function PUT(req: NextRequest, ctx: { params: { id?: string } }) {
  * DELETE – soft delete a transaction
  * Body: { id: number, teamId: number }
  */
-export async function DELETE(req: NextRequest, ctx: { params: { id?: string } }) {
+export async function DELETE(req: NextRequest, { params } : Ctx) {
     try {
         // id: from dynamic route or ?id=
-        const idStr = ctx.params?.id ?? new URL(req.url).searchParams.get('id');
+        const idStr = params?.id ?? new URL(req.url).searchParams.get('id');
         const id = Number(idStr);
 
         // teamId: prefer body, fallback to ?teamId=
@@ -73,7 +74,7 @@ export async function DELETE(req: NextRequest, ctx: { params: { id?: string } })
         try {
             body = await req.json();
         } catch {
-            // no body provided (common for DELETE) — that's fine
+            // DELETE request without body — that's fine
         }
         const teamIdStr = body?.teamId ?? new URL(req.url).searchParams.get('teamId');
         const teamId = Number(teamIdStr);
