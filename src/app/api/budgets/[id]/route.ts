@@ -6,8 +6,8 @@ import { updateBudget, deleteBudgetById } from '@/lib/services/budgetService'
 export async function PUT(req: NextRequest, { params } : { params: { id: string } }) {
     try {
         // ID comes only from the URL path
-        const id = Number(params.id);
-        if (!Number.isInteger(id)) return fail('Valid id is required', 400);
+        const budgetId = Number(params.id);
+        if (!Number.isInteger(budgetId)) return fail('Valid id is required', 400);
 
         const body = await req.json();
 
@@ -16,7 +16,7 @@ export async function PUT(req: NextRequest, { params } : { params: { id: string 
         if (!Number.isInteger(teamId)) return fail('Valid teamId is required', 400);
 
         const updated = await updateBudget({
-            id,
+            id: budgetId,
             teamId,
             amount: Number(body.amount),
             month: body.month, // "YYYY-MM" or Date; service normalizes
