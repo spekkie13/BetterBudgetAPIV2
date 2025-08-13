@@ -30,7 +30,7 @@ export async function DELETE(req: NextRequest) {
     const id = parseInt(idParam);
     const teamId = parseInt(teamIdParam);
     if (isNaN(id)) return fail('Invalid ID', 400)
-    if (isNaN(teamId)) return fail('Invalid ID', 400)
+    if (isNaN(teamId)) return fail('Invalid Team ID', 400)
 
     await categoryService.deleteCategoryById(id, teamId);
     return ok({}, 'Category deleted successfully', 201);

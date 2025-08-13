@@ -34,7 +34,6 @@ export async function GET(req: NextRequest) {
         }
 
         const allCategories = await categoryService.getAllCategories(teamId);
-        console.log(allCategories);
         return ok(allCategories, 'Categories fetched')
     } catch (error) {
         console.error('Error fetching categories:', error);

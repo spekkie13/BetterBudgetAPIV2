@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import { jsonReq, buildUrl } from '../utils/http';
 
 import { GET as TeamsGET, POST as TeamsPOST } from '@/app/api/teams/route';
-import { GET as TeamByIdGET, PUT as TeamByIdPUT, DELETE as TeamByIdDELETE } from '@/app/api/teams/[id]/route';
+import { GET as TeamByIdGET, PUT as TeamByIdPUT, DELETE as TeamByIdDELETE } from '@/app/api/teams/[teamId]/route';
 import { GET as TrendGET } from '@/app/api/teams/[teamId]/budgets/trend/route';
 
 import * as usr from '@/lib/services/userService';
