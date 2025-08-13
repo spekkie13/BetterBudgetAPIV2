@@ -6,7 +6,6 @@ import {
     updateTransaction,     // (payload) -> updated row | null
     deleteTransactionById, // (teamId: number, id: number) -> void
 } from '@/lib/services/transactionService';
-import {Ctx} from "@/models/ctx";
 
 export async function OPTIONS() {
     return new NextResponse(null, { status: 204, headers: corsHeaders });
@@ -28,7 +27,7 @@ export async function OPTIONS() {
  *  }
  */
 // app/api/transactions/[id]/route.ts
-export async function PUT(req: NextRequest, { params } : Ctx) {
+export async function PUT(req: NextRequest, { params } : { params: { id: string } }) {
     try {
         const body = await req.json();
         const idStr = params?.id ?? new URL(req.url).searchParams.get('id');
@@ -63,7 +62,7 @@ export async function PUT(req: NextRequest, { params } : Ctx) {
  * DELETE – soft delete a transaction
  * Body: { id: number, teamId: number }
  */
-export async function DELETE(req: NextRequest, { params } : Ctx) {
+export async function DELETE(req: NextRequest, { params } : { params: { id: string } }) {
     try {
         // id: from dynamic route or ?id=
         const idStr = params?.id ?? new URL(req.url).searchParams.get('id');

@@ -2,9 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { corsHeaders } from '@/lib/cors'
 import { ok, fail } from '@/lib/utils/apiResponse'
 import { updateBudget, deleteBudgetById } from '@/lib/services/budgetService'
-import {Ctx} from "@/models/ctx";
 
-export async function PUT(req: NextRequest, { params } : Ctx) {
+export async function PUT(req: NextRequest, { params } : { params: { id: string } }) {
     try {
         // ID comes only from the URL path
         const id = Number(params?.id);
@@ -33,7 +32,7 @@ export async function PUT(req: NextRequest, { params } : Ctx) {
     }
 }
 
-export async function DELETE(req: NextRequest, { params } : Ctx) {
+export async function DELETE(req: NextRequest, { params } : { params: { id: string } }) {
     try {
         // id must come from the route param
         const id = Number(params?.id);
