@@ -17,10 +17,7 @@ const monthStartEnd = (yyyyMm: string) => {
     return { start, end };
 };
 
-export async function GET(
-    req: NextRequest,
-    { params }: { params: { teamId: string; categoryId: string } }
-) {
+export async function GET(req: NextRequest, { params }: { params: { teamId: string; categoryId: string } }) {
     const teamId = Number(params.teamId);
     const categoryId = Number(params.categoryId);
     if (!Number.isInteger(teamId) || !Number.isInteger(categoryId)) {

@@ -15,10 +15,7 @@ const addMonthsUtc = (d: Date, n: number) => new Date(Date.UTC(d.getUTCFullYear(
 const toYmd = (d: Date) =>
     `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
 
-export async function GET(
-    req: NextRequest,
-    { params }: { params: { teamId: string } }
-) {
+export async function GET(req: NextRequest, { params }: { params: { teamId: string } }) {
     const teamId = Number(params.teamId);
     if (!Number.isInteger(teamId)) {
         return NextResponse.json({ error: 'Bad teamId' }, { status: 400 });

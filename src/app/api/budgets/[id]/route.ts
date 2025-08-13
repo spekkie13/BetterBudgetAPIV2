@@ -3,11 +3,11 @@ import { corsHeaders } from '@/lib/cors'
 import { ok, fail } from '@/lib/utils/apiResponse'
 import { updateBudget, deleteBudgetById } from '@/lib/services/budgetService'
 
-export async function PUT(req: NextRequest, { params } : { params: { id: string } }) {
+export async function PUT(req: NextRequest, ctx: any) {
     try {
         // ID comes only from the URL path
-        const budgetId = Number(params.id);
-        if (!Number.isInteger(budgetId)) return fail('Valid id is required', 400);
+        const { id } = (ctx as { params: { id: string } }).params;
+        if (!Number.isInteger(id)) return fail('Valid id is required', 400);
 
         const body = await req.json();
 
@@ -16,7 +16,7 @@ export async function PUT(req: NextRequest, { params } : { params: { id: string 
         if (!Number.isInteger(teamId)) return fail('Valid teamId is required', 400);
 
         const updated = await updateBudget({
-            id: budgetId,
+            id: Number(id),
             teamId,
             amount: Number(body.amount),
             month: body.month, // "YYYY-MM" or Date; service normalizes
