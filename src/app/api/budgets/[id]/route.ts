@@ -18,10 +18,10 @@ export async function PUT(req: NextRequest, { params } : { params: { id: string 
         const updated = await updateBudget({
             id,
             teamId,
-            amount: body?.amount !== undefined ? Number(body.amount) : undefined,
-            month: body?.month, // "YYYY-MM" or Date; service normalizes
-            categoryId: body?.categoryId !== undefined ? Number(body.categoryId) : undefined,
-            rollover: body?.rollover !== undefined ? Boolean(body.rollover) : undefined,
+            amount: Number(body.amount),
+            month: body.month, // "YYYY-MM" or Date; service normalizes
+            categoryId: Number(body.categoryId),
+            rollover: Boolean(body.rollover)
         });
 
         if (!updated) return fail('Budget not found', 404);
