@@ -47,7 +47,7 @@ export async function DELETE(req: NextRequest, ctx : any) {
 
         if (!Number.isInteger(teamId)) return fail('Valid teamId is required', 400);
 
-        await deleteBudgetById(teamId!, id);
+        await deleteBudgetById(teamId!, Number(id));
         // Choose either 200 with a body...
         return ok({ id }, 'Budget deleted'); // 200
         // ...or 204 no-content (then return new NextResponse(null, { status: 204 }))
