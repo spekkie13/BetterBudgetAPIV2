@@ -6,13 +6,13 @@ import { updateBudget, deleteBudgetById } from '@/lib/services/budgetService'
 export async function PUT(req: NextRequest, { params } : { params: { id: string } }) {
     try {
         // ID comes only from the URL path
-        const id = Number(params?.id);
+        const id = Number(params.id);
         if (!Number.isInteger(id)) return fail('Valid id is required', 400);
 
         const body = await req.json();
 
         // Related context can come from body (teamId is not a resource ID, so it’s fine here)
-        const teamId = Number(body?.teamId);
+        const teamId = Number(body.teamId);
         if (!Number.isInteger(teamId)) return fail('Valid teamId is required', 400);
 
         const updated = await updateBudget({
@@ -35,14 +35,14 @@ export async function PUT(req: NextRequest, { params } : { params: { id: string 
 export async function DELETE(req: NextRequest, { params } : { params: { id: string } }) {
     try {
         // id must come from the route param
-        const id = Number(params?.id);
+        const id = Number(params.id);
         if (!Number.isInteger(id)) return fail('Valid id is required', 400);
 
         // optional body (but we expect teamId in it for auth/guarding)
         let teamId: number | null = null;
         if (req.headers.get('content-type')?.includes('application/json')) {
             const body = await req.json().catch(() => ({}));
-            teamId = Number(body?.teamId);
+            teamId = Number(body.teamId);
         }
 
         if (!Number.isInteger(teamId)) return fail('Valid teamId is required', 400);
