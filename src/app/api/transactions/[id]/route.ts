@@ -27,13 +27,12 @@ export async function OPTIONS() {
  *  }
  */
 // app/api/transactions/[id]/route.ts
-export async function PUT(req: NextRequest, { params } : { params: { id: string } }) {
+export async function PUT(req: NextRequest, ctx : any) {
+    const { idStr, teamIdStr } = (ctx as { params: { idStr: string; teamIdStr: string } }).params;
+    const id = Number(idStr);
+    const teamId = Number(teamIdStr);
     try {
         const body = await req.json();
-        const idStr = params?.id ?? new URL(req.url).searchParams.get('id');
-        const id = Number(idStr);
-        const teamId = Number(body?.teamId ?? new URL(req.url).searchParams.get('teamId'));
-
         if (!Number.isInteger(id)) return fail('Valid id is required', 400);
         if (!Number.isInteger(teamId)) return fail('Valid teamId is required', 400);
 
@@ -62,13 +61,11 @@ export async function PUT(req: NextRequest, { params } : { params: { id: string 
  * DELETE – soft delete a transaction
  * Body: { id: number, teamId: number }
  */
-export async function DELETE(req: NextRequest, { params } : { params: { id: string } }) {
-    try {
-        // id: from dynamic route or ?id=
-        const idStr = params?.id ?? new URL(req.url).searchParams.get('id');
-        const id = Number(idStr);
+export async function DELETE(req: NextRequest, ctx : any) {
+    const { idStr } = (ctx as { params: { idStr: string } }).params;
 
-        // teamId: prefer body, fallback to ?teamId=
+    try {
+        const id = Number(idStr);
         let body: any = null;
         try {
             body = await req.json();

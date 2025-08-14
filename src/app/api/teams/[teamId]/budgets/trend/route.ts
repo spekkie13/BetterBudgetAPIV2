@@ -15,8 +15,8 @@ const addMonthsUtc = (d: Date, n: number) => new Date(Date.UTC(d.getUTCFullYear(
 const toYmd = (d: Date) =>
     `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
 
-export async function GET(req: NextRequest, { params }: { params: { teamId: string } }) {
-    const teamId = Number(params.teamId);
+export async function GET(req: NextRequest, ctx : any) {
+    const { teamId } = (ctx as { params: { teamId: string } }).params;
     if (!Number.isInteger(teamId)) {
         return NextResponse.json({ error: 'Bad teamId' }, { status: 400 });
     }
@@ -46,7 +46,7 @@ export async function GET(req: NextRequest, { params }: { params: { teamId: stri
         })
         .from(txn)
         .where(and(
-            eq(txn.teamId, teamId),
+            eq(txn.teamId, Number(teamId)),
             eq(txn.isTransfer, false),
             isNull(txn.deletedAt),
             ltOp(txn.amountCents, 0),              // expenses (negative)

@@ -10,8 +10,8 @@ const Query = z.object({ month: z.string().regex(/^\d{4}-\d{2}$/) });
 const monthToDate = (yyyyMm: string) => `${yyyyMm}-01`;
 const toCents = (n: number) => Math.round(Number(n) * 100);
 
-export async function GET(req: NextRequest, { params }: { params: { teamId: string } }) {
-    const teamId = Number(params.teamId);
+export async function GET(req: NextRequest, ctx : any) {
+    const { teamId } = (ctx as { params: { teamId: string } }).params;
     if (!Number.isInteger(teamId)) {
         return NextResponse.json({ error: 'Bad teamId' }, { status: 400 });
     }
@@ -25,7 +25,7 @@ export async function GET(req: NextRequest, { params }: { params: { teamId: stri
     const monthStart = monthToDate(month);
 
     // 1) Compute summary (budget/spent/remaining/percent) per category
-    const summary = await getMonthSummary(teamId, month);
+    const summary = await getMonthSummary(Number(teamId), month);
 
     // 2) Enrich with category color/icon (summary already has name/type)
     const catIds = summary.map(s => s.categoryId);
