@@ -3,8 +3,10 @@ import { corsHeaders } from '@/lib/cors';
 import { LinesParams, LinesQuery } from '@/lib/http/teams/linesSchemas';
 import { getCategoryLinesController } from '@/lib/http/teams/teamsController';
 
-export async function GET(req: NextRequest, ctx: { params: { teamId: string; categoryId: string } }) {
-    const paramsParsed = LinesParams.safeParse({ teamId: ctx.params.teamId, categoryId: ctx.params.categoryId });
+export async function GET(req: NextRequest, ctx: any) {
+    const { teamId, categoryId } = (ctx as { params: { teamId: string; categoryId: string; } }).params;
+
+    const paramsParsed = LinesParams.safeParse({ teamId: teamId, categoryId: categoryId });
     if (!paramsParsed.success) return new NextResponse(JSON.stringify({ error: 'Bad params' }), { status: 400, headers: corsHeaders });
 
     const sp = new URL(req.url).searchParams;
