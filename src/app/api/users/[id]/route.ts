@@ -8,8 +8,10 @@ export async function OPTIONS() {
 }
 
 // GET /api/users/[id]
-export async function GET(_req: NextRequest, ctx: { params: { id: string } }) {
-    const params = UserIdParams.safeParse({ id: ctx.params.id });
+export async function GET(_req: NextRequest, ctx: any) {
+    const { id } = (ctx as { params: { id: string } }).params;
+
+    const params = UserIdParams.safeParse({ id: id });
     if (!params.success) return new NextResponse(JSON.stringify({ error: 'Invalid user ID' }), { status: 400, headers: corsHeaders });
 
     const result = await getUserByIdController(params.data);
@@ -17,8 +19,10 @@ export async function GET(_req: NextRequest, ctx: { params: { id: string } }) {
 }
 
 // PUT /api/users/[id]
-export async function PUT(req: NextRequest, ctx: { params: { id: string } }) {
-    const params = UserIdParams.safeParse({ id: ctx.params.id });
+export async function PUT(req: NextRequest, ctx: any) {
+    const { id } = (ctx as { params: { id: string } }).params;
+
+    const params = UserIdParams.safeParse({ id: id });
     if (!params.success) return new NextResponse(JSON.stringify({ error: 'Invalid user ID' }), { status: 400, headers: corsHeaders });
 
     const body = await req.json().catch(() => ({}));
@@ -30,8 +34,10 @@ export async function PUT(req: NextRequest, ctx: { params: { id: string } }) {
 }
 
 // DELETE /api/users/[id]
-export async function DELETE(_req: NextRequest, ctx: { params: { id: string } }) {
-    const params = UserIdParams.safeParse({ id: ctx.params.id });
+export async function DELETE(_req: NextRequest, ctx: any) {
+    const { id } = (ctx as { params: { id: string } }).params;
+
+    const params = UserIdParams.safeParse({ id: id });
     if (!params.success) return new NextResponse(JSON.stringify({ error: 'Invalid user ID' }), { status: 400, headers: corsHeaders });
 
     const result = await deleteUserController(params.data);
