@@ -3,8 +3,10 @@ import { corsHeaders } from '@/lib/cors';
 import { SpendTrendParams, SpendTrendQuery } from '@/lib/http/teams/trendSchemas';
 import { getSpendTrendController } from '@/lib/http/teams/teamsController';
 
-export async function GET(req: NextRequest, ctx: { params: { teamId: string } }) {
-    const paramsParsed = SpendTrendParams.safeParse({ teamId: ctx.params.teamId });
+export async function GET(req: NextRequest, ctx: any) {
+    const { teamId } = (ctx as { params: { teamId: string } }).params;
+
+    const paramsParsed = SpendTrendParams.safeParse({ teamId: teamId });
     if (!paramsParsed.success) return new NextResponse(JSON.stringify({ error: 'Bad teamId' }), { status: 400, headers: corsHeaders });
 
     const sp = new URL(req.url).searchParams;
