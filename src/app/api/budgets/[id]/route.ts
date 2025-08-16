@@ -9,22 +9,24 @@ async function readJsonIfAny(req: NextRequest) {
         : {};
 }
 
-export async function PUT(req: NextRequest, ctx: { params: { id: string } }) {
+export async function PUT(req: NextRequest, ctx: any) {
+    const { id } = (ctx as { params: { id: string } }).params;
     const body = await req.json().catch(() => ({}));
-    const result = await updateBudgetController(ctx.params.id, body);
+    const result = await updateBudgetController(id, body);
     return new NextResponse(
         result.body === null ? null : JSON.stringify(result.body),
         { status: result.status, headers: corsHeaders }
     );
 }
 
-export async function DELETE(req: NextRequest, ctx: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, ctx: any) {
+    const { id } = (ctx as { params: { id: string } }).params;
     // teamId can come from JSON body or ?teamId=
     const body = await readJsonIfAny(req);
     const sp = new URL(req.url).searchParams;
     const input = { teamId: body.teamId ?? sp.get('teamId') ?? undefined };
 
-    const result = await deleteBudgetController(ctx.params.id, input);
+    const result = await deleteBudgetController(id, input);
     return new NextResponse(
         result.body === null ? null : JSON.stringify(result.body),
         { status: result.status, headers: corsHeaders }
