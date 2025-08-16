@@ -13,8 +13,8 @@ const QuerySingle = z.object({
     teamId: z.string().transform(Number),
 });
 
-export async function GET(req: NextRequest, { params }: { params: { id?: string } }) {
-    const id = Number(params?.id);
+export async function GET(req: NextRequest, ctx : any) {
+    const { id } = (ctx as { params: { id: string } }).params;
     if (!Number.isInteger(id)) return fail('Invalid id', 400);
 
     const parsed = QuerySingle.safeParse({
@@ -24,7 +24,7 @@ export async function GET(req: NextRequest, { params }: { params: { id?: string 
         return NextResponse.json({ error: 'Invalid teamId' }, { status: 400, headers: corsHeaders });
     }
 
-    const row = await getTransactionById(parsed.data.teamId, id);
+    const row = await getTransactionById(parsed.data.teamId, Number(id));
     return ok(row ?? {});
 }
 
