@@ -1,27 +1,24 @@
-import {NextRequest, NextResponse} from 'next/server';
-import {corsHeaders, jsonWithCors} from '@/lib/cors';
-import { getCategoryByName } from '@/lib/services/categoryService';
+import { NextRequest, NextResponse } from 'next/server';
+import { corsHeaders } from '@/lib/cors';
+import { checkCategoryExistsController } from '@/lib/http/categories/categoryController';
 
 export async function POST(req: NextRequest) {
     try {
-        const { name, userId } = await req.json();
+        const body = await req.json().catch(() => ({}));
+        const result = await checkCategoryExistsController(body);
 
-        if (!name || typeof name !== 'string' || !userId || isNaN(userId)) {
-            return jsonWithCors({ error: 'Invalid input' }, 400);
-        }
-
-        const category = await getCategoryByName(name, userId);
-        return jsonWithCors({ exists: !!category });
-    } catch (error) {
-        console.error('Error checking category existence:', error);
-        return jsonWithCors({ error: 'Internal server error' }, 500);
+        return new NextResponse(
+            JSON.stringify(result.body),
+            { status: result.status, headers: corsHeaders }
+        );
+    } catch (e) {
+        return new NextResponse(JSON.stringify({ error: 'Internal server error' }), {
+            status: 500,
+            headers: corsHeaders,
+        });
     }
 }
 
-// Handle OPTIONS preflight
 export async function OPTIONS() {
-    return new NextResponse(null, {
-        status: 204,
-        headers: corsHeaders,
-    })
+    return new NextResponse(null, { status: 204, headers: corsHeaders });
 }

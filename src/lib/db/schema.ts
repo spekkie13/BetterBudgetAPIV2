@@ -1,6 +1,6 @@
 import {
     pgTable, serial, integer, varchar, text, timestamp, boolean, date, pgEnum,
-    jsonb, primaryKey, uniqueIndex, index, bigserial, bigint
+    jsonb, primaryKey, uniqueIndex, index, bigserial, bigint, AnyPgColumn
 } from 'drizzle-orm/pg-core';
 
 // ---------- Enums ----------
@@ -46,16 +46,14 @@ export const accounts = pgTable('account', {
 ]);
 
 // ---------- Categories ----------
-export let categories: any; // temporary
-
-categories = pgTable('category', {
+export const categories = pgTable('category', {
     id: serial('id').primaryKey(),
     teamId: integer('team_id').notNull().references(() => teams.id, { onDelete: 'cascade' }),
     name: varchar('name', { length: 255 }).notNull(),
     type: categoryType('type').notNull().default('expense'),
     color: varchar('color', { length: 32 }).notNull(),
     icon: varchar('icon', { length: 64 }).notNull(),
-    parentId: integer('parent_id').references(() => (categories as any).id, { onDelete: 'set null' }),
+    parentId: integer('parent_id').references((): AnyPgColumn => categories.id, { onDelete: 'set null' }),
 });
 
 

@@ -1,45 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server';
-import {fail, ok} from '@/lib/utils/apiResponse'
 import { corsHeaders } from '@/lib/cors';
-import * as categoryService from '@/lib/services/categoryService';
-import {isValid} from "@/lib/helpers";
+import { updateCategoryController, deleteCategoryController } from '@/lib/http/categories/categoryController';
+
+// small helper
+async function readJsonIfAny(req: NextRequest) {
+    return req.headers.get('content-type')?.includes('application/json')
+        ? await req.json().catch(() => ({}))
+        : {};
+}
 
 export async function PUT(req: NextRequest) {
-    const { searchParams } = new URL(req.url);
-    const idParam = searchParams.get('id');
+    const searchParams = new URL(req.url).searchParams;
+    const body = await readJsonIfAny(req);
 
-    if (!isValid(idParam)) return fail('Must provide a valid id', 400);
+    const result = await updateCategoryController(searchParams, body);
 
-    const id = parseInt(idParam);
-    if (isNaN(id)) return fail( 'Invalid ID', 400)
-
-    const body = await req.json();
-    const updated = await categoryService.updateCategory({ ...body, id });
-
-    return ok(updated);
+    return new NextResponse(
+        result.body === null ? null : JSON.stringify(result.body),
+        { status: result.status, headers: corsHeaders }
+    );
 }
 
 export async function DELETE(req: NextRequest) {
-    const { searchParams } = new URL(req.url);
-    const idParam = searchParams.get('id');
-    const teamIdParam = searchParams.get('teamId');
+    const searchParams = new URL(req.url).searchParams;
 
-    if (!isValid(idParam)) return fail('Must provide a valid id', 400);
-    if (!isValid(teamIdParam)) return fail('Must provide a valid id', 400);
+    const result = await deleteCategoryController(searchParams);
 
-    const id = parseInt(idParam);
-    const teamId = parseInt(teamIdParam);
-    if (isNaN(id)) return fail('Invalid ID', 400)
-    if (isNaN(teamId)) return fail('Invalid Team ID', 400)
-
-    await categoryService.deleteCategoryById(id, teamId);
-    return ok({}, 'Category deleted successfully', 201);
+    return new NextResponse(
+        result.body === null ? null : JSON.stringify(result.body),
+        { status: result.status, headers: corsHeaders }
+    );
 }
 
-// Handle OPTIONS preflight
 export async function OPTIONS() {
-    return new NextResponse(null, {
-        status: 204,
-        headers: corsHeaders,
-    });
+    return new NextResponse(null, { status: 204, headers: corsHeaders });
 }

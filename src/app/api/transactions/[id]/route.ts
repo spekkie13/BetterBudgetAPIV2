@@ -2,13 +2,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { corsHeaders } from '@/lib/cors';
 import { ok, fail } from '@/lib/utils/apiResponse';
-import {
-    updateTransaction,     // (payload) -> updated row | null
-    deleteTransactionById, // (teamId: number, id: number) -> void
-} from '@/lib/services/transactionService';
+import { updateTransaction, deleteTransactionById, getTransactionById } from '@/lib/services/transaction/transactionService';
+import { z } from 'zod'
 
 export async function OPTIONS() {
     return new NextResponse(null, { status: 204, headers: corsHeaders });
+}
+
+const QuerySingle = z.object({
+    teamId: z.string().transform(Number),
+});
+
+export async function GET(req: NextRequest, { params }: { params: { id?: string } }) {
+    const id = Number(params?.id);
+    if (!Number.isInteger(id)) return fail('Invalid id', 400);
+
+    const parsed = QuerySingle.safeParse({
+        teamId: new URL(req.url).searchParams.get('teamId'),
+    });
+    if (!parsed.success || !Number.isInteger(parsed.data.teamId)) {
+        return NextResponse.json({ error: 'Invalid teamId' }, { status: 400, headers: corsHeaders });
+    }
+
+    const row = await getTransactionById(parsed.data.teamId, id);
+    return ok(row ?? {});
 }
 
 /**

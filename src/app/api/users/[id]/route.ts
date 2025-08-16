@@ -1,65 +1,39 @@
-import {corsHeaders} from '@/lib/cors';
-import {NextRequest, NextResponse} from 'next/server';
-import {deleteUserById, getUserByEmail, getUserById, updateUser} from "@/lib/services/userService";
-import { ok, fail } from '@/lib/utils/apiResponse'
+import { NextRequest, NextResponse } from 'next/server';
+import { corsHeaders } from '@/lib/cors';
+import { UserIdParams, UpdateUserBody } from '@/lib/http/users/userSchemas';
+import { getUserByIdController, updateUserController, deleteUserController } from '@/lib/http/users/userController';
 
-// Handle OPTIONS preflight
 export async function OPTIONS() {
-    return new NextResponse(null, {
-        status: 204,
-        headers: corsHeaders,
-    })
+    return new NextResponse(null, { status: 204, headers: corsHeaders });
 }
 
-export async function GET(req: NextRequest) {
-    const { searchParams } = new URL(req.url);
-    const userIdParam = searchParams.get('userId');
-    const email = searchParams.get('email');
+// GET /api/users/[id]
+export async function GET(_req: NextRequest, ctx: { params: { id: string } }) {
+    const params = UserIdParams.safeParse({ id: ctx.params.id });
+    if (!params.success) return new NextResponse(JSON.stringify({ error: 'Invalid user ID' }), { status: 400, headers: corsHeaders });
 
-    if(userIdParam) {
-        const userId = parseInt(userIdParam);
-        if (isNaN(userId)) {
-            console.log('invalid user ID')
-            return fail('Provide a valid user ID')
-        }
-        const user = await getUserById(userId)
-        return user ? ok(user) : fail('user not found', 404)
-    }
-
-    if(email){
-        const user = await getUserByEmail(email);
-        return user ? ok(user) : fail('user not found', 404);
-    }
-
-    console.log('No user ID or email provided')
-    return fail('User ID or email is required', 400)
+    const result = await getUserByIdController(params.data);
+    return new NextResponse(result.body === null ? null : JSON.stringify(result.body), { status: result.status, headers: corsHeaders });
 }
 
-export async function PUT(req: NextRequest) {
-    const { searchParams } = new URL(req.url);
-    const idParam = searchParams.get('id');
+// PUT /api/users/[id]
+export async function PUT(req: NextRequest, ctx: { params: { id: string } }) {
+    const params = UserIdParams.safeParse({ id: ctx.params.id });
+    if (!params.success) return new NextResponse(JSON.stringify({ error: 'Invalid user ID' }), { status: 400, headers: corsHeaders });
 
-    if (idParam) {
-        const id = parseInt(idParam);
-        const body = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const parsed = UpdateUserBody.safeParse(body);
+    if (!parsed.success) return new NextResponse(JSON.stringify({ error: 'Invalid body' }), { status: 400, headers: corsHeaders });
 
-        const updatedUser = await updateUser({
-            id,
-            ...body
-        });
-        return ok(updatedUser);
-    }
-    return fail('User ID is required', 400);
+    const result = await updateUserController(params.data, parsed.data);
+    return new NextResponse(JSON.stringify(result.body), { status: result.status, headers: corsHeaders });
 }
 
-export async function DELETE(req: NextRequest) {
-    const { searchParams } = new URL(req.url);
-    const idParam = searchParams.get('id');
+// DELETE /api/users/[id]
+export async function DELETE(_req: NextRequest, ctx: { params: { id: string } }) {
+    const params = UserIdParams.safeParse({ id: ctx.params.id });
+    if (!params.success) return new NextResponse(JSON.stringify({ error: 'Invalid user ID' }), { status: 400, headers: corsHeaders });
 
-    if (idParam) {
-        const id = parseInt(idParam);
-        await deleteUserById(id)
-        return ok({}, 'User deleted')
-    }
-    return fail('User ID is required', 400);
+    const result = await deleteUserController(params.data);
+    return new NextResponse(null, { status: result.status, headers: corsHeaders });
 }

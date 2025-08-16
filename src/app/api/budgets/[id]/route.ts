@@ -1,65 +1,36 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { corsHeaders } from '@/lib/cors'
-import { ok, fail } from '@/lib/utils/apiResponse'
-import { updateBudget, deleteBudgetById } from '@/lib/services/budgetService'
+import { NextRequest, NextResponse } from 'next/server';
+import { corsHeaders } from '@/lib/cors';
+import { updateBudgetController, deleteBudgetController } from '@/lib/http/budgets/budgetController';
 
-export async function PUT(req: NextRequest, ctx : any) {
-    try {
-        // ID comes only from the URL path
-        const { id } = (ctx as { params: { id: string } }).params;
-        if (!Number.isInteger(id)) return fail('Valid id is required', 400);
-
-        const body = await req.json();
-
-        // Related context can come from body (teamId is not a resource ID, so it’s fine here)
-        const teamId = Number(body.teamId);
-        if (!Number.isInteger(teamId)) return fail('Valid teamId is required', 400);
-
-        const updated = await updateBudget({
-            id: Number(id),
-            teamId,
-            amount: Number(body.amount),
-            month: body.month, // "YYYY-MM" or Date; service normalizes
-            categoryId: Number(body.categoryId),
-            rollover: Boolean(body.rollover)
-        });
-
-        if (!updated) return fail('Budget not found', 404);
-        return ok(updated);
-    } catch (e) {
-        console.error('PUT /api/budgets/[id] error:', e);
-        return fail('Internal server error', 500);
-    }
+// Helper: read JSON body if present
+async function readJsonIfAny(req: NextRequest) {
+    return req.headers.get('content-type')?.includes('application/json')
+        ? await req.json().catch(() => ({}))
+        : {};
 }
 
-export async function DELETE(req: NextRequest, ctx : any) {
-    try {
-        // id must come from the route param
-        const { id } = (ctx as { params: { id: string } }).params;
-        if (!Number.isInteger(id)) return fail('Valid id is required', 400);
+export async function PUT(req: NextRequest, ctx: { params: { id: string } }) {
+    const body = await req.json().catch(() => ({}));
+    const result = await updateBudgetController(ctx.params.id, body);
+    return new NextResponse(
+        result.body === null ? null : JSON.stringify(result.body),
+        { status: result.status, headers: corsHeaders }
+    );
+}
 
-        // optional body (but we expect teamId in it for auth/guarding)
-        let teamId: number | null = null;
-        if (req.headers.get('content-type')?.includes('application/json')) {
-            const body = await req.json().catch(() => ({}));
-            teamId = Number(body.teamId);
-        }
+export async function DELETE(req: NextRequest, ctx: { params: { id: string } }) {
+    // teamId can come from JSON body or ?teamId=
+    const body = await readJsonIfAny(req);
+    const sp = new URL(req.url).searchParams;
+    const input = { teamId: body.teamId ?? sp.get('teamId') ?? undefined };
 
-        if (!Number.isInteger(teamId)) return fail('Valid teamId is required', 400);
-
-        await deleteBudgetById(teamId!, Number(id));
-        // Choose either 200 with a body...
-        return ok({ id }, 'Budget deleted'); // 200
-        // ...or 204 no-content (then return new NextResponse(null, { status: 204 }))
-    } catch (e) {
-        console.error('DELETE /api/budgets/[id] error:', e);
-        return fail('Internal server error', 500);
-    }
+    const result = await deleteBudgetController(ctx.params.id, input);
+    return new NextResponse(
+        result.body === null ? null : JSON.stringify(result.body),
+        { status: result.status, headers: corsHeaders }
+    );
 }
 
 export async function OPTIONS() {
-    return new NextResponse(null, {
-        status: 204,
-        headers: corsHeaders,
-    })
+    return new NextResponse(null, { status: 204, headers: corsHeaders });
 }
