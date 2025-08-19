@@ -1,18 +1,30 @@
 import { z } from 'zod';
+import {zId} from "@/lib/http/shared/schemas";
 
 // ---- atoms
-export const zId = z.union([z.number().int(), z.string()]).transform(Number).refine(Number.isInteger, 'Invalid id');
-export const zTeamId = z.union([z.number().int(), z.string()])
-    .transform(v => (v === '' || v == null ? undefined : Number(v)))
-    .refine(v => v === undefined || Number.isInteger(v), 'Invalid teamId');
+const numOpt = z.preprocess(
+    v => (v === '' || v == null ? undefined : v),
+    z.coerce.number().int().optional()
+)
 
-// ---- collection GET
+const emailOpt = z.preprocess(
+    v => (v === '' || v == null ? undefined : v),
+    z.string().email().optional()
+)
+
 export const UsersQuery = z.object({
-    userId: z.union([z.string(), z.number(), z.undefined()]).transform(v => (v == null ? undefined : Number(v)))
-        .refine(v => v === undefined || Number.isInteger(v), 'Invalid userId'),
-    teamId: zTeamId,
-    email: z.string().email().optional(),
-});
+    userId: numOpt,   // ?userId=1
+    teamId: numOpt,   // ?teamId=1
+    email:  emailOpt, // ?email=foo@bar.com
+})
+    .superRefine((val, ctx) => {
+        const provided = ['userId', 'teamId', 'email'].filter(k => (val as any)[k] !== undefined)
+        if (provided.length === 0) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Provide one of: userId, teamId or email.' })
+        } else if (provided.length > 1) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Provide only one of: userId, teamId or email.' })
+        }
+    })
 export type UsersQueryInput = z.infer<typeof UsersQuery>;
 
 // ---- create

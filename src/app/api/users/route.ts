@@ -10,11 +10,14 @@ export async function OPTIONS() {
 // GET /api/users?userId=&teamId=&email=
 export async function GET(req: NextRequest) {
     const sp = new URL(req.url).searchParams;
+    console.log(req.url)
+    console.log(sp)
     const parsed = UsersQuery.safeParse({
         userId: sp.get('userId') ?? undefined,
         teamId: sp.get('teamId') ?? undefined,
         email: sp.get('email') ?? undefined,
     });
+    console.log(parsed);
     if (!parsed.success) {
         return new NextResponse(JSON.stringify({ error: 'Invalid query' }), { status: 400, headers: corsHeaders });
     }
