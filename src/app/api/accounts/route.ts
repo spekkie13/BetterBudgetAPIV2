@@ -4,18 +4,33 @@ import { corsHeaders } from '@/lib/cors';
 import { AccountsParams, AccountsQuery, CreateAccountBody } from '@/lib/http/accounts/accountSchemas';
 import { listAccountsController, createAccountController } from '@/lib/http/accounts/accountsController';
 
-export async function GET(req: NextRequest, ctx: any) {
-    const { teamId } = (ctx as { params: { teamId: string } }).params;
-
-    const p = AccountsParams.safeParse({ teamId: teamId });
-    if (!p.success) return new NextResponse(JSON.stringify({ error: 'Invalid teamId' }), { status: 400, headers: corsHeaders });
-
+export async function GET(req: NextRequest) {
     const sp = new URL(req.url).searchParams;
-    const q = AccountsQuery.safeParse({ includeArchived: sp.get('includeArchived') ?? undefined });
-    if (!q.success) return new NextResponse(JSON.stringify({ error: 'Invalid query' }), { status: 400, headers: corsHeaders });
+    const teamId = sp.get("teamId");
+
+    const p = AccountsParams.safeParse({ teamId });
+    if (!p.success) {
+        return new NextResponse(
+            JSON.stringify({ error: "Invalid teamId" }),
+            { status: 400, headers: corsHeaders }
+        );
+    }
+
+    const q = AccountsQuery.safeParse({
+        includeArchived: sp.get("includeArchived") ?? undefined,
+    });
+    if (!q.success) {
+        return new NextResponse(
+            JSON.stringify({ error: "Invalid query" }),
+            { status: 400, headers: corsHeaders }
+        );
+    }
 
     const result = await listAccountsController(p.data.teamId, q.data);
-    return new NextResponse(JSON.stringify(result.body), { status: result.status, headers: corsHeaders });
+    return new NextResponse(JSON.stringify(result.body), {
+        status: result.status,
+        headers: corsHeaders,
+    });
 }
 
 export async function POST(req: NextRequest, ctx: any) {
