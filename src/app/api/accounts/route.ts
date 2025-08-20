@@ -4,8 +4,10 @@ import { corsHeaders } from '@/lib/cors';
 import { AccountsParams, AccountsQuery, CreateAccountBody } from '@/lib/http/accounts/accountSchemas';
 import { listAccountsController, createAccountController } from '@/lib/http/accounts/accountsController';
 
-export async function GET(req: NextRequest, ctx: { params: { teamId: string } }) {
-    const p = AccountsParams.safeParse({ teamId: ctx.params.teamId });
+export async function GET(req: NextRequest, ctx: any) {
+    const { teamId } = (ctx as { params: { teamId: string } }).params;
+
+    const p = AccountsParams.safeParse({ teamId: teamId });
     if (!p.success) return new NextResponse(JSON.stringify({ error: 'Invalid teamId' }), { status: 400, headers: corsHeaders });
 
     const sp = new URL(req.url).searchParams;
@@ -16,8 +18,10 @@ export async function GET(req: NextRequest, ctx: { params: { teamId: string } })
     return new NextResponse(JSON.stringify(result.body), { status: result.status, headers: corsHeaders });
 }
 
-export async function POST(req: NextRequest, ctx: { params: { teamId: string } }) {
-    const p = AccountsParams.safeParse({ teamId: ctx.params.teamId });
+export async function POST(req: NextRequest, ctx: any) {
+    const { teamId } = (ctx as { params: { teamId: string; id: string } }).params;
+
+    const p = AccountsParams.safeParse({ teamId: teamId });
     if (!p.success) return new NextResponse(JSON.stringify({ error: 'Invalid teamId' }), { status: 400, headers: corsHeaders });
 
     const body = await req.json().catch(() => ({}));
