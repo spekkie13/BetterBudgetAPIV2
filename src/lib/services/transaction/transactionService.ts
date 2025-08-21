@@ -68,7 +68,7 @@ export async function createTransaction(data: CreateTxnInput) {
     const cents = toCentsStrict(data.amount);
     const kind: TxnKind = data.kind ?? (cents >= 0 ? 'income' : 'expense');
     const signedCents = kind === 'income' ? POS(cents) : NEG(cents);
-
+    console.log(signedCents);
     return txRepo.tx(async (conn) => {
         const currency = data.currency ?? (await userRepo.getCurrency(data.accountId));
         if (!currency) throw new Error('Account not found');
@@ -102,7 +102,7 @@ export async function createTransaction(data: CreateTxnInput) {
                 amountCents: kind === 'income' ? POS(toCentsStrict(s.amount)) : NEG(toCentsStrict(s.amount)),
             })));
         }
-
+        console.log(created)
         return created;
     });
 }
