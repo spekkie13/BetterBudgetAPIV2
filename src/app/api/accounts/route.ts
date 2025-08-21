@@ -4,6 +4,10 @@ import { corsHeaders } from '@/lib/cors';
 import { AccountsParams, AccountsQuery, CreateAccountBody } from '@/lib/http/accounts/accountSchemas';
 import { listAccountsController, createAccountController } from '@/lib/http/accounts/accountsController';
 
+export async function OPTIONS() {
+    return new NextResponse(null, { status: 204, headers: corsHeaders });
+}
+
 export async function GET(req: NextRequest) {
     const sp = new URL(req.url).searchParams;
     const teamId = sp.get("teamId");

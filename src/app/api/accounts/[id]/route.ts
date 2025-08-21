@@ -4,6 +4,10 @@ import { corsHeaders } from '@/lib/cors';
 import { AccountIdParams, UpdateAccountBody } from '@/lib/http/accounts/accountSchemas';
 import { getAccountController, updateAccountController, deleteAccountController } from '@/lib/http/accounts/accountsController';
 
+export async function OPTIONS() {
+    return new NextResponse(null, { status: 204, headers: corsHeaders });
+}
+
 export async function GET(_req: NextRequest, ctx: any) {
     const { teamId, id } = (ctx as { params: { teamId: string; id: string } }).params;
 
