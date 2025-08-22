@@ -68,54 +68,71 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        console.log(body);
-        // Transfer
-        if (body?.isTransfer || (body?.fromAccountId && body?.toAccountId)) {
-            const teamId = Number(body?.teamId);
-            const fromAccountId = Number(body?.fromAccountId);
-            const toAccountId = Number(body?.toAccountId);
-            const amount = Number(body?.amount);
-            const date = new Date(body?.date);
 
-            if (!Number.isInteger(teamId)) return fail('Invalid teamId', 400);
-            if (!Number.isInteger(fromAccountId) || !Number.isInteger(toAccountId)) return fail('Invalid account ids', 400);
-            if (!Number.isFinite(amount)) return fail('Invalid amount', 400);
-            if (Number.isNaN(date.getTime())) return fail('Invalid date', 400);
+        // --- Normalize IDs and date aliases ---
+        const int = (v: unknown) => {
+            const n = Number(v);
+            return Number.isInteger(n) ? n : NaN;
+        };
+        const postedAtStr = body?.postedAt ?? body?.date ?? body?.createdAt;
+        const postedAt = new Date(postedAtStr ?? NaN);
+
+        // Accept both camel and legacy capital-ID keys from client
+        const fromAccountId = int(body?.fromAccountId ?? body?.fromAccountID);
+        const toAccountId   = int(body?.toAccountId   ?? body?.toAccountID);
+        const accountId     = int(body?.accountId ?? body?.fromAccountId ?? body?.fromAccountID);
+        const teamId        = int(body?.teamId);
+
+        // amounts are signed cents (no conversion!)
+        const amountCents = Number(body?.amountCents);
+
+        // Quick validators with clear messages
+        const requireInt = (ok: boolean, msg: string) => { if (!ok) return fail(msg, 400); };
+
+        if (Number.isNaN(postedAt.getTime())) return fail('Invalid postedAt/date/createdAt', 400);
+        if (!Number.isInteger(teamId))        return fail('Invalid teamId', 400);
+        if (!Number.isFinite(amountCents))    return fail('Invalid amountCents', 400);
+
+        const isTransfer = Boolean(body?.isTransfer) ||
+            (Number.isInteger(fromAccountId) && Number.isInteger(toAccountId));
+
+        if (isTransfer) {
+            requireInt(Number.isInteger(fromAccountId) && Number.isInteger(toAccountId), 'Invalid account ids');
+            if (fromAccountId === toAccountId) return fail('fromAccountId and toAccountId must differ', 400);
+            if (amountCents <= 0)              return fail('Transfer amountCents must be > 0', 400);
 
             const result = await createTransfer({
                 teamId,
                 fromAccountId,
                 toAccountId,
-                amount,
-                date,
-                memo: body?.memo,
+                amountCents,         // positive signed cents
+                postedAt,
+                memo: body?.memo ?? null,
                 createdBy: body?.createdBy ?? null,
+                currency: body?.currency
             });
+
             return ok(result, 'Transfer created', 201);
         }
 
         // Regular income/expense
-        const teamId = Number(body?.teamId);
-        const accountId = Number(body?.accountId);
-        const amount = Number(body?.amount);
-        const date = new Date(body?.date);
-
-        if (!Number.isInteger(teamId)) return fail('Invalid teamId', 400);
-        if (!Number.isInteger(accountId)) return fail('Invalid accountId', 400);
-        if (!Number.isFinite(amount)) return fail('Invalid amount', 400);
-        if (Number.isNaN(date.getTime())) return fail('Invalid date', 400);
-
+        requireInt(Number.isInteger(accountId), 'Invalid accountId');
+/*
+                updatedAt: "2025-08-21T20:16:29.337Z"
+ */
         const created = await createTransaction({
             teamId,
             accountId,
-            amount,
-            date,
-            categoryId: body?.categoryId !== undefined ? Number(body.categoryId) : undefined,
-            payee: body?.payee,
-            description: body?.description,
+            amountCents,           // signed cents; expense < 0, income > 0
+            postedAt,
+            categoryId: body?.categoryId != null ? int(body.categoryId) : undefined,
+            payee: body?.payee ?? null,
+            memo: body?.description ?? body?.memo ?? null,
             createdBy: body?.createdBy ?? null,
+            createdAt: body.createdAt,
+            updatedAt: body.updatedAt,
             currency: body?.currency,
-            splits: Array.isArray(body?.splits) ? body.splits : undefined,
+            splits: Array.isArray(body?.splits) ? body.splits : undefined // expect signed cents
         });
 
         return ok(created, 'Transaction created', 201);

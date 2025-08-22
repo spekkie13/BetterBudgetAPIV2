@@ -56,12 +56,12 @@ export async function PUT(req: NextRequest, ctx : any) {
         const updated = await updateTransaction({
             id,
             teamId,
-            amount: body?.amount,
-            date: body?.date ? new Date(body.date) : undefined,
+            amountCents: body?.amount,
+            postedAt: body?.date ? new Date(body.date) : undefined,
             accountId: body?.accountId,
             categoryId: body?.categoryId ?? undefined,
             payee: body?.payee,
-            description: body?.description,
+            memo: body?.description,
             splits:
                 body?.splits === null ? null :
                     Array.isArray(body?.splits) ? body.splits : undefined,
