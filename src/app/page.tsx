@@ -30,20 +30,26 @@ export default function HomePage() {
     };
 
     const createExpense = async () => {
-        const dateStr = "31/07/2025"
-        const [Day, Month, Year] = dateStr.split('/').map(Number);
-        const date = new Date(Date.UTC(Year, Month - 1, Day));
-
-        const res = await fetch('/api/expenses', {
+        const res = await fetch('/api/transactions', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                description: 'Test expense',
-                amount: 123.45,
-                date: date,
-                userId: 1,
-                categoryId: 43,
-                isRecurring: false,
+                amountCents: -100,
+                categoryId: 1,
+                createdAt: "2025-08-21T20:16:29.337Z",
+                createdBy: 1,
+                currency: "EUR",
+                deletedAt: null,
+                fromAccountID: 10,
+                id: 0,
+                isTransfer: false,
+                memo: "week boodschappen",
+                payee: "",
+                postedAt: "2025-08-21T20:16:29.337Z",
+                teamId: 1,
+                // toAccountID: null,
+                transferGroupId: null,
+                updatedAt: "2025-08-21T20:16:29.337Z"
             }),
         })
         const data = await res.json()

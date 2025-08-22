@@ -117,10 +117,8 @@ export async function POST(req: NextRequest) {
 
         // Regular income/expense
         requireInt(Number.isInteger(accountId), 'Invalid accountId');
-/*
-                updatedAt: "2025-08-21T20:16:29.337Z"
- */
-        const created = await createTransaction({
+
+        const transactionData = {
             teamId,
             accountId,
             amountCents,           // signed cents; expense < 0, income > 0
@@ -133,7 +131,9 @@ export async function POST(req: NextRequest) {
             updatedAt: body.updatedAt,
             currency: body?.currency,
             splits: Array.isArray(body?.splits) ? body.splits : undefined // expect signed cents
-        });
+        }
+        console.log(transactionData)
+        const created = await createTransaction(transactionData);
 
         return ok(created, 'Transaction created', 201);
     } catch (error) {
