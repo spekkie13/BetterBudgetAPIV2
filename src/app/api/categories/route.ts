@@ -10,7 +10,8 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
     try {
-        const body = await req.json().catch(() => ({}));
+        const body = await req.json()
+        console.log(body)
         const result = await createCategoryController(body);
         return new NextResponse(
             result.body === null ? null : JSON.stringify(result.body),

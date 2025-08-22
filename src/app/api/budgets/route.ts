@@ -15,6 +15,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
     try {
         const bodyRaw = await req.json();
+        console.log(bodyRaw);
         const parsed = CreateBudgetBody.safeParse(bodyRaw);
         if (!parsed.success) {
             return new NextResponse(JSON.stringify({ error: 'Invalid body' }), {
