@@ -36,6 +36,7 @@ export async function getCategoriesController(q: CategoryQueryInput): Promise<Ht
 export async function createCategoryController(body: unknown): Promise<HttpResult> {
     try {
         const parsed = CreateCategoryBody.safeParse(body);
+        console.log(parsed);
         if (!parsed.success) {
             return { status: 400, body: { error: 'Invalid body' } };
         }

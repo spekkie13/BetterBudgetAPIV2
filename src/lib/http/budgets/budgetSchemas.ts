@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { zTeamId, zMaybeId, zMonth, zMoney } from '@/lib/http/shared/schemas';
+import {zCategoryIdParam} from "@/lib/http/teams/commonSchemas";
 
 export const BudgetQuery = z.object({
     teamId: zTeamId,                // required
@@ -12,7 +13,7 @@ export type BudgetQueryInput = z.infer<typeof BudgetQuery>;
 
 export const CreateBudgetBody = z.object({
     teamId: zTeamId,
-    categoryId: zTeamId,            // same integer rules as ids
+    categoryId: zCategoryIdParam,            // same integer rules as ids
     month: zMonth,
     amount: zMoney,                 // major units (your service converts if needed)
     rollover: z.boolean().optional().default(false),
