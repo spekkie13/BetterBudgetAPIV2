@@ -1,14 +1,18 @@
+import * as budgetService from '@/lib/services/budget/budgetService';
 import {
     getBudgetById,
     getBudgetByMonthAndCategory,
     getBudgetsByCategory,
     getBudgetsByMonth,
     getAllBudgets,
-    createBudget, updateBudget, deleteBudgetById,
 } from '@/lib/services/budget/budgetService';
-import { BudgetQueryInput, CreateBudgetInput } from './budgetSchemas';
-import {AppError, HttpResult, toHttpResult} from '@/lib/http/shared/errors';
-import {DeleteBudgetInput, UpdateBudgetBody} from "@/lib/http/budgets/budgetIdSchema";
+import { BudgetQueryInput, CreateBudgetBody } from './budgetSchemas';
+import { HttpResult, toHttpResult} from '@/lib/http/shared/errors';
+import {
+    DeleteBudgetQuery,
+    UpdateBudgetBody,
+    UpdateBudgetQuery
+} from "@/lib/http/budgets/budgetMutateSchemas";
 
 export async function getBudgetsController(q: BudgetQueryInput): Promise<HttpResult> {
     try {
@@ -46,71 +50,60 @@ export async function getBudgetsController(q: BudgetQueryInput): Promise<HttpRes
     }
 }
 
-export async function createBudgetController(input: CreateBudgetInput): Promise<HttpResult> {
+export async function createBudgetController(body: unknown): Promise<HttpResult> {
     try {
-        const created = await createBudget({
-            teamId: input.teamId,
-            categoryId: input.categoryId,
-            month: input.month,
-            amount: input.amount,
-            rollover: input.rollover ?? false,
-        });
+        const parsed = CreateBudgetBody.safeParse(body);
+
+        if (!parsed.success) {
+            return { status: 400, body: { error: 'Invalid body' } };
+        }
+
+        const { teamId, categoryId, month, amount, rollover } = parsed.data;
+
+        const created = await budgetService.createBudget({
+            teamId,
+            categoryId,
+            month,
+            amount,
+            rollover
+        })
         return { status: 201, body: created };
     } catch (e) {
         return toHttpResult(e);
     }
 }
 
-function parseId(raw?: string): number {
-    const id = Number(raw);
-    if (!Number.isInteger(id)) throw new AppError('BAD_REQUEST', 'Valid id is required', 400);
-    return id;
-}
-
-export async function updateBudgetController(ctxId: string, body: unknown): Promise<HttpResult> {
+export async function updateBudgetController(query: URLSearchParams, body: unknown): Promise<HttpResult> {
     try {
-        const id = parseId(ctxId);
+        const q = UpdateBudgetQuery.safeParse(Object.fromEntries(query.entries()));
+        if (!q.success) return { status: 400, body: { error: 'Must provide a valid id' } };
 
-        const parsed = UpdateBudgetBody.safeParse(body);
-        if (!parsed.success) {
-            return { status: 400, body: { error: 'Invalid body' } };
-        }
+        const b = UpdateBudgetBody.safeParse(body);
+        if (!b.success) return { status: 400, body: { error: 'Invalid body' } };
 
-        const { teamId, amount, month, categoryId, rollover } = parsed.data;
+        const updated = await budgetService.upsertBudget({
+            teamId: b.data.teamId,
+            amount: b.data.amount,
+            month: b.data.month,
+            categoryId: b.data.categoryId,
+            rollover: b.data.rollover
+        })
 
-        const updated = await updateBudget({
-            id,
-            teamId,
-            amount: Number(amount),
-            month,
-            categoryId,
-            rollover: Boolean(rollover),
-        });
-
-        if (!updated) {
-            return { status: 404, body: { error: 'Budget not found' } };
-        }
+        if (!updated) return { status: 404, body: { error: 'Budget not found' } };
 
         return { status: 200, body: updated };
-    } catch (e) {
+    }catch (e) {
         return toHttpResult(e);
     }
 }
 
-export async function deleteBudgetController(ctxId: string, input: unknown): Promise<HttpResult> {
+export async function deleteBudgetController(query: URLSearchParams): Promise<HttpResult> {
     try {
-        const id = parseId(ctxId);
+        const q = DeleteBudgetQuery.safeParse(Object.fromEntries(query.entries()));
+        if (!q.success) return { status: 400, body: { error: 'Must provide a valid id and teamId' } };
 
-        // Support teamId via JSON body or query; validation happens here
-        const parsed = DeleteBudgetInput.safeParse(input);
-        if (!parsed.success) {
-            return { status: 400, body: { error: 'Valid teamId is required' } };
-        }
+        await budgetService.deleteBudgetById(q.data.id, q.data.teamId);
 
-        const { teamId } = parsed.data;
-
-        await deleteBudgetById(teamId, id);
-        // If your service returns false on not-found, map to 404 instead.
         return { status: 204, body: null };
     } catch (e) {
         return toHttpResult(e);

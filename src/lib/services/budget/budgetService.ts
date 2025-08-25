@@ -10,7 +10,7 @@ export async function getAllBudgets(teamId: number): Promise<BudgetRow[]> {
 }
 
 export async function getBudgetById(teamId: number, id: number): Promise<BudgetRow | null> {
-    return repo.selectById(teamId, id);
+    return repo.selectByTeamAndId(teamId, id);
 }
 
 export async function getBudgetByMonthAndCategory(
@@ -48,24 +48,21 @@ export async function createBudget(data: {
 }
 
 /** Update on (team_id, category_id, period_month) */
-export async function updateBudget(data: {
-    id: number;
+export async function upsertBudget(data: {
     teamId: number;          // guard updates by team
     amount?: number;         // major units
     month?: string | Date;   // move to another month
     categoryId?: number;     // reassign category
     rollover?: boolean;
 }): Promise<BudgetRow | null> {
-    const patch: Partial<BudgetInsert> = {};
-    if (data.amount !== undefined) patch.amountCents = toCents(data.amount);
-    if (data.month !== undefined) patch.periodMonth = monthToDate(data.month);
-    if (data.categoryId !== undefined) patch.categoryId = data.categoryId;
-    if (data.rollover !== undefined) patch.rollover = data.rollover;
-
-    // no-op fast path
-    if (Object.keys(patch).length === 0) return repo.selectById(data.teamId, data.id);
-
-    return repo.updateById(data.teamId, data.id, patch);
+    const values: BudgetInsert = {
+        teamId: data.teamId,
+        amountCents: toCents(data.amount ?? 0),
+        periodMonth: monthToDate(data.month ?? '2025-08'),
+        categoryId: data.categoryId ?? 0,
+        rollover: data.rollover ?? false,
+    }
+    return repo.upsert(values);
 }
 
 export async function deleteBudgetById(teamId: number, id: number): Promise<void> {

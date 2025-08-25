@@ -8,7 +8,7 @@ export async function selectAllByTeam(teamId: number): Promise<BudgetRow[]> {
     return db.select().from(budget).where(eq(budget.teamId, teamId));
 }
 
-export async function selectById(teamId: number, id: number): Promise<BudgetRow | null> {
+export async function selectByTeamAndId(teamId: number, id: number): Promise<BudgetRow | null> {
     const rows = await db
         .select()
         .from(budget)
@@ -50,20 +50,22 @@ export async function insert(values: BudgetInsert): Promise<BudgetRow> {
     return created;
 }
 
-export async function updateById(teamId: number, id: number, patch: Partial<BudgetInsert>): Promise<BudgetRow | null> {
-    const [updated] = await db
-        .update(budget)
-        .set(patch)
-        .where(and(eq(budget.id, id), eq(budget.teamId, teamId)))
-        .returning({
-            id: budget.id,
-            teamId: budget.teamId,
-            categoryId: budget.categoryId,
-            periodMonth: budget.periodMonth,
-            amountCents: budget.amountCents,
-            rollover: budget.rollover,
-        });
-    return updated ?? null;
+export async function upsert(values: BudgetInsert): Promise<BudgetRow | null> {
+    const [row] = await db
+        .insert(budget)
+        .values(values)
+        .onConflictDoUpdate({
+            target: [budget.id],
+            set: {
+                teamId: values.teamId,
+                categoryId: values.categoryId,
+                periodMonth: values.periodMonth,
+                amountCents: values.amountCents,
+                rollover: values.rollover,
+            },
+        })
+        .returning();
+    return row;
 }
 
 export async function deleteById(teamId: number, id: number): Promise<void> {

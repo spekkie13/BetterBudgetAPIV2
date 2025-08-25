@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { zTeamId, zMaybeId, zMonth, zMoney } from '@/lib/http/shared/schemas';
+import {zTeamId, zMaybeId, zMonth, zMoney} from '@/lib/http/shared/schemas';
 import {zCategoryIdParam} from "@/lib/http/teams/commonSchemas";
 
 export const BudgetQuery = z.object({

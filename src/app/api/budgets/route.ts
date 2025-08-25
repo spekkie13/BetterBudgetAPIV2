@@ -8,18 +8,22 @@ import {
     updateBudgetController
 } from '@/lib/http/budgets/budgetController';
 
-export async function OPTIONS() {
-    return new NextResponse(null, { status: 204, headers: corsHeaders });
+async function readJsonIfAny(req: NextRequest) {
+    return req.headers.get('content-type')?.includes('application/json')
+        ? await req.json().catch(() => ({}))
+        : {};
 }
 
 export async function GET(req: NextRequest) {
     return handleGet(req, BudgetQuery, getBudgetsController);
 }
 
-export async function PUT(req: NextRequest, ctx: any) {
-    const { id } = (ctx as { params: { id: string } }).params;
-    const body = await req.json().catch(() => ({}));
-    const result = await updateBudgetController(id, body);
+export async function PUT(req: NextRequest) {
+    const searchParams = new URL(req.url).searchParams;
+    const body = await readJsonIfAny(req);
+
+    const result = await updateBudgetController(searchParams, body);
+
     return new NextResponse(
         result.body === null ? null : JSON.stringify(result.body),
         { status: result.status, headers: corsHeaders }
@@ -55,4 +59,8 @@ export async function POST(req: NextRequest) {
             headers: corsHeaders,
         });
     }
+}
+
+export async function OPTIONS() {
+    return new NextResponse(null, { status: 204, headers: corsHeaders });
 }
