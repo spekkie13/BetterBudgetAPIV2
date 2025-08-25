@@ -2,10 +2,32 @@ import { NextRequest, NextResponse } from 'next/server';
 import { corsHeaders } from '@/lib/cors';
 import { handleGet } from '@/lib/http/shared/handle';
 import { CategoryQuery } from '@/lib/http/categories/categorySchemas';
-import { getCategoriesController, createCategoryController } from '@/lib/http/categories/categoryController';
+import {
+    getCategoriesController,
+    createCategoryController,
+    updateCategoryController
+} from '@/lib/http/categories/categoryController';
+
+async function readJsonIfAny(req: NextRequest) {
+    return req.headers.get('content-type')?.includes('application/json')
+        ? await req.json().catch(() => ({}))
+        : {};
+}
 
 export async function GET(req: NextRequest) {
     return handleGet(req, CategoryQuery, getCategoriesController);
+}
+
+export async function PUT(req: NextRequest) {
+    const searchParams = new URL(req.url).searchParams;
+    const body = await readJsonIfAny(req);
+
+    const result = await updateCategoryController(searchParams, body);
+
+    return new NextResponse(
+        result.body === null ? null : JSON.stringify(result.body),
+        { status: result.status, headers: corsHeaders }
+    );
 }
 
 export async function POST(req: NextRequest) {

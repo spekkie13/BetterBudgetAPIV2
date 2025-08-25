@@ -7,105 +7,47 @@ export default function HomePage() {
 
     const log = (msg: string) => setLogs(prev => [msg, ...prev])
 
-    const createPeriod = async () => {
-        const startDateStr = "01/07/2025"
-        const [startDay, startMonth, StartYear] = startDateStr.split('/').map(Number);
-        const startDate = new Date(Date.UTC(StartYear, startMonth - 1, startDay));
-
-        const endDateStr = "31/07/2025"
-        const [endDay, endMonth, endYear] = endDateStr.split('/').map(Number);
-        const endDate = new Date(Date.UTC(endYear, endMonth - 1, endDay));
-
-        const res = await fetch('/api/periods/find-or-create', {
+    const createCategory = async () => {
+        const res = await fetch('/api/categories', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                startDate,
-                endDate,
-            }),
-        });
-
-        const data = await res.json();
-        log(`Created or fetched period: ${JSON.stringify(data)}`);
-    };
-
-    const createExpense = async () => {
-        const res = await fetch('/api/transactions', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                amountCents: -100,
-                categoryId: 1,
-                createdAt: "2025-08-21T20:16:29.337Z",
-                createdBy: 1,
-                currency: "EUR",
-                deletedAt: null,
-                fromAccountID: 10,
-                id: 0,
-                isTransfer: false,
-                memo: "week boodschappen",
-                payee: "",
-                postedAt: "2025-08-21T20:16:29.337Z",
                 teamId: 1,
-                // toAccountID: null,
-                transferGroupId: null,
-                updatedAt: "2025-08-21T20:16:29.337Z"
+                name: 'Test',
+                type: 'expense',
+                icon: '1',
+                color: 'blue',
+                parentId: null
             }),
         })
         const data = await res.json()
         log(`Created expense: ${JSON.stringify(data)}`)
     }
 
-    const createIncome = async () => {
-        const dateStr = "31/07/2025"
-        const [Day, Month, Year] = dateStr.split('/').map(Number);
-        const date = new Date(Date.UTC(Year, Month - 1, Day));
-
-        const res = await fetch('/api/incomes', {
+    const createBudget = async () => {
+        const res = await fetch('/api/budgets', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                amount: 123.45,
-                date: date,
-                userId: 1,
+                id: 0,
+                teamId: 1,
+                categoryId: 1,
+                periodMonth: '2025-09',
+                amountCents: 100000,
+                rollover: false
             }),
         })
         const data = await res.json()
-        log(`Created income: ${JSON.stringify(data)}`)
+        log(`Created expense: ${JSON.stringify(data)}`)
     }
-
-    const updateResult = async () => {
-        const resultId = 85;
-        const userId = 2;
-
-        const updatedResult = {
-            id: resultId,
-            userId: userId,
-            categoryId: 15,
-            periodId: 5,
-            totalSpent: 250.75,
-            percentageSpent: 55.8,
-        };
-
-        const res = await fetch(`/api/results/${resultId}?id=${resultId}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(updatedResult),
-        });
-
-        const data = await res.json();
-        log(`Updated result: ${JSON.stringify(data)}`);
-    };
 
     return (
         <div className="p-8 space-y-4">
             <h1 className="text-2xl font-bold">API Test Page</h1>
 
             <div className="space-x-2">
-                <button onClick={createPeriod} className="btn">Create Period</button>
-                <button onClick={createExpense} className="btn">Create Expense</button>
-                <button onClick={createIncome} className="btn">Create Income</button>
-                <button onClick={updateResult} className="btn">Update Result</button>
+                <button onClick={createCategory} className="btn">Create Category</button>
+                <button onClick={createBudget} className="btn">Create Budget</button>
             </div>
 
             <div className="mt-8">
