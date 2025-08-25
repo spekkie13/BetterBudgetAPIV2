@@ -1,22 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { corsHeaders } from '@/lib/cors';
-import { updateBudgetController, deleteBudgetController } from '@/lib/http/budgets/budgetController';
+import { deleteBudgetController } from '@/lib/http/budgets/budgetController';
 
 // Helper: read JSON body if present
 async function readJsonIfAny(req: NextRequest) {
     return req.headers.get('content-type')?.includes('application/json')
         ? await req.json().catch(() => ({}))
         : {};
-}
-
-export async function PUT(req: NextRequest, ctx: any) {
-    const { id } = (ctx as { params: { id: string } }).params;
-    const body = await req.json().catch(() => ({}));
-    const result = await updateBudgetController(id, body);
-    return new NextResponse(
-        result.body === null ? null : JSON.stringify(result.body),
-        { status: result.status, headers: corsHeaders }
-    );
 }
 
 export async function DELETE(req: NextRequest, ctx: any) {

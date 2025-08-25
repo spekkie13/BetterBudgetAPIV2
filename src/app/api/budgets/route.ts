@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { corsHeaders } from '@/lib/cors';
 import { handleGet } from '@/lib/http/shared/handle';
 import { BudgetQuery, CreateBudgetBody } from '@/lib/http/budgets/budgetSchemas';
-import { getBudgetsController, createBudgetController } from '@/lib/http/budgets/budgetController';
+import {
+    getBudgetsController,
+    createBudgetController,
+    updateBudgetController
+} from '@/lib/http/budgets/budgetController';
 
 export async function OPTIONS() {
     return new NextResponse(null, { status: 204, headers: corsHeaders });
@@ -10,6 +14,16 @@ export async function OPTIONS() {
 
 export async function GET(req: NextRequest) {
     return handleGet(req, BudgetQuery, getBudgetsController);
+}
+
+export async function PUT(req: NextRequest, ctx: any) {
+    const { id } = (ctx as { params: { id: string } }).params;
+    const body = await req.json().catch(() => ({}));
+    const result = await updateBudgetController(id, body);
+    return new NextResponse(
+        result.body === null ? null : JSON.stringify(result.body),
+        { status: result.status, headers: corsHeaders }
+    );
 }
 
 export async function POST(req: NextRequest) {
