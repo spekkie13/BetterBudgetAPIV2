@@ -33,9 +33,7 @@ export async function PUT(req: NextRequest) {
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json()
-        console.log(body)
         const result = await createCategoryController(body);
-        console.log(result)
         return new NextResponse(
             result.body === null ? null : JSON.stringify(result.body),
             { status: result.status, headers: corsHeaders }

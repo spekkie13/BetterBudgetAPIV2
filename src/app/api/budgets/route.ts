@@ -38,9 +38,7 @@ export async function POST(req: NextRequest) {
             month: bodyRaw.periodMonth,
             amount: bodyRaw.amountCents
         }
-        console.log(bodyRaw);
         const parsed = CreateBudgetBody.safeParse(bodyRaw);
-        console.log(parsed);
         if (!parsed.success) {
             return new NextResponse(JSON.stringify({ error: 'Invalid body' }), {
                 status: 400,

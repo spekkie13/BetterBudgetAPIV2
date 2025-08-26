@@ -68,7 +68,6 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        console.log(body)
         // --- Normalize IDs and date aliases ---
         const int = (v: unknown) => {
             const n = Number(v);
@@ -132,7 +131,7 @@ export async function POST(req: NextRequest) {
             currency: body?.currency,
             splits: Array.isArray(body?.splits) ? body.splits : undefined // expect signed cents
         }
-        console.log(transactionData)
+
         const created = await createTransaction(transactionData);
 
         return ok(created, 'Transaction created', 201);

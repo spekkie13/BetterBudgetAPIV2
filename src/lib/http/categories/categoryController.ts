@@ -35,13 +35,14 @@ export async function getCategoriesController(q: CategoryQueryInput): Promise<Ht
 
 export async function createCategoryController(body: unknown): Promise<HttpResult> {
     try {
-        const parsed = CreateCategoryBody.safeParse(body);
-        console.log(parsed);
-        if (!parsed.success) {
+        console.log(body);
+        const q = CreateCategoryBody.safeParse(body);
+
+        if (!q.success) {
             return { status: 400, body: { error: 'Invalid body' } };
         }
 
-        const { teamId, name, color, icon, type, parentId } = parsed.data;
+        const { teamId, name, color, icon, type, parentId } = q.data;
 
         const created = await categoryService.createCategory({
             teamId,
