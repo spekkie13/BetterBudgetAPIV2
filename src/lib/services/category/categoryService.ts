@@ -27,8 +27,9 @@ export async function createCategory(data: { teamId: number; name: string; color
     return repo.insert(values)
 }
 
-export async function upsertCategory(data: { teamId: number; name: string; color: string; icon: string; type?: 'expense' | 'income' | 'transfer'; parentId?: number | null; }) : Promise<CategoryRow> {
+export async function upsertCategory(data: { id?: number, teamId: number; name: string; color: string; icon: string; type?: 'expense' | 'income' | 'transfer'; parentId?: number | null; }) : Promise<CategoryRow> {
     const values: CategoryInsert = {
+        ...(data.id ? { id: data.id } : {}),
         teamId: data.teamId,
         name: data.name,
         color: data.color,

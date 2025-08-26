@@ -82,6 +82,7 @@ export async function updateBudgetController(query: URLSearchParams, body: unkno
         if (!b.success) return { status: 400, body: { error: 'Invalid body' } };
 
         const updated = await budgetService.upsertBudget({
+            id: q.data.id,
             teamId: b.data.teamId,
             amount: b.data.amount,
             month: b.data.month,

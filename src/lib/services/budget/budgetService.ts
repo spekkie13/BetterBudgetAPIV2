@@ -49,6 +49,7 @@ export async function createBudget(data: {
 
 /** Update on (team_id, category_id, period_month) */
 export async function upsertBudget(data: {
+    id?: number,
     teamId: number;          // guard updates by team
     amount?: number;         // major units
     month?: string | Date;   // move to another month
@@ -56,6 +57,7 @@ export async function upsertBudget(data: {
     rollover?: boolean;
 }): Promise<BudgetRow | null> {
     const values: BudgetInsert = {
+        ...(data.id ? { id: data.id } : {}),
         teamId: data.teamId,
         amountCents: toCents(data.amount ?? 0),
         periodMonth: monthToDate(data.month ?? '2025-08'),

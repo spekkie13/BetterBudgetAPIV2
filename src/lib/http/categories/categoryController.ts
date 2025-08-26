@@ -67,6 +67,7 @@ export async function updateCategoryController(query: URLSearchParams, body: unk
         if (!b.success) return { status: 400, body: { error: 'Invalid body' } };
 
         const updated = await categoryService.upsertCategory({
+            id: q.data.id,
             teamId: b.data.teamId,
             name: b.data.name ?? "",
             color: b.data.color ?? "",
