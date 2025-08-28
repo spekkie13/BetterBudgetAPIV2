@@ -71,7 +71,7 @@ export async function GET(req: NextRequest) {
     })();
 
     // month handling:
-    // - mode 2: use provided ?month or fallback to the current month
+    // - mode 2: use provided ?month or fallback to a current month
     // - mode 1: ignore month (all-time)
     const month = resolvedMode === 2 ? (q.month ?? currentMonthStr()) : undefined;
 
@@ -84,7 +84,7 @@ export async function GET(req: NextRequest) {
         cursor: q.cursor ?? null,
         id: q.id,
         categoryId: q.categoryId,
-        accountId: q.accountId ?? 0,
+        accountId: q.accountId,
     });
 
     return NextResponse.json(body, { status, headers: corsHeaders });
