@@ -3,43 +3,20 @@ import { db } from '@/lib/db/client';
 import { transactions as txn, transactionSplits as splits } from '@/lib/db/schema';
 import { and, eq, gte, lt, desc, isNull, inArray, or, SQL } from 'drizzle-orm';
 
+type TypeFilter = 'income' | 'expense' | 'transfer';
+
 type BaseFilter = {
     teamId: number;
-    start: Date;
-    end: Date;
-    cursor?: { postedAt: Date; id: number } | null;
-    type?: 'income' | 'expense' | 'transfer';
+    start?: Date; // undefined => all-time
+    end?: Date;   // undefined => all-time
+    cursor?: { postedAt?: Date; id?: number } | null;
+    type?: TypeFilter;
+    accountId?: number;
 };
 
-function baseConds({ teamId, start, end, cursor, type }: BaseFilter): SQL[] {
-    const conds: (SQL | undefined)[] = [
-        eq(txn.teamId, teamId),
-        isNull(txn.deletedAt),
-        gte(txn.postedAt, start),
-        lt(txn.postedAt, end),
-    ];
-
-    // transfer / sign filters
-    if (type === 'transfer') {
-        conds.push(eq(txn.isTransfer, true));
-    } else {
-        conds.push(eq(txn.isTransfer, false));
-        if (type === 'expense') conds.push(lt(txn.amountCents, 0 as any));
-        if (type === 'income')  conds.push(gte(txn.amountCents, 0 as any)); // >= 0 to include zeroes if you want
-    }
-
-    // compound keyset: (postedAt < c.postedAt) OR (postedAt = c.postedAt AND id < c.id)
-    if (cursor) {
-        conds.push(
-            or(
-                lt(txn.postedAt, cursor.postedAt),
-                and(eq(txn.postedAt, cursor.postedAt), lt(txn.id, cursor.id))
-            )
-        );
-    }
-
-    return conds.filter(Boolean) as SQL[];
-}
+type ListArgs = BaseFilter & {
+    categoryId?: number;
+};
 
 export async function getById(teamId: number, id: number) {
     const rows = await db
@@ -50,55 +27,108 @@ export async function getById(teamId: number, id: number) {
     return rows[0] ?? null;
 }
 
-export async function listBase(filter: BaseFilter, limit: number) {
-    const items = await db
-        .select()
-        .from(txn)
-        .where(and(...baseConds(filter)))
-        .orderBy(desc(txn.postedAt), desc(txn.id))
-        .limit(limit);
+function baseConditions({ teamId, start, end, cursor, type, accountId }: BaseFilter): SQL[] {
+    const conditions: (SQL | undefined)[] = [
+        eq(txn.teamId, teamId),
+        isNull(txn.deletedAt),
+        start ? gte(txn.postedAt, start) : undefined,
+        end   ? lt(txn.postedAt, end)    : undefined,
+    ];
 
-    const last = items.at(-1);
-    const nextCursor = last ? { postedAt: last.postedAt, id: last.id } : null;
-    return { items, nextCursor };
+    // Transfer / sign filters op parent txn
+    if (type === 'transfer') {
+        conditions.push(eq(txn.isTransfer, true));
+    } else if (type === 'expense') {
+        conditions.push(eq(txn.isTransfer, false));
+        conditions.push(lt(txn.amountCents, 0 as any));
+    } else if (type === 'income') {
+        conditions.push(eq(txn.isTransfer, false));
+        conditions.push(gte(txn.amountCents, 0 as any));
+    } else {
+        // show all
+    }
+
+    if (accountId !== undefined) {
+        conditions.push(eq(txn.accountId, accountId));
+    }
+
+    if (cursor?.postedAt || cursor?.id) {
+        const cDate = cursor.postedAt ?? new Date(8640000000000000); // far future fallback
+        const cId = cursor.id ?? Number.MAX_SAFE_INTEGER;
+        conditions.push(
+            or(
+                lt(txn.postedAt, cDate),
+                and(eq(txn.postedAt, cDate), lt(txn.id, cId))
+            )
+        );
+    }
+
+    return conditions.filter(Boolean) as SQL[];
 }
 
-export async function listWithCategory(filter: BaseFilter & { categoryId: number }, limit: number) {
-    // 1) base txn category matches
+export async function list(args: ListArgs, limit: number): Promise<{
+    items: any[];
+    nextCursor: { postedAt: Date; id: number } | null;
+}> {
+    const { categoryId, ...base } = args;
+
+    if (categoryId === undefined) {
+        const items = await db
+            .select()
+            .from(txn)
+            .where(and(...baseConditions(base)))
+            .orderBy(desc(txn.postedAt), desc(txn.id))
+            .limit(limit + 1);
+
+        let nextCursor = null as { postedAt: Date; id: number } | null;
+        let sliced = items;
+
+        if (items.length > limit) {
+            const last = items[limit - 1];
+            nextCursor = { postedAt: last.postedAt, id: last.id };
+            sliced = items.slice(0, limit);
+        }
+
+        return { items: sliced, nextCursor };
+    }
+
     const baseMatches = await db
         .select({ id: txn.id, postedAt: txn.postedAt })
         .from(txn)
-        .where(and(...baseConds(filter), eq(txn.categoryId, filter.categoryId)))
+        .where(and(...baseConditions(base), eq(txn.categoryId, categoryId)))
         .orderBy(desc(txn.postedAt), desc(txn.id))
         .limit(limit * 2);
 
-    // 2) split category matches
     const splitMatches = await db
         .select({ id: txn.id, postedAt: txn.postedAt })
         .from(splits)
         .innerJoin(txn, eq(splits.txnId, txn.id))
-        .where(and(...baseConds(filter), eq(splits.categoryId, filter.categoryId)))
+        .where(and(...baseConditions(base), eq(splits.categoryId, categoryId)))
         .orderBy(desc(txn.postedAt), desc(txn.id))
         .limit(limit * 2);
 
-    // 3) merge distinct by id, sort, slice
+    // 3) merge distinct by id, sort desc, slice limit
     const seen = new Set<number>();
     const merged = [...baseMatches, ...splitMatches]
         .filter(r => (seen.has(r.id) ? false : (seen.add(r.id), true)))
-        .sort((a, b) => (b.postedAt.getTime() - a.postedAt.getTime()) || (b.id - a.id))
+        .sort((a, b) =>
+            (b.postedAt.getTime() - a.postedAt.getTime()) || (b.id - a.id)
+        )
         .slice(0, limit);
 
-    if (merged.length === 0) return { items: [], nextCursor: null };
+    if (merged.length === 0) {
+        return { items: [], nextCursor: null };
+    }
 
-    // 4) hydrate in stable order
     const ids = merged.map(m => m.id);
     const items = await db
         .select()
         .from(txn)
-        .where(and(eq(txn.teamId, filter.teamId), inArray(txn.id, ids)))
+        .where(and(eq(txn.teamId, base.teamId), inArray(txn.id, ids), isNull(txn.deletedAt)))
         .orderBy(desc(txn.postedAt), desc(txn.id));
 
     const last = merged.at(-1)!;
     const nextCursor = { postedAt: last.postedAt, id: last.id };
+
     return { items, nextCursor };
 }
