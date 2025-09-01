@@ -6,6 +6,7 @@ import {
 // ---------- Enums ----------
 export const categoryType = pgEnum('category_type', ['expense','income','transfer']);
 export const currencyCode = pgEnum('currency_code', ['USD','EUR','GBP','JPY','CAD','AUD','NZD']);
+export const periodStart = pgEnum('period_start', ['calendar_month', 'anchored_month'])
 
 // ---------- Teams & Users ----------
 export const teams = pgTable('team', {
@@ -13,6 +14,14 @@ export const teams = pgTable('team', {
     name: varchar('name', { length: 255 }).notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
+
+export const team_settings = pgTable('team_settings', {
+    id: serial('id').primaryKey(),
+    teamId: integer('team_id').notNull().references(() => teams.id, { onDelete: 'cascade' }),
+    periodStart: periodStart('period_start').notNull().default('calendar_month'),
+    anchor_day: integer('anchor_day').notNull().default(1),
+    anchor_timezone: varchar('anchor_timezone').notNull().default('Europe/Amsterdam')
+})
 
 export const users = pgTable('app_user', {
     id: serial('id').primaryKey(),
@@ -55,8 +64,6 @@ export const categories = pgTable('category', {
     icon: varchar('icon', { length: 64 }).notNull(),
     parentId: integer('parent_id').references((): AnyPgColumn => categories.id, { onDelete: 'set null' }),
 });
-
-
 
 // ---------- Transactions (ledger) ----------
 export const transactions = pgTable('txn', {
