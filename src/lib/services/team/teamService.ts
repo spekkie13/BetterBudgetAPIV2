@@ -1,7 +1,13 @@
 // lib/services/teamService.ts
 import * as teamRepo from '@/lib/db/repos/teamRepo';
-import * as membershipRepo from '@/lib/db/repos/membershipRepo';
-import { TeamInsert, TeamRow } from '@/lib/domain/team';
+import { TeamRow } from '@/app/meta/rowModel'
+import { TeamInsert } from '@/app/meta/insertModel'
+import {
+    deleteByIdTeam, exists, getRole,
+    insert, insertManyOnConflictIgnore,
+    selectMembersWithUserByTeam,
+    updateRole
+} from "@/lib/services/membership/membershipService";
 
 // ------------ Types returned by this service ------------
 export type TeamMemberDTO = {
@@ -27,7 +33,7 @@ export async function createTeam(data: { name: string; ownerUserId?: number }): 
     const newTeam = await teamRepo.insert(teamValues);
 
     if (data.ownerUserId) {
-        await membershipRepo.insert({
+        await insert({
             userId: data.ownerUserId,
             teamId: newTeam.id,
             role: 'owner',
@@ -54,12 +60,7 @@ export async function getTeamWithMembers(teamId: number): Promise<TeamWithMember
     const team = await teamRepo.selectById(teamId); // expected: { id, name, createdAt } | null
     if (!team) return null;
 
-    const members = await membershipRepo.selectMembersWithUserByTeam(teamId);
-    // expected shape from repo:
-    // Array<{
-    //   userId: number; email: string; username: string; name: string | null;
-    //   role: string; joinedAt: Date;
-    // }>
+    const members = await selectMembersWithUserByTeam(teamId);
     return { team, members };
 }
 
@@ -70,7 +71,7 @@ export async function getTeamById(teamId: number) {
 
 // ------------ Membership management ------------
 export async function addUserToTeam(params: { teamId: number; userId: number; role?: string }) {
-    const row = await membershipRepo.insertOnConflictIgnore({
+    const row = await insert({
         teamId: params.teamId,
         userId: params.userId,
         role: params.role ?? 'member',
@@ -81,19 +82,19 @@ export async function addUserToTeam(params: { teamId: number; userId: number; ro
 }
 
 export async function removeUserFromTeam(params: { teamId: number; userId: number }) {
-    await membershipRepo.deleteByComposite(params.teamId, params.userId);
+    await deleteByIdTeam(params.teamId, params.userId);
     // expected: void (or boolean if you prefer)
 }
 
 export async function changeMemberRole(params: { teamId: number; userId: number; role: string }) {
-    const row = await membershipRepo.updateRole(params.teamId, params.userId, params.role);
+    const row = await updateRole(params.teamId, params.userId, params.role);
     // expected: returns updated row or null if not found
     return row ?? null;
 }
 
 export async function addUsersToTeam(params: { teamId: number; userIds: number[]; role?: string }) {
     if (!params.userIds.length) return [];
-    return membershipRepo.insertManyOnConflictIgnore(
+    return insertManyOnConflictIgnore(
         params.userIds.map((uid) => ({
             teamId: params.teamId,
             userId: uid,
@@ -124,12 +125,12 @@ export async function deleteTeam(teamId: number) {
 
 // ------------ Guards (handy in API routes) ------------
 export async function assertUserInTeam(userId: number, teamId: number) {
-    const exists = await membershipRepo.exists(userId, teamId);
+    const userExists = await exists(userId, teamId);
     // expected: boolean
-    if (!exists) throw new Error('Forbidden: user is not a member of this team');
+    if (!userExists) throw new Error('Forbidden: user is not a member of this team');
 }
 
 export async function assertUserHasRole(userId: number, teamId: number, roles: string[] = ['owner', 'admin']) {
-    const role = await membershipRepo.getRole(userId, teamId); // expected: string | null
+    const role = await getRole(userId, teamId); // expected: string | null
     if (!role || !roles.includes(role)) throw new Error('Forbidden: insufficient role');
 }

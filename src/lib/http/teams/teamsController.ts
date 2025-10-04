@@ -1,5 +1,5 @@
-import { db } from '@/lib/db/client';
-import {categories, transactions as txn, transactionSplits as split} from '@/lib/db/schema';
+import { db } from '@/db/client';
+import {categories, txn, transactionSplits} from '@/db/schema';
 import {and, eq, gte, lt, isNull, or, SQL, inArray} from 'drizzle-orm';
 import { LinesParamsInput, LinesQueryInput } from './linesSchemas';
 import {monthStartEndUtc, decodeCursor2, encodeCursor, monthStartUtc, addMonthsUtc, toYmd} from './commonSchemas';
@@ -50,14 +50,14 @@ export async function getCategoryLinesController(params: LinesParamsInput, query
         .select({
             txn_id: txn.id,
             posted_at: txn.postedAt,
-            amount_cents: split.amountCents,
+            amount_cents: transactionSplits.amountCents,
             is_transfer: txn.isTransfer,
             payee: txn.payee,
             memo: txn.memo,
         })
         .from(txn)
-        .innerJoin(split, eq(split.txnId, txn.id))
-        .where(and(...(baseConds as SQL[]), eq(split.categoryId, categoryId)));
+        .innerJoin(transactionSplits, eq(transactionSplits.txnId, txn.id))
+        .where(and(...(baseConds as SQL[]), eq(transactionSplits.categoryId, categoryId)));
 
     // 3) Merge, sort (posted_at desc, txn_id desc), slice
     const items = [...base, ...splitRows]

@@ -1,21 +1,5 @@
-export class Period implements IPeriod{
-    id: number
-    startDate: Date
-    endDate: Date
-    startingAmount: number
-
-    constructor(data : IPeriod)
-    {
-        this.id = data.id
-        this.startDate = data.startDate
-        this.endDate = data.endDate
-        this.startingAmount = data.startingAmount
-    }
-}
-
-interface IPeriod {
-    id: number,
-    startDate: Date,
-    endDate: Date,
-    startingAmount: number,
-}
+export type Period = {
+    start: Date;   // inclusive
+    end: Date;     // inclusive 23:59:59.999 in TZ, but stored as Date (UTC)
+    key: string;   // canonical period key
+};

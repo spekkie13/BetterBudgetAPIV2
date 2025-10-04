@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { corsHeaders } from '@/lib/cors';
+import { corsHeaders } from '@/lib/utils/cors';
 import { handleGet } from '@/lib/http/shared/handle';
 import { CategoryQuery } from '@/lib/http/categories/categorySchemas';
 import {

@@ -1,7 +1,8 @@
-import { db } from '@/lib/db/client';
-import { teams, memberships } from '@/lib/db/schema';
+import { db } from '@/db/client';
+import { teams, memberships } from '@/db/schema';
 import { eq } from 'drizzle-orm';
-import type { TeamInsert, TeamRow } from '@/lib/domain/team';
+import { TeamInsert } from '@/app/meta/insertModel'
+import { TeamRow } from '@/app/meta/rowModel'
 
 /**
  * Insert a new team.

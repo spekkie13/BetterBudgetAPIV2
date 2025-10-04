@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { corsHeaders } from '@/lib/cors';
+import { corsHeaders } from '@/lib/utils/cors';
 import { TeamIdParams, UpdateTeamBody } from '@/lib/http/teams/teamIdSchemas';
 import { getTeamByIdController, updateTeamController, deleteTeamController } from '@/lib/http/teams/teamsController';
 

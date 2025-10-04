@@ -1,56 +1,35 @@
-import {
-    createAccount,
-    getAccountById,
-    getAccountsForTeam,
-    updateAccount,
-    deleteAccount,
-} from '@/lib/services/account/accountService';
-import type { AccountsQueryInput, CreateAccountInput, UpdateAccountInput } from './accountSchemas';
+import {AccountService} from "@/lib/services/account/accountService";
+import {ok, fail} from "@/lib/utils/apiResponse";
+import {AccountsQueryInput} from "@/lib/http/accounts/accountSchemas";
+import {CreateAccountInput} from "@/db/types/accountTypes";
+import {AccountInsert} from "@/app/meta/insertModel";
 
-/**
- * GET /teams/:teamId/accounts
- */
-export async function listAccountsController(teamId: number, query: AccountsQueryInput) {
-    const items = await getAccountsForTeam(teamId);
-    const filtered = !query.includeArchived
-        ? items.filter(a => !a.isArchived)
-        : items;
-    return { status: 200, body: filtered };
-}
+export function makeAccountsController(svc: AccountService) {
+    return {
+        async listAccounts(teamId: number, query: AccountsQueryInput) {
+            const items = await svc.selectAllByTeam(teamId);
+            const filtered = query?.includeArchived ? items : items.filter(a => !a.isArchived);
+            return ok(filtered);
+        },
 
-/**
- * GET /teams/:teamId/accounts/:id
- */
-export async function getAccountController(teamId: number, id: number) {
-    const row = await getAccountById(teamId, id);
-    return row ? { status: 200, body: row } : { status: 404, body: { error: 'Account not found' } };
-}
+        async getAccount(teamId: number, id: number) {
+            const row = await svc.selectByIdTeam(teamId, id);            // ✅ don't scan the whole table
+            return row ? ok(row) : fail(404, "Account not found");
+        },
 
-/**
- * POST /teams/:teamId/accounts
- */
-export async function createAccountController(teamId: number, body: CreateAccountInput) {
-    const created = await createAccount({
-        teamId,
-        name: body.name,
-        type: body.type,
-        currency: body.currency, // let DB default to 'EUR' when undefined
-    });
-    return { status: 201, body: created };
-}
+        async createAccount(teamId: number, body: CreateAccountInput) {
+            const created = await svc.insert({ ...body, teamId });        // ✅ add teamId, and await
+            return ok(created, 'Account created successfully',201);
+        },
 
-/**
- * PUT/PATCH /teams/:teamId/accounts/:id
- */
-export async function updateAccountController(teamId: number, id: number, body: UpdateAccountInput) {
-    const updated = await updateAccount({ teamId, id, patch: body });
-    return updated ? { status: 200, body: updated } : { status: 404, body: { error: 'Account not found' } };
-}
+        async updateAccount(teamId: number, id: number, body: AccountInsert) {
+            const updated = await svc.updateByIdTeam(teamId, id, body);   // ✅ pass patch directly
+            return updated ? ok(updated) : fail(404, "Account not found");
+        },
 
-/**
- * DELETE /teams/:teamId/accounts/:id
- */
-export async function deleteAccountController(teamId: number, id: number) {
-    await deleteAccount(teamId, id);
-    return { status: 204, body: null };
+        async deleteAccount(teamId: number, id: number) {
+            await svc.deleteByIdTeam(teamId, id);
+            return ok(null, 'account deleted succssfully',204);
+        },
+    };
 }

@@ -1,13 +1,15 @@
 import { CategoryQueryInput, CreateCategoryBody } from './categorySchemas';
-import * as categoryService from '@/lib/services/category/categoryService';
 import { HttpResult, toHttpResult } from '@/lib/http/shared/errors';
+import { DeleteCategoryQuery, UpdateCategoryBody, UpdateCategoryQuery } from "@/lib/http/categories/categoryMutateSchemas";
+import { CheckCategoryExistsBody } from "@/lib/http/categories/categoryExistsSchemas";
 import {
-    DeleteCategoryQuery,
-    UpdateCategoryBody,
-    UpdateCategoryQuery
-} from "@/lib/http/categories/categoryMutateSchemas";
-import {getCategoryByName} from "@/lib/services/category/categoryService";
-import {CheckCategoryExistsBody} from "@/lib/http/categories/categoryExistsSchemas";
+    deleteByIdTeam,
+    insert,
+    selectAllByTeam,
+    selectByIdTeam,
+    updateByIdTeam,
+    exists
+} from "@/lib/services/category/categoryService";
 
 export async function getCategoriesController(q: CategoryQueryInput): Promise<HttpResult> {
     try {
@@ -15,18 +17,19 @@ export async function getCategoriesController(q: CategoryQueryInput): Promise<Ht
 
         // /api/categories?teamId=1&id=123
         if (id !== undefined) {
-            const cat = await categoryService.getCategoryByTeamAndCategoryId(Number(id), teamId);
+            const cat = await selectByIdTeam(teamId, Number(id));
             return { status: 200, body: cat ?? {} };
         }
 
         // /api/categories?teamId=1&name=Groceries
         if (name) {
-            const cat = await categoryService.getCategoryByName(name, teamId);
+            let cat = await selectAllByTeam(teamId);
+            cat = cat.filter(c => c.name === name);
             return { status: 200, body: cat ?? {} };
         }
 
         // /api/categories?teamId=1
-        const all = await categoryService.getAllCategories(teamId);
+        const all = await selectAllByTeam(teamId);
         return { status: 200, body: all };
     } catch (e) {
         return toHttpResult(e);
@@ -35,7 +38,6 @@ export async function getCategoriesController(q: CategoryQueryInput): Promise<Ht
 
 export async function createCategoryController(body: unknown): Promise<HttpResult> {
     try {
-        console.log(body);
         const q = CreateCategoryBody.safeParse(body);
 
         if (!q.success) {
@@ -44,7 +46,7 @@ export async function createCategoryController(body: unknown): Promise<HttpResul
 
         const { teamId, name, color, icon, type, parentId } = q.data;
 
-        const created = await categoryService.createCategory({
+        const created = await insert({
             teamId,
             name,
             color,
@@ -67,7 +69,7 @@ export async function updateCategoryController(query: URLSearchParams, body: unk
         const b = UpdateCategoryBody.safeParse(body);
         if (!b.success) return { status: 400, body: { error: 'Invalid body' } };
 
-        const updated = await categoryService.upsertCategory({
+        const updated = await updateByIdTeam(b.data.teamId, q.data.id, {
             id: q.data.id,
             teamId: b.data.teamId,
             name: b.data.name ?? "",
@@ -91,7 +93,7 @@ export async function deleteCategoryController(query: URLSearchParams): Promise<
         const q = DeleteCategoryQuery.safeParse(Object.fromEntries(query.entries()));
         if (!q.success) return { status: 400, body: { error: 'Must provide a valid id and teamId' } };
 
-        await categoryService.deleteCategoryById(q.data.id, q.data.teamId);
+        await deleteByIdTeam(q.data.id, q.data.teamId);
 
         // Prefer 204 No Content for deletes
         return { status: 204, body: null };
@@ -107,10 +109,10 @@ export async function checkCategoryExistsController(body: unknown): Promise<Http
             return { status: 400, body: { error: 'Invalid body' } };
         }
 
-        const { teamId, name } = parsed.data;
-        const category = await getCategoryByName(name, teamId);
+        const { teamId, id } = parsed.data;
+        let categoryExists = await exists(teamId, id);
 
-        return { status: 200, body: { exists: !!category } };
+        return { status: 200, body: { exists: categoryExists } };
     } catch (e) {
         return toHttpResult(e);
     }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { corsHeaders } from '@/lib/cors';
+import { corsHeaders } from '@/lib/utils/cors';
 import { SpendTrendParams, SpendTrendQuery } from '@/lib/http/teams/trendSchemas';
 import { getSpendTrendController } from '@/lib/http/teams/teamsController';
 

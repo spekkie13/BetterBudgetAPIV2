@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { corsHeaders } from '@/lib/cors';
+import { corsHeaders } from '@/lib/utils/cors';
 import { patchCategorySlotsController } from '@/lib/http/userSettings/categorySlotsController';
 
 export async function OPTIONS() {

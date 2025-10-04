@@ -1,11 +1,6 @@
 // services/summaryService.ts
-import { db } from '@/lib/db/client';
-import {
-    budgets as budget,
-    transactions as txn,
-    transactionSplits as splits,
-    categories,
-} from '@/lib/db/schema';
+import { db } from '@/db/client';
+import { budgets, txn, transactionSplits, categories } from '@/db/schema';
 import { and, eq, gte, lte, isNull, inArray } from 'drizzle-orm';
 
 // ---------- helpers ----------
@@ -49,13 +44,13 @@ export async function getMonthSummary(teamId: number, month: string | Date): Pro
     // 1) Pull all budgets for this month
     const budgetRows = await db
         .select({
-            categoryId: budget.categoryId,
-            periodMonth: budget.periodMonth,
-            amountCents: budget.amountCents,
-            rollover: budget.rollover,
+            categoryId: budgets.categoryId,
+            periodMonth: budgets.periodMonth,
+            amountCents: budgets.amountCents,
+            rollover: budgets.rollover,
         })
-        .from(budget)
-        .where(and(eq(budget.teamId, teamId), eq(budget.periodMonth, start.toISOString().slice(0, 10))));
+        .from(budgets)
+        .where(and(eq(budgets.teamId, teamId), eq(budgets.periodMonth, start.toISOString().slice(0, 10))));
 
     // 2) Pull all base transactions for the month (non-transfer, not deleted)
     const txRows = await db
@@ -80,12 +75,12 @@ export async function getMonthSummary(teamId: number, month: string | Date): Pro
     const splitRows = txIds.length
         ? await db
             .select({
-                txnId: splits.txnId,
-                categoryId: splits.categoryId,
-                amount: splits.amountCents,
+                txnId: transactionSplits.txnId,
+                categoryId: transactionSplits.categoryId,
+                amount: transactionSplits.amountCents,
             })
-            .from(splits)
-            .where(inArray(splits.txnId, txIds))
+            .from(transactionSplits)
+            .where(inArray(transactionSplits.txnId, txIds))
         : [];
 
     // 4) Optional: category metadata (for friendly names/types)

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { corsHeaders } from '@/lib/cors';
+import { corsHeaders } from '@/lib/utils/cors';
 import { BudgetParams, BudgetQuery } from '@/lib/http/teams/budgetSchemas';
 import { getBudgetController } from '@/lib/http/teams/teamsController';
 

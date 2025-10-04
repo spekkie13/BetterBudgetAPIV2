@@ -1,6 +1,6 @@
 // lib/http/transactions/transactionRepo.ts
-import { db } from '@/lib/db/client';
-import { transactions as txn, transactionSplits as splits } from '@/lib/db/schema';
+import { db } from '@/db/client';
+import { txn, transactionSplits } from '@/db/schema';
 import { and, eq, gte, lt, desc, isNull, inArray, or, SQL } from 'drizzle-orm';
 
 type TypeFilter = 'income' | 'expense' | 'transfer';
@@ -101,9 +101,9 @@ export async function list(args: ListArgs, limit: number): Promise<{
 
     const splitMatches = await db
         .select({ id: txn.id, postedAt: txn.postedAt })
-        .from(splits)
-        .innerJoin(txn, eq(splits.txnId, txn.id))
-        .where(and(...baseConditions(base), eq(splits.categoryId, categoryId)))
+        .from(transactionSplits)
+        .innerJoin(txn, eq(transactionSplits.txnId, txn.id))
+        .where(and(...baseConditions(base), eq(transactionSplits.categoryId, categoryId)))
         .orderBy(desc(txn.postedAt), desc(txn.id))
         .limit(limit * 2);
 

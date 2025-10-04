@@ -1,5 +1,5 @@
-import {db} from "@/lib/db/client";
-import {accounts} from "@/lib/db/schema";
+import {db} from "@/db/client";
+import {accounts} from "@/db/schema";
 import {eq} from "drizzle-orm";
 
 export async function getCurrency(accountId: number): Promise<string | null> {

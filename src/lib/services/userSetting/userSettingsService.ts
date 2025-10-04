@@ -1,6 +1,6 @@
 // services/userSettingsService.ts
-import { db } from '@/lib/db/client';
-import { userSettings } from '@/lib/db/schema';
+import { db } from '@/db/client';
+import { userSettings } from '@/db/schema';
 import { eq, InferInsertModel, InferSelectModel } from 'drizzle-orm';
 
 // ---------- Types ----------

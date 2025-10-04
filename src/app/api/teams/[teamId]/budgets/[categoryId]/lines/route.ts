@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { corsHeaders } from '@/lib/cors';
+import { corsHeaders } from '@/lib/utils/cors';
 import { LinesParams, LinesQuery } from '@/lib/http/teams/linesSchemas';
 import { getCategoryLinesController } from '@/lib/http/teams/teamsController';
 

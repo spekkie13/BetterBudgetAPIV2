@@ -1,6 +1,6 @@
 // services/userService.ts
-import { db } from '@/lib/db/client';
-import {users, teams, memberships, accounts} from '@/lib/db/schema';
+import { db } from '@/db/client';
+import {users, teams, memberships, accounts} from '@/db/schema';
 import { and, eq, inArray } from 'drizzle-orm';
 
 // Types

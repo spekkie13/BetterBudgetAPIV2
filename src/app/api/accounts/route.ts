@@ -1,8 +1,13 @@
 // app/api/teams/[teamId]/accounts/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { corsHeaders } from '@/lib/cors';
+import { corsHeaders } from '@/lib/utils/cors';
 import { AccountsParams, AccountsQuery, CreateAccountBody } from '@/lib/http/accounts/accountSchemas';
-import { listAccountsController, createAccountController } from '@/lib/http/accounts/accountsController';
+import {AccountService} from "@/lib/services/account/accountService";
+import {makeAccountsController} from "@/lib/http/accounts/accountsController";
+import {AccountInsert} from "@/app/meta/insertModel";
+
+const svc = new AccountService();
+const controller = makeAccountsController(svc);
 
 export async function OPTIONS() {
     return new NextResponse(null, { status: 204, headers: corsHeaders });
@@ -30,7 +35,7 @@ export async function GET(req: NextRequest) {
         );
     }
 
-    const result = await listAccountsController(p.data.teamId, q.data);
+    const result = await controller.listAccounts(p.data.teamId, q.data);
     return new NextResponse(JSON.stringify(result.body), {
         status: result.status,
         headers: corsHeaders,
@@ -47,6 +52,13 @@ export async function POST(req: NextRequest, ctx: any) {
     const b = CreateAccountBody.safeParse(body);
     if (!b.success) return new NextResponse(JSON.stringify({ error: 'Invalid body' }), { status: 400, headers: corsHeaders });
 
-    const result = await createAccountController(p.data.teamId, b.data);
+    const accountBody: AccountInsert = {
+        teamId: p.data.teamId,
+        name: b.data.name ?? "",
+        type: b.data.type ?? "",
+        currency: b.data.currency,
+    }
+
+    const result = await controller.createAccount(p.data.teamId, accountBody);
     return new NextResponse(JSON.stringify(result.body), { status: result.status, headers: corsHeaders });
 }

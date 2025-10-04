@@ -1,6 +1,6 @@
 // app/api/transactions/mutation/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { corsHeaders } from '@/lib/cors';
+import { corsHeaders } from '@/lib/utils/cors';
 import { ok, fail } from '@/lib/utils/apiResponse';
 import { updateTransaction, deleteTransactionById, getTransactionById } from '@/lib/services/transaction/transactionService';
 import { z } from 'zod'
@@ -15,7 +15,7 @@ const QuerySingle = z.object({
 
 export async function GET(req: NextRequest, ctx : any) {
     const { id } = (ctx as { params: { id: string } }).params;
-    if (!Number.isInteger(id)) return fail('Invalid id', 400);
+    if (!Number.isInteger(id)) return fail(400, 'Invalid id');
 
     const parsed = QuerySingle.safeParse({
         teamId: new URL(req.url).searchParams.get('teamId'),
@@ -50,8 +50,8 @@ export async function PUT(req: NextRequest, ctx : any) {
     const teamId = Number(teamIdStr);
     try {
         const body = await req.json();
-        if (!Number.isInteger(id)) return fail('Valid id is required', 400);
-        if (!Number.isInteger(teamId)) return fail('Valid teamId is required', 400);
+        if (!Number.isInteger(id)) return fail(400,'Valid id is required');
+        if (!Number.isInteger(teamId)) return fail(400,'Valid teamId is required');
 
         const updated = await updateTransaction({
             id,
@@ -70,7 +70,7 @@ export async function PUT(req: NextRequest, ctx : any) {
         return ok(updated ?? {}, 'Transaction updated');
     } catch (err) {
         console.error('Error updating transaction:', err);
-        return fail('Failed to update transaction', 500);
+        return fail(500,'Failed to update transaction');
     }
 }
 
@@ -92,13 +92,13 @@ export async function DELETE(req: NextRequest, ctx : any) {
         const teamIdStr = body?.teamId ?? new URL(req.url).searchParams.get('teamId');
         const teamId = Number(teamIdStr);
 
-        if (!Number.isInteger(id)) return fail('Valid id is required', 400);
-        if (!Number.isInteger(teamId)) return fail('Valid teamId is required', 400);
+        if (!Number.isInteger(id)) return fail(400,'Valid id is required');
+        if (!Number.isInteger(teamId)) return fail(400,'Valid teamId is required');
 
         await deleteTransactionById(teamId, id);
         return ok({}, 'Transaction deleted');
     } catch (error) {
         console.error('DELETE /api/transactions/[id] error:', error);
-        return fail('Failed to delete transaction', 500);
+        return fail(500, 'Failed to delete transaction');
     }
 }

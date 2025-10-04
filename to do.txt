@@ -1,0 +1,6 @@
+-> Inspect entire lib folder to establish a clear and reusable structure for
+   => services
+   => API handlers
+   => db interactions
+   => helper methods
+-> Rewrite models to encompass what is needed and expand into ways to make the code reusable in more places

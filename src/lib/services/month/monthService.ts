@@ -1,9 +1,9 @@
 // services/monthService.ts
-import { db } from '@/lib/db/client';
-import { budgets as budget, transactions as txn, accounts, categories } from '@/lib/db/schema';
+import { db } from '@/db/client';
 import { and, desc, eq, gte, lt, lte, isNull, inArray } from 'drizzle-orm';
 import { toYmd } from '@/lib/utils/date';
 import { toCents } from '@/lib/shared/helpers'
+import {accounts, budgets, categories, txn} from "@/db/schema";
 
 // --- utils ---
 const monthStart = (d: Date | string) => {
@@ -21,11 +21,11 @@ export const calculateMonthRange = (date: Date) => {
 // 2nd most recent month that has any budget rows (distinct by month)
 export async function getSecondMostRecentBudgetMonth(teamId: number) {
     const rows = await db
-        .select({ periodMonth: budget.periodMonth })
-        .from(budget)
-        .where(eq(budget.teamId, teamId))
-        .groupBy(budget.periodMonth) // DISTINCT by month
-        .orderBy(desc(budget.periodMonth))
+        .select({ periodMonth: budgets.periodMonth })
+        .from(budgets)
+        .where(eq(budgets.teamId, teamId))
+        .groupBy(budgets.periodMonth) // DISTINCT by month
+        .orderBy(desc(budgets.periodMonth))
         .limit(2);
 
     // periodMonth is a DATE column mapped as string (YYYY-MM-DD)
@@ -36,11 +36,11 @@ export async function getSecondMostRecentBudgetMonth(teamId: number) {
 export async function getBudgetMonthByDate(teamId: number, date: Date) {
     const ymd = toYmd(monthStart(date));
     const rows = await db
-        .select({ periodMonth: budget.periodMonth })
-        .from(budget)
-        .where(and(eq(budget.teamId, teamId), lte(budget.periodMonth, ymd)))
-        .groupBy(budget.periodMonth)
-        .orderBy(desc(budget.periodMonth))
+        .select({ periodMonth: budgets.periodMonth })
+        .from(budgets)
+        .where(and(eq(budgets.teamId, teamId), lte(budgets.periodMonth, ymd)))
+        .groupBy(budgets.periodMonth)
+        .orderBy(desc(budgets.periodMonth))
         .limit(1);
 
     return rows[0]?.periodMonth ?? null;
@@ -50,9 +50,9 @@ export async function getBudgetMonthByDate(teamId: number, date: Date) {
 export async function getBudgetMonthByStartDate(teamId: number, startDateInput: Date | string) {
     const ymd = toYmd(monthStart(startDateInput));
     const rows = await db
-        .select({ periodMonth: budget.periodMonth })
-        .from(budget)
-        .where(and(eq(budget.teamId, teamId), eq(budget.periodMonth, ymd)))
+        .select({ periodMonth: budgets.periodMonth })
+        .from(budgets)
+        .where(and(eq(budgets.teamId, teamId), eq(budgets.periodMonth, ymd)))
         .limit(1);
 
     return rows[0]?.periodMonth ?? null;
@@ -83,9 +83,13 @@ export async function ensureBudgetMonth(
         if (catIds.length) {
             // 2) Load which of those already have a budget row for this month
             const existing = await db
-                .select({ categoryId: budget.categoryId })
-                .from(budget)
-                .where(and(eq(budget.teamId, teamId), eq(budget.periodMonth, ymd), inArray(budget.categoryId, catIds)));
+                .select({ categoryId: budgets.categoryId })
+                .from(budgets)
+                .where(and(
+                    eq(budgets.teamId, teamId),
+                    eq(budgets.periodMonth, ymd),
+                    inArray(budgets.categoryId, catIds)
+                ));
 
             const existingIds = new Set(existing.map(e => e.categoryId));
             const missing = catIds.filter(id => !existingIds.has(id));
@@ -93,7 +97,7 @@ export async function ensureBudgetMonth(
             // 3) Insert missing as zero budgets (onConflictDoNothing for safety)
             if (missing.length) {
                 await db
-                    .insert(budget)
+                    .insert(budgets)
                     .values(
                         missing.map(categoryId => ({
                             teamId,
@@ -103,7 +107,7 @@ export async function ensureBudgetMonth(
                             rollover: false,
                         }))
                     )
-                    .onConflictDoNothing({ target: [budget.teamId, budget.categoryId, budget.periodMonth] });
+                    .onConflictDoNothing({ target: [budgets.teamId, budgets.categoryId, budgets.periodMonth] });
             }
         }
     }

@@ -1,6 +1,5 @@
 // lib/services/transaction/txService.ts
 import * as txRepo from '@/lib/db/repos/transactionRepo';
-import * as categoryRepo from '@/lib/db/repos/categoryRepo';
 import * as userRepo from '@/lib/db/repos/userRepo';
 
 import { toDateStrict } from './txUtils';
@@ -10,6 +9,7 @@ import type {
     UpdateTxnInputCents,
     SplitInputCents,
 } from './txTypes';
+import {exists} from "@/lib/services/category/categoryService";
 
 // ---------- READS ----------
 export async function getTransactionById(teamId: number, id: number) {
@@ -183,8 +183,8 @@ async function checkSplitsSignedCents(
     totalSignedCents: number,
 ) {
     const catIds = [...new Set(splits.map((s) => s.categoryId))];
-    if (catIds.length) {
-        await categoryRepo.ensureAllExistForTeam(teamId, catIds);
+    for(let id of catIds) {
+        await exists(teamId, id);
     }
 
     const sum = splits.reduce((a, s) => a + toIntStrict(s.amountCents), 0);

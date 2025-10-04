@@ -1,6 +1,6 @@
 // lib/services/transaction/txRepo.ts
-import { db } from '@/lib/db/client';
-import { transactions as txn, transactionSplits as splits } from '@/lib/db/schema';
+import { db } from '@/db/client';
+import { txn, transactionSplits } from '@/db/schema';
 import { and, or, desc, eq, gt, lt, gte, isNull, inArray, SQL } from 'drizzle-orm';
 
 export async function selectById(teamId: number, id: number) {
@@ -65,14 +65,14 @@ export async function selectIdsBySplitCategory(teamId: number, start: Date, end:
         isNull(txn.deletedAt),
         gte(txn.postedAt, start),
         lt(txn.postedAt, end),
-        eq(splits.categoryId, categoryId),
-        sign === 'pos' ? gt(splits.amountCents, 0) : undefined,
-        sign === 'neg' ? lt(splits.amountCents, 0) : undefined,
+        eq(transactionSplits.categoryId, categoryId),
+        sign === 'pos' ? gt(transactionSplits.amountCents, 0) : undefined,
+        sign === 'neg' ? lt(transactionSplits.amountCents, 0) : undefined,
     ];
     return db
         .select({ id: txn.id })
         .from(txn)
-        .innerJoin(splits, eq(splits.txnId, txn.id))
+        .innerJoin(transactionSplits, eq(transactionSplits.txnId, txn.id))
         .where(and(...(conds.filter(Boolean) as SQL[])));
 }
 
@@ -88,12 +88,12 @@ export async function selectSplitAwareByCategory(teamId: number, categoryId: num
     const rows = await db
         .select({ t: txn })
         .from(txn)
-        .leftJoin(splits, eq(splits.txnId, txn.id))
+        .leftJoin(transactionSplits, eq(transactionSplits.txnId, txn.id))
         .where(and(
             eq(txn.teamId, teamId),
             eq(txn.isTransfer, false),
             isNull(txn.deletedAt),
-            or(eq(txn.categoryId, categoryId), eq(splits.categoryId, categoryId)),
+            or(eq(txn.categoryId, categoryId), eq(transactionSplits.categoryId, categoryId)),
         ))
         .orderBy(desc(txn.postedAt), desc(txn.id));
     return rows.map(r => r.t);
@@ -111,7 +111,7 @@ export async function insertTxnReturningId(values: any) {
 
 export async function insertSplits(rows: { txnId: number; categoryId: number; amountCents: number }[]) {
     if (!rows.length) return;
-    await db.insert(splits).values(rows);
+    await db.insert(transactionSplits).values(rows);
 }
 
 export async function tx<T>(fn: (conn: typeof db) => Promise<T>) {
@@ -128,7 +128,7 @@ export async function txInsertTxn(conn: typeof db, values: any, returningAll = t
 
 export async function txInsertSplits(conn: typeof db, rows: { txnId: number; categoryId: number; amountCents: number }[]) {
     if (!rows.length) return;
-    await conn.insert(splits).values(rows);
+    await conn.insert(transactionSplits).values(rows);
 }
 
 export async function txUpdateTxn(conn: typeof db, id: number, patch: any) {
@@ -137,7 +137,7 @@ export async function txUpdateTxn(conn: typeof db, id: number, patch: any) {
 }
 
 export async function txDeleteSplitsByTxn(conn: typeof db, txnId: number) {
-    await conn.delete(splits).where(eq(splits.txnId, txnId));
+    await conn.delete(transactionSplits).where(eq(transactionSplits.txnId, txnId));
 }
 
 export async function softDelete(teamId: number, id: number) {

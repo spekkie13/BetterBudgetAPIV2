@@ -1,45 +1,12 @@
-// services/categoryService.ts
-import * as repo from '@/lib/db/repos/categoryRepo'
-import type {CategoryInsert, CategoryRow} from "@/lib/domain/category";
+import { makeCategoryRepo } from "@/adapters/repo/categoryRepo";
 
-// ---------- Categories ----------
-export async function getCategoryByTeamAndCategoryId(categoryId: number, teamId: number) {
-    return repo.selectByTeamAndId(teamId, categoryId);
-}
+const repo = makeCategoryRepo()
 
-export async function getCategoryByName(name: string, teamId: number) {
-    return repo.selectByName(teamId, name);
-}
-
-export async function getAllCategories(teamId: number) {
-    return repo.selectAllByTeam(teamId)
-}
-
-export async function createCategory(data: { teamId: number; name: string; color: string; icon: string; type?: 'expense' | 'income' | 'transfer'; parentId?: number | null; }) : Promise<CategoryRow> {
-    const values: CategoryInsert = {
-        teamId: data.teamId,
-        name: data.name,
-        color: data.color,
-        icon: data.icon,
-        type: (data.type ?? 'expense') as any,
-        parentId: data.parentId ?? null,
-    }
-    return repo.insert(values)
-}
-
-export async function upsertCategory(data: { id?: number, teamId: number; name: string; color: string; icon: string; type?: 'expense' | 'income' | 'transfer'; parentId?: number | null; }) : Promise<CategoryRow> {
-    const values: CategoryInsert = {
-        ...(data.id ? { id: data.id } : {}),
-        teamId: data.teamId,
-        name: data.name,
-        color: data.color,
-        icon: data.icon,
-        type: (data.type ?? 'expense') as any,
-        parentId: data.parentId ?? null,
-    }
-    return repo.upsert(values)
-}
-
-export async function deleteCategoryById(categoryId: number, teamId: number) : Promise<void> {
-    await repo.deleteById(teamId, categoryId);
-}
+export const insert          = (v: Parameters<typeof repo.create>[0]) => repo.create(v);
+export const selectByIdTeam  = (teamId: number, id: number) => repo.getById(teamId, id);
+export const selectAllByTeam = (teamId: number) => repo.listByTeam(teamId);
+export const updateByIdTeam  = (teamId: number, id: number, p: any) => repo.updateById(teamId, id, p);
+export const deleteByIdTeam  = (teamId: number, id: number) => repo.deleteById(teamId, id);
+export const exists          = (teamId: number, id: number) => repo.exists(teamId, id);
+export const selectByName = (teamId: number, name: string) => repo.selectByName(teamId, name);
+export const ensureAllExistForTeam = (teamId: number, catIds: number[]) => repo.ensureAllExistForTeam(teamId, catIds)

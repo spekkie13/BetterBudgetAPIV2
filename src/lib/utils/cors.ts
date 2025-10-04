@@ -1,7 +1,3 @@
-/**
- * Wrap your route handler with this function to automatically
- * inject CORS headers and handle preflight (OPTIONS) requests.
- */
 import { NextResponse } from 'next/server';
 
 export const corsHeaders = {

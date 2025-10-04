@@ -1,6 +1,6 @@
 // app/api/transactions/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { corsHeaders } from '@/lib/cors';
+import { corsHeaders } from '@/lib/utils/cors';
 import { ok, fail } from '@/lib/utils/apiResponse';
 import { getTransactions } from '@/lib/http/transactions/transactionController';
 import { createTransaction, createTransfer } from '@/lib/services/transaction/transactionService';
@@ -107,19 +107,19 @@ export async function POST(req: NextRequest) {
         const teamId        = int(body?.teamId);
         const amountCents   = Number(body?.amountCents);
 
-        const requireInt = (ok: boolean, msg: string) => { if (!ok) return fail(msg, 400); };
+        const requireInt = (ok: boolean, msg: string) => { if (!ok) return fail(400, msg); };
 
-        if (Number.isNaN(postedAt.getTime())) return fail('Invalid postedAt/date/createdAt', 400);
-        if (!Number.isInteger(teamId))        return fail('Invalid teamId', 400);
-        if (!Number.isFinite(amountCents))    return fail('Invalid amountCents', 400);
+        if (Number.isNaN(postedAt.getTime())) return fail(400,'Invalid postedAt/date/createdAt');
+        if (!Number.isInteger(teamId))        return fail(400,'Invalid teamId');
+        if (!Number.isFinite(amountCents))    return fail(400,'Invalid amountCents');
 
         const isTransfer = Boolean(body?.isTransfer) ||
             (Number.isInteger(fromAccountId) && Number.isInteger(toAccountId));
 
         if (isTransfer) {
             requireInt(Number.isInteger(fromAccountId) && Number.isInteger(toAccountId), 'Invalid account ids');
-            if (fromAccountId === toAccountId) return fail('fromAccountId and toAccountId must differ', 400);
-            if (amountCents <= 0)              return fail('Transfer amountCents must be > 0', 400);
+            if (fromAccountId === toAccountId) return fail(400,'fromAccountId and toAccountId must differ');
+            if (amountCents <= 0)              return fail(400,'Transfer amountCents must be > 0');
 
             const result = await createTransfer({
                 teamId,
@@ -156,6 +156,6 @@ export async function POST(req: NextRequest) {
         return ok(created, 'Transaction created', 201);
     } catch (error) {
         console.error('POST /api/transactions error:', error);
-        return fail('Internal server error', 500);
+        return fail(500, 'Internal server error');
     }
 }

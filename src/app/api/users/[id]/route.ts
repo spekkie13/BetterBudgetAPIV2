@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { corsHeaders } from '@/lib/cors';
+import { corsHeaders } from '@/lib/utils/cors';
 import { UserIdParams, UpdateUserBody } from '@/lib/http/users/userSchemas';
 import { getUserByIdController, updateUserController, deleteUserController } from '@/lib/http/users/userController';
 
