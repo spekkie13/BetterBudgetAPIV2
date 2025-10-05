@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { corsHeaders } from '@/lib/utils/cors';
-import { LinesParams, LinesQuery } from '@/lib/http/teams/linesSchemas';
-import { getCategoryLinesController } from '@/lib/http/teams/teamsController';
+import { corsHeaders } from '@/core/http/cors';
+import { makeTeamsController } from '@/adapters/controllers/teamsController';
+import {LinesParams, LinesQuery} from "@/db/types/linesTypes";
+import {TeamService} from "@/adapters/services/teamService";
+
+const svc = new TeamService();
+const controller = makeTeamsController(svc);
 
 export async function GET(req: NextRequest, ctx: any) {
     const { teamId, categoryId } = (ctx as { params: { teamId: string; categoryId: string; } }).params;
@@ -17,6 +21,12 @@ export async function GET(req: NextRequest, ctx: any) {
     });
     if (!queryParsed.success) return new NextResponse(JSON.stringify({ error: 'Invalid query' }), { status: 400, headers: corsHeaders });
 
-    const result = await getCategoryLinesController(paramsParsed.data, queryParsed.data);
+    const result = await controller.getCategoryLines(
+        paramsParsed.data.teamId,
+        paramsParsed.data.categoryId,
+        queryParsed.data.month,
+        queryParsed.data.limit,
+        queryParsed.data.cursor
+    )
     return new NextResponse(JSON.stringify(result.body), { status: result.status, headers: corsHeaders });
 }

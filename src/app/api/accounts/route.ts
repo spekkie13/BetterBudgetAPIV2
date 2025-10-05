@@ -1,10 +1,8 @@
-// app/api/teams/[teamId]/accounts/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { corsHeaders } from '@/lib/utils/cors';
-import { AccountsParams, AccountsQuery, CreateAccountBody } from '@/lib/http/accounts/accountSchemas';
-import {AccountService} from "@/lib/services/account/accountService";
-import {makeAccountsController} from "@/lib/http/accounts/accountsController";
-import {AccountInsert} from "@/app/meta/insertModel";
+import { corsHeaders } from '@/core/http/cors';
+import {AccountService} from "@/adapters/services/accountService";
+import {makeAccountsController} from "@/adapters/controllers/accountsController";
+import {AccountBody, AccountInsert, AccountParams, AccountQuery} from "@/db/types/accountTypes";
 
 const svc = new AccountService();
 const controller = makeAccountsController(svc);
@@ -14,28 +12,29 @@ export async function OPTIONS() {
 }
 
 export async function GET(req: NextRequest) {
-    const sp = new URL(req.url).searchParams;
-    const teamId = sp.get("teamId");
+    const searchParams = new URL(req.url).searchParams;
+    const teamId = searchParams.get("teamId");
 
-    const p = AccountsParams.safeParse({ teamId });
-    if (!p.success) {
+    const parsedParams = AccountParams.safeParse({ teamId });
+    if (!parsedParams.success) {
         return new NextResponse(
             JSON.stringify({ error: "Invalid teamId" }),
             { status: 400, headers: corsHeaders }
         );
     }
 
-    const q = AccountsQuery.safeParse({
-        includeArchived: sp.get("includeArchived") ?? undefined,
+    const parsedQuery = AccountQuery.safeParse({
+        includeArchived: searchParams.get("includeArchived") ?? false,
     });
-    if (!q.success) {
+
+    if (!parsedQuery.success) {
         return new NextResponse(
             JSON.stringify({ error: "Invalid query" }),
             { status: 400, headers: corsHeaders }
         );
     }
 
-    const result = await controller.listAccounts(p.data.teamId, q.data);
+    const result = await controller.listAccounts(parsedParams.data.teamId, parsedQuery.data);
     return new NextResponse(JSON.stringify(result.body), {
         status: result.status,
         headers: corsHeaders,
@@ -45,20 +44,20 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest, ctx: any) {
     const { teamId } = (ctx as { params: { teamId: string; id: string } }).params;
 
-    const p = AccountsParams.safeParse({ teamId: teamId });
-    if (!p.success) return new NextResponse(JSON.stringify({ error: 'Invalid teamId' }), { status: 400, headers: corsHeaders });
+    const params = AccountParams.safeParse({ teamId: teamId });
+    if (!params.success) return new NextResponse(JSON.stringify({ error: 'Invalid teamId' }), { status: 400, headers: corsHeaders });
 
-    const body = await req.json().catch(() => ({}));
-    const b = CreateAccountBody.safeParse(body);
-    if (!b.success) return new NextResponse(JSON.stringify({ error: 'Invalid body' }), { status: 400, headers: corsHeaders });
+    const reqBody = await req.json().catch(() => ({}));
+    const parsedBody = AccountBody.safeParse(reqBody);
+    if (!parsedBody.success) return new NextResponse(JSON.stringify({ error: 'Invalid body' }), { status: 400, headers: corsHeaders });
 
     const accountBody: AccountInsert = {
-        teamId: p.data.teamId,
-        name: b.data.name ?? "",
-        type: b.data.type ?? "",
-        currency: b.data.currency,
+        teamId: params.data.teamId,
+        name: parsedBody.data.name ?? "",
+        type: parsedBody.data.type ?? "",
+        currency: parsedBody.data.currency,
     }
 
-    const result = await controller.createAccount(p.data.teamId, accountBody);
+    const result = await controller.createAccount(params.data.teamId, accountBody);
     return new NextResponse(JSON.stringify(result.body), { status: result.status, headers: corsHeaders });
 }

@@ -1,51 +1,21 @@
-// app/api/transactions/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { corsHeaders } from '@/lib/utils/cors';
-import { ok, fail } from '@/lib/utils/apiResponse';
-import { getTransactions } from '@/lib/http/transactions/transactionController';
-import { createTransaction, createTransfer } from '@/lib/services/transaction/transactionService';
-import { z } from 'zod';
+import { corsHeaders } from '@/core/http/cors';
+import { ok, fail } from '@/core/http/Response';
+import {makeTransactionController} from '@/adapters/controllers/transactionController';
+import {TransactionService} from '@/adapters/services/transactionService';
+import {TransactionBody, TransactionInsert} from "@/db/types/transactionTypes";
+
+const svc = new TransactionService();
+const controller = makeTransactionController(svc);
 
 export async function OPTIONS() {
     return new NextResponse(null, { status: 204, headers: corsHeaders });
 }
 
-// ── Query validation ───────────────────────────────────────────────────────────
-/**
- * mode:
- *  - 1 = all-time scope (ignore month unless explicitly provided for future flexibility)
- *  - 2 = month scope (uses ?month=YYYY-MM or defaults to current month)
- * default: backward compatible:
- *   - if ?type present → mode 2
- *   - else → mode 1
- */
-const Query = z.object({
-    teamId: z.coerce.number().int(),
-    mode: z.coerce.number().int().optional(),                     // 1 | 2
-    month: z
-        .string()
-        .regex(/^\d{4}-\d{2}$/, 'month must be YYYY-MM')
-        .optional(),
-    type: z.enum(['income', 'expense', 'transfer']).optional(),
-    limit: z.coerce.number().int().min(1).max(200).default(50),
-    cursor: z.string().nullable().optional(),
-    id: z.coerce.number().int().optional(),
-    categoryId: z.coerce.number().int().optional(),
-    accountId: z.coerce.number().int().optional(),
-});
-
-// helper: current month as "YYYY-MM"
-function currentMonthStr(): string {
-    const now = new Date();
-    const y = now.getUTCFullYear();
-    const m = String(now.getUTCMonth() + 1).padStart(2, '0');
-    return `${y}-${m}`;
-}
-
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
 
-    const parsed = Query.safeParse({
+    const parsed = TransactionBody.safeParse({
         teamId: searchParams.get('teamId'),
         mode: searchParams.get('mode') ?? undefined,
         month: searchParams.get('month') ?? undefined,
@@ -61,31 +31,8 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: parsed.error }, { status: 400, headers: corsHeaders });
     }
 
-    const q = parsed.data;
-
-    // ── Mode resolver (backward compatible) ─────────────────────────────────────
-    // If a mode is specified, honor it. Else: if type present → mode2, else mode1.
-    const resolvedMode: 1 | 2 = ((): 1 | 2 => {
-        if (q.mode === 1 || q.mode === 2) return q.mode as 1 | 2;
-        return q.type ? 2 : 1;
-    })();
-
-    // month handling:
-    // - mode 2: use provided ?month or fallback to a current month
-    // - mode 1: ignore month (all-time)
-    const month = resolvedMode === 2 ? (q.month ?? currentMonthStr()) : undefined;
-
     // ── Fetch ──────────────────────────────────────────────────────────────────
-    const { status, body } = await getTransactions({
-        teamId: q.teamId,
-        month,                 // undefined for all-time (mode 1)
-        type: q.type,          // optional
-        limit: q.limit,
-        cursor: q.cursor ?? null,
-        id: q.id,
-        categoryId: q.categoryId,
-        accountId: q.accountId,
-    });
+    const { status, body } = await controller.listAllByTeam(parsed.data.teamId);
 
     return NextResponse.json(body, { status, headers: corsHeaders });
 }
@@ -121,15 +68,42 @@ export async function POST(req: NextRequest) {
             if (fromAccountId === toAccountId) return fail(400,'fromAccountId and toAccountId must differ');
             if (amountCents <= 0)              return fail(400,'Transfer amountCents must be > 0');
 
-            const result = await createTransfer({
+            //create leg 1
+            const outLeg = await controller.createTransaction(teamId, {
                 teamId,
-                fromAccountId,
-                toAccountId,
-                amountCents,
-                postedAt,
-                memo: body?.memo ?? null,
+                accountId,
+                amountCents: amountCents * -1,
+                postedAt: postedAtStr,
+                categoryId: body.categoryId ?? null,
+                payee: body?.payee ?? null,
+                memo: body?.description ?? body?.memo ?? null,
                 createdBy: body?.createdBy ?? null,
-                currency: body?.currency
+                createdAt: body.createdAt,
+                updatedAt: body.updatedAt,
+                deletedAt: body.deletedAt,
+                currency: body?.currency,
+                isTransfer: true,
+                transferGroupId: body?.transferGroupId ?? null,
+                id: 0,
+            })
+
+            //create leg 2
+            const result = await controller.createTransaction(teamId, {
+                teamId,
+                accountId,
+                amountCents,
+                postedAt: postedAtStr,
+                categoryId: null,
+                payee: null,
+                memo: body?.memo ?? 'Transfer',
+                createdBy: body?.createdBy ?? null,
+                createdAt: body.createdAt,
+                updatedAt: body.updatedAt,
+                deletedAt: body.deletedAt,
+                currency: body?.currency,
+                isTransfer: true,
+                transferGroupId: outLeg.body.id,
+                id: 0,
             });
 
             return ok(result, 'Transfer created', 201);
@@ -137,22 +111,25 @@ export async function POST(req: NextRequest) {
 
         requireInt(Number.isInteger(accountId), 'Invalid accountId');
 
-        const transactionData = {
+        const transactionData: TransactionInsert = {
             teamId,
             accountId,
             amountCents,
-            postedAt,
-            categoryId: body?.categoryId != null ? int(body.categoryId) : undefined,
+            postedAt: postedAtStr,
+            categoryId: body.categoryId ?? null,
             payee: body?.payee ?? null,
             memo: body?.description ?? body?.memo ?? null,
             createdBy: body?.createdBy ?? null,
             createdAt: body.createdAt,
             updatedAt: body.updatedAt,
+            deletedAt: body.deletedAt,
             currency: body?.currency,
-            splits: Array.isArray(body?.splits) ? body.splits : undefined
+            isTransfer: body?.isTransfer ?? false,
+            transferGroupId: body?.transferGroupId ?? null,
+            id: 0,
         };
 
-        const created = await createTransaction(transactionData);
+        const created = await controller.createTransaction(teamId, transactionData);
         return ok(created, 'Transaction created', 201);
     } catch (error) {
         console.error('POST /api/transactions error:', error);

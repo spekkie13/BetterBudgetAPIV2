@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getTeamSettingsById } from '@/lib/services/team/teamSettingsService'
-import { runAutoRollover } from '@/lib/services/team/teamSettingsService'
-import {zTeamId} from "@/lib/http/shared/schemas";
+import { getTeamSettingsById } from '@/adapters/services/teamSettingsService'
+import { runAutoRollover } from '@/adapters/services/teamSettingsService'
+import {zDateTime, zTeamId} from "@/db/types/common";
 
 const BodySchema = z.object({
     teamId: zTeamId,
-    nowISO: z.string().datetime().optional(),
+    nowISO: zDateTime,
 })
 
 export async function POST(req: NextRequest) {
