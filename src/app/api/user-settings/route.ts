@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}));
     const upsert = UserSettingsBody.safeParse(body);
-    if (!upsert.success) return { status: 400, body: { error: 'Invalid input' } };
+    if (!upsert.success) return new NextResponse(JSON.stringify({ error: 'Invalid body'}), { status: 400, headers: corsHeaders });
 
     const userSettingBody: UserSettingsInsert = {
         userId: upsert.data.userId,
