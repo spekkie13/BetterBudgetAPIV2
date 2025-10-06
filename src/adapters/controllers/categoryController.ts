@@ -4,8 +4,12 @@ import {ok} from "@/core/http/Response";
 
 export function makeCategoryController(svc: CategoryService) {
     return {
-        async getCategory(teamId: number, id: number) {
-            const row = await svc.selectByIdTeam(teamId, id);
+        async getCategory(teamId: number, categoryId?: number | null) {
+            if (categoryId === undefined || categoryId === null) {
+                const row = await svc.selectAllByTeam(teamId);
+                return row ? { status: 200, body: row } : { status: 404, body: { error: 'No categories found'}};
+            }
+            const row = await svc.selectByIdTeam(teamId, categoryId);
             return row ? { status: 200, body: row } : { status: 404, body: { error: 'Category not found' } };
         },
 

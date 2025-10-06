@@ -23,21 +23,26 @@ export async function GET(req: NextRequest) {
         );
     }
 
-    const q = BudgetQuery.safeParse({
+    const parsedQuery = BudgetQuery.safeParse({
         teamId: sp.get("teamId"),
         budgetId: sp.get("id"),
-        categoryId: sp.get("categoryId"),
-        month: sp.get("periodMonth") ?? undefined,
+        categoryId: sp.get("categoryId") ?? 0,
+        month: sp.get("periodMonth"),
     });
-
-    if (!q.success) {
+    console.log(parsedQuery);
+    if (!parsedQuery.success) {
         return new NextResponse(
             JSON.stringify({ error: "Invalid query" }),
             { status: 400, headers: corsHeaders }
         );
     }
 
-    const result = await controller.getBudgets(q.data.teamId, q.data.id ?? 0, q.data.categoryId ?? 0, q.data.periodMonth ?? "");
+    const result = await controller.getBudgets(
+        parsedQuery.data.teamId,
+        parsedQuery.data.id,
+        parsedQuery.data.categoryId,
+        parsedQuery.data.periodMonth
+    );
     return new NextResponse(JSON.stringify(result.body), {
         status: result.status,
         headers: corsHeaders,
@@ -47,7 +52,6 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest, ctx: any) {
     const { teamId } = (ctx as { params: { teamId: string; } }).params;
     const p = BudgetParams.safeParse({ teamId: teamId });
-
     if (!p.success) return new NextResponse(JSON.stringify({ error: 'Invalid teamId' }), { status: 400, headers: corsHeaders});
 
     const body = await req.json().catch(() => ({}));

@@ -15,7 +15,7 @@ export async function GET(req: NextRequest, ctx: any) {
 
     const sp = new URL(req.url).searchParams;
     const queryParsed = BudgetQuery.safeParse({ month: sp.get('month') ?? '' });
-    if (!queryParsed.success) return new NextResponse(JSON.stringify({ error: 'Invalid month' }), { status: 400, headers: corsHeaders });
+    if (!queryParsed.success || queryParsed.data.periodMonth === undefined) return new NextResponse(JSON.stringify({ error: 'Invalid month' }), { status: 400, headers: corsHeaders });
 
     const result = await controller.getBudget(paramsParsed.data.teamId, queryParsed.data.periodMonth);
     return new NextResponse(JSON.stringify(result.body), { status: result.status, headers: corsHeaders });

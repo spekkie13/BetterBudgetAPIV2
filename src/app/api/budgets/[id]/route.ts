@@ -25,7 +25,7 @@ export async function PUT(req: NextRequest, ctx: any) {
     const { teamId, id } = (ctx as { params: { teamId: string; id: string } }).params;
 
     const p = BudgetParams.safeParse({ teamId: teamId, id: id });
-    if (!p.success) return new NextResponse(JSON.stringify({ error: 'Invalid params' }), { status: 400, headers: corsHeaders });
+    if (!p.success || p.data.id === undefined) return new NextResponse(JSON.stringify({ error: 'Invalid params' }), { status: 400, headers: corsHeaders });
 
     const body = await req.json().catch(() => ({}));
     const b = BudgetBody.safeParse(body);
@@ -48,7 +48,7 @@ export async function DELETE(_req: NextRequest, ctx: any) {
     const { teamId, id } = (ctx as { params: { teamId: string; id: string } }).params;
 
     const p = BudgetParams.safeParse({ teamId: teamId, id: id });
-    if (!p.success) return new NextResponse(JSON.stringify({ error: 'Invalid params' }), { status: 400, headers: corsHeaders });
+    if (!p.success || p.data.id === undefined) return new NextResponse(JSON.stringify({ error: 'Invalid params' }), { status: 400, headers: corsHeaders });
 
     const result = await controller.deleteBudget(p.data.teamId, p.data.id);
     return new NextResponse(null, { status: result.status, headers: corsHeaders });

@@ -1,7 +1,7 @@
 import {InferInsertModel, InferSelectModel} from "drizzle-orm";
 import {categories} from "@/db/schema";
 import { z } from 'zod';
-import {zId, zName, zTeamId, zType50, zUserId} from "@/db/types/common";
+import {zMaybeId, zName, zTeamId, zType50, zUserId} from "@/db/types/common";
 
 /**all db Category types*/
 export type CategoryRow = InferSelectModel<typeof categories>;
@@ -9,20 +9,20 @@ export type CategoryInsert = InferInsertModel<typeof categories>;
 export type CategoryPatch = Partial<Pick<CategoryInsert, 'name' | 'type' | 'color' | 'icon' | 'parentId'>>;
 
 export const CategoryQuery = z.object({
-    id: z.number().int(),
-    teamId: z.number().int(),
-    type: z.string(),
+    id: zMaybeId.nullable(),
+    teamId: zTeamId,
+    type: zType50.nullable(),
 })
 
 /** create a composite category key object */
 
 /** Parse route input to verify correctness */
-export const CategoryParams = z.object({ teamId: zTeamId, id: zId });
+export const CategoryParams = z.object({ teamId: zTeamId, id: zMaybeId });
 export type CategoryParamsInput = z.infer<typeof CategoryParams>;
 
 /** Collection query */
 export const CategoryBody = z.object({
-    id: zId,
+    id: zMaybeId,
     teamId: zTeamId,
     name: zName,
     type: zType50,

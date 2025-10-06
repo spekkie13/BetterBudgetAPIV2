@@ -21,13 +21,13 @@ export async function GET(req: NextRequest) {
         )
     }
 
-    const parsedQuery = CategoryQuery.safeParse({teamId, id, type});
-    if (!parsedQuery.success){
-        return new NextResponse(
-            JSON.stringify({ error: 'Invalid Query'}),
-            { status: 400, headers: corsHeaders}
-        )
-    }
+    const parsedQuery = CategoryQuery.safeParse({
+        teamId: teamId,
+        id: id,
+        type: type
+    });
+
+    if (!parsedQuery.success) return new NextResponse(JSON.stringify({ error: 'Invalid params'}), { status: 400, headers: corsHeaders})
 
     const result = await controller.getCategory(parsedQuery.data.teamId, parsedQuery.data.id)
     return new NextResponse(JSON.stringify(result.body), {
@@ -56,7 +56,7 @@ export async function PUT(req: NextRequest, ctx: any) {
         parentId: parsedBody.data.parentId ?? 0,
     };
 
-    const result = await controller.updateCategory(params.data.teamId, params.data.id, categoryBody);
+    const result = await controller.updateCategory(params.data.teamId, params.data.id ?? 0, categoryBody);
     return new NextResponse(JSON.stringify(result.body), { status: result.status, headers: corsHeaders });
 }
 
@@ -87,6 +87,7 @@ export async function DELETE(_req: NextRequest, ctx: any) {
     const { teamId, id } = (ctx as { params: { teamId: string; id: string } }).params;
     const params = CategoryParams.safeParse({ teamId: teamId, id: id });
     if (!params.success) return new NextResponse(JSON.stringify({ error: 'Invalid params'}), { status: 400, headers: corsHeaders})
+    if (params.data.id === undefined) return new NextResponse(JSON.stringify({ error: 'Invalid id param'}), { status: 400, headers: corsHeaders})
 
     const result = await controller.deleteCategory(params.data.teamId, params.data.id);
     return new NextResponse(

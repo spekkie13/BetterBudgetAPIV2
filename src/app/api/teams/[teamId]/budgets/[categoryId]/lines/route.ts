@@ -19,7 +19,7 @@ export async function GET(req: NextRequest, ctx: any) {
         limit: sp.get('limit') ?? '50',
         cursor: sp.get('cursor'),
     });
-    if (!queryParsed.success) return new NextResponse(JSON.stringify({ error: 'Invalid query' }), { status: 400, headers: corsHeaders });
+    if (!queryParsed.success || queryParsed.data.month === undefined) return new NextResponse(JSON.stringify({ error: 'Invalid query' }), { status: 400, headers: corsHeaders });
 
     const result = await controller.getCategoryLines(
         paramsParsed.data.teamId,

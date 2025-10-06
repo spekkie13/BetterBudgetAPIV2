@@ -5,10 +5,10 @@ import {toHttpResult} from "@/core/http/errors";
 
 export function makeBudgetController(svc: BudgetService) {
     return {
-        async getBudgets(teamId: number, budgetId: number, categoryId: number, month: string) {
+        async getBudgets(teamId: number, budgetId?: number, categoryId?: number, month?: string) {
             try {
                 // 1) /api/budgets?teamId=1&budgetId=123
-                if (budgetId !== undefined) {
+                if (budgetId !== 0 && budgetId !== undefined && budgetId !== null) {
                     const budget = await svc.selectByIdTeam(teamId, budgetId);
                     return { status: 200, body: budget ?? {} };
                 }
@@ -20,9 +20,9 @@ export function makeBudgetController(svc: BudgetService) {
                 }
 
                 // 3) /api/budgets?teamId=1&categoryId=2
-                if (categoryId !== undefined) {
+                if (categoryId !== 0) {
                     let rows = await svc.selectAllByTeam(teamId);
-                    rows = rows.filter(r => r.id === categoryId);
+                    rows = rows.filter(r => r.categoryId === categoryId);
                     return { status: 200, body: rows };
                 }
 
