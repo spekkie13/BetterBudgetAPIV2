@@ -43,7 +43,7 @@ export async function PUT(req: NextRequest, ctx : any) {
     if (!parsedBody.success) return new NextResponse(JSON.stringify({ error: 'invalid body'}), { status: 400, headers: corsHeaders});
 
     const transactionBody: TransactionInsert = {
-        id: params.data.id,
+        id: params.data.id ?? 0,
         teamId: params.data.teamId,
         accountId: parsedBody.data.accountId,
         amountCents: parsedBody.data.amountCents ?? 0,
