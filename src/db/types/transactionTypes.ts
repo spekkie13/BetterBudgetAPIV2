@@ -1,7 +1,7 @@
 import {InferSelectModel} from "drizzle-orm";
 import {txn} from "@/db/schema";
 import {z} from "zod";
-import {zBoolish, zCents, zCurrency, zDateTime, zId, zName, zTeamId, zType50} from "@/db/types/common";
+import {zBoolish, zCents, zCurrency, zDateTime, zId, zMaybeId, zTeamId, zType50} from "@/db/types/common";
 
 /** all db Transaction types */
 export type TransactionRow = InferSelectModel<typeof txn>;
@@ -18,7 +18,7 @@ export const TransactionQuery = z.object({
 export type TransactionQueryInput = z.infer<typeof TransactionQuery>;
 
 /** Parse route input to verify correctness */
-export const TransactionParams = z.object({ teamId: zTeamId, id: zId });
+export const TransactionParams = z.object({ teamId: zTeamId, id: zMaybeId });
 export type TransactionParamsInput = z.infer<typeof TransactionParams>;
 
 /** Collection query */

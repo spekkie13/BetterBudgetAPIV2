@@ -3,7 +3,7 @@ import { corsHeaders } from '@/core/http/cors';
 import { ok, fail } from '@/core/http/Response';
 import {makeTransactionController} from '@/adapters/controllers/transactionController';
 import {TransactionService} from '@/adapters/services/transactionService';
-import {TransactionBody, TransactionInsert} from "@/db/types/transactionTypes";
+import {TransactionInsert, TransactionParams} from "@/db/types/transactionTypes";
 
 const svc = new TransactionService();
 const controller = makeTransactionController(svc);
@@ -15,16 +15,8 @@ export async function OPTIONS() {
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
 
-    const parsed = TransactionBody.safeParse({
-        teamId: searchParams.get('teamId'),
-        mode: searchParams.get('mode') ?? undefined,
-        month: searchParams.get('month') ?? undefined,
-        type: searchParams.get('type') ?? undefined,
-        limit: searchParams.get('limit') ?? '50',
-        cursor: searchParams.get('cursor'),
-        id: searchParams.get('id') ?? undefined,
-        categoryId: searchParams.get('categoryId') ?? undefined,
-        accountId: searchParams.get('accountId') ?? undefined,
+    const parsed = TransactionParams.safeParse({
+        teamId: Number(searchParams.get('teamId') ?? ""),
     });
 
     if (!parsed.success) {
