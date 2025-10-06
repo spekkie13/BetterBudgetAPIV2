@@ -15,17 +15,18 @@ export async function OPTIONS() {
 export async function GET(req: NextRequest) {
     const sp = new URL(req.url).searchParams;
     const parsed = UserQuery.safeParse({
-        userId: sp.get('userId') ?? undefined,
-        teamId: sp.get('teamId') ?? undefined,
-        email: sp.get('email') ?? undefined,
+        userId: sp.get('userId') ?? 0,
+        teamId: sp.get('teamId') ?? 0,
+        email: sp.get('email') ?? "",
     });
+    console.log(parsed);
     if (!parsed.success) {
         return new NextResponse(JSON.stringify({ error: 'Invalid query' }), { status: 400, headers: corsHeaders });
     }
 
     let result;
-    if (parsed.data.id !== undefined){
-        result = await controller.getUser(parsed.data.id);
+    if (parsed.data.userId !== undefined){
+        result = await controller.getUser(parsed.data.userId);
         return new NextResponse(JSON.stringify(result.body), { status: result.status, headers: corsHeaders });
     }
 

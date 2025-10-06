@@ -9,11 +9,9 @@ export type UserInsert = InferSelectModel<typeof users>;
 export type UserPatch = Partial<Pick<UserInsert, 'email' | 'username' | 'name'>>;
 
 export const UserQuery = z.object({
-    id: zId,
+    userId: zId,
     teamId: zTeamId,
     email: zEmail,
-    username: z.string().trim().min(1),
-    name: zName,
 })
 export type UserQueryInput = z.infer<typeof UserQuery>;
 
