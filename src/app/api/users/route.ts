@@ -25,8 +25,8 @@ export async function GET(req: NextRequest) {
     }
 
     let result;
-    if (parsed.data.id !== undefined){
-        result = await controller.getUser(parsed.data.id);
+    if (parsed.data.userId !== undefined){
+        result = await controller.getUser(parsed.data.userId);
         return new NextResponse(JSON.stringify(result.body), { status: result.status, headers: corsHeaders });
     }
 
