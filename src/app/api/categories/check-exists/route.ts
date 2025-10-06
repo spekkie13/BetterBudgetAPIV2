@@ -1,22 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { corsHeaders } from '@/lib/cors';
-import { checkCategoryExistsController } from '@/lib/http/categories/categoryController';
+import { corsHeaders } from '@/core/http/cors';
+import { makeCategoryController } from '@/adapters/controllers/categoryController';
+import {CategoryService} from "@/adapters/services/categoryService";
+import {CategoryParams} from "@/db/types/categoryTypes";
 
-export async function POST(req: NextRequest) {
-    try {
-        const body = await req.json().catch(() => ({}));
-        const result = await checkCategoryExistsController(body);
+const svc = new CategoryService();
+const controller = makeCategoryController(svc);
 
-        return new NextResponse(
-            JSON.stringify(result.body),
-            { status: result.status, headers: corsHeaders }
-        );
-    } catch (e) {
-        return new NextResponse(JSON.stringify({ error: 'Internal server error' }), {
-            status: 500,
-            headers: corsHeaders,
-        });
-    }
+export async function POST(_req: NextRequest, ctx: any) {
+    const { teamId, id } = (ctx as { params: { teamId: string; id: string } }).params;
+
+    const params = CategoryParams.safeParse({ teamId: teamId, id: id });
+    if (!params.success) return new NextResponse(JSON.stringify({ error: 'invalid params'}), { status: 400, headers: corsHeaders})
+    const result = await controller.ensureAllExists(params.data.teamId, [params.data.id]);
+    return new NextResponse(JSON.stringify(result.body), { status: result.status, headers: corsHeaders})
 }
 
 export async function OPTIONS() {

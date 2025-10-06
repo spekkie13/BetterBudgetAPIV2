@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { corsHeaders } from '@/lib/cors';
-import { BudgetParams, BudgetQuery } from '@/lib/http/teams/budgetSchemas';
-import { getBudgetController } from '@/lib/http/teams/teamsController';
+import { corsHeaders } from '@/core/http/cors';
+import {BudgetParams, BudgetQuery} from "@/db/types/budgetTypes";
+import {TeamService} from "@/adapters/services/teamService";
+import {makeTeamsController} from "@/adapters/controllers/teamsController";
+
+const svc = new TeamService();
+const controller = makeTeamsController(svc);
 
 export async function GET(req: NextRequest, ctx: any) {
     const { teamId } = (ctx as { params: { teamId: string } }).params;
@@ -13,6 +17,6 @@ export async function GET(req: NextRequest, ctx: any) {
     const queryParsed = BudgetQuery.safeParse({ month: sp.get('month') ?? '' });
     if (!queryParsed.success) return new NextResponse(JSON.stringify({ error: 'Invalid month' }), { status: 400, headers: corsHeaders });
 
-    const result = await getBudgetController(paramsParsed.data, queryParsed.data);
+    const result = await controller.getBudget(paramsParsed.data.teamId, queryParsed.data.periodMonth);
     return new NextResponse(JSON.stringify(result.body), { status: result.status, headers: corsHeaders });
 }

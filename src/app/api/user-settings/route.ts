@@ -1,41 +1,58 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { corsHeaders } from '@/lib/cors';
-import {
-    getUserSettingsController,
-    postUserSettingsController,
-    putUserSettingsController,
-    patchUserSettingsController,
-    deleteUserSettingsController,
-} from '@/lib/http/userSettings/userSettingsController';
+import { corsHeaders } from '@/core/http/cors';
+import { makeUserSettingsController } from '@/adapters/controllers/userSettingsController';
+import {UserSettingsService} from "@/adapters/services/userSettingsService";
+import {UserSettingsBody, UserSettingsInsert, UserSettingsParams} from "@/db/types/userSettingsTypes";
+
+const svc = new UserSettingsService();
+const controller = makeUserSettingsController(svc);
 
 export async function OPTIONS() {
     return new NextResponse(null, { status: 204, headers: corsHeaders });
 }
 
 export async function GET(req: NextRequest) {
-    const result = await getUserSettingsController(new URL(req.url).searchParams);
+    const searchParams = new URL(req.url).searchParams;
+    const userId = searchParams.get('userId') ?? "";
+
+    const result = await controller.getUserSetting(userId);
     return new NextResponse(JSON.stringify(result.body), { status: result.status, headers: corsHeaders });
 }
 
 export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}));
-    const result = await postUserSettingsController(body);
+    const upsert = UserSettingsBody.safeParse(body);
+    if (!upsert.success) return new NextResponse(JSON.stringify({ error: 'Invalid body'}), { status: 400, headers: corsHeaders });
+
+    const userSettingBody: UserSettingsInsert = {
+        userId: upsert.data.userId,
+        theme: upsert.data.theme ?? "light",
+        textSize: upsert.data.textSize ?? "medium",
+        preferences: upsert.data.preferences ?? {},
+    }
+
+    const result = await controller.createUserSetting(userSettingBody);
     return new NextResponse(JSON.stringify(result.body), { status: result.status, headers: corsHeaders });
 }
 
-export async function PUT(req: NextRequest) {
-    const body = await req.json().catch(() => ({}));
-    const result = await putUserSettingsController(body);
-    return new NextResponse(JSON.stringify(result.body), { status: result.status, headers: corsHeaders });
-}
+export async function PUT(req: NextRequest, ctx: any) {
+    const { userId } = (ctx as { params: { userId: string } }).params;
 
-export async function PATCH(req: NextRequest) {
+    const params = UserSettingsParams.safeParse({ userId: userId });
+    if (!params.success) return new NextResponse(JSON.stringify({ error: 'Invalid userId' }), { status: 400, headers: corsHeaders });
+
     const body = await req.json().catch(() => ({}));
-    const result = await patchUserSettingsController(body);
+    const parsed = UserSettingsBody.safeParse(body);
+    if (!parsed.success) return new NextResponse(JSON.stringify({ error: 'invalid body' }), { status: 400, headers: corsHeaders });
+
+    const result = await controller.updateUserSetting(Number(userId), body);
     return new NextResponse(JSON.stringify(result.body), { status: result.status, headers: corsHeaders });
 }
 
 export async function DELETE(req: NextRequest) {
-    const result = await deleteUserSettingsController(new URL(req.url).searchParams);
+    const searchParams = new URL(req.url).searchParams;
+    const userId = searchParams.get('userId') ?? "";
+
+    const result = await controller.deleteUserSetting(userId);
     return new NextResponse(JSON.stringify(result.body), { status: result.status, headers: corsHeaders });
 }
