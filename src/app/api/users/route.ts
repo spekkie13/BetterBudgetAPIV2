@@ -19,23 +19,23 @@ export async function GET(req: NextRequest) {
         teamId: sp.get('teamId') ?? 0,
         email: sp.get('email') ?? "",
     });
-    console.log(parsed);
     if (!parsed.success) {
         return new NextResponse(JSON.stringify({ error: 'Invalid query' }), { status: 400, headers: corsHeaders });
     }
 
     let result;
-    if (parsed.data.userId !== undefined){
+    if (parsed.data.userId !== 0){
         result = await controller.getUser(parsed.data.userId);
         return new NextResponse(JSON.stringify(result.body), { status: result.status, headers: corsHeaders });
     }
 
     if (parsed.data.email !== undefined){
+        console.log(parsed.data.email);
         result = await controller.getUserByEmail(parsed.data.email);
         return new NextResponse(JSON.stringify(result.body), { status: result.status, headers: corsHeaders });
     }
 
-    if (parsed.data.teamId !== undefined){
+    if (parsed.data.teamId !== 0){
         result = await controller.getUserByTeamId(parsed.data.teamId);
         return new NextResponse(JSON.stringify(result.body), { status: result.status, headers: corsHeaders });
     }

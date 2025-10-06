@@ -1,5 +1,5 @@
 import { db } from '@/db/client';
-import {users, teams, memberships, accounts} from '@/db/schema';
+import {users, teams, memberships} from '@/db/schema';
 import { eq, inArray } from 'drizzle-orm';
 import {KeyedRepoServiceBase} from "@/adapters/services/factory/keyedRepoServiceBase";
 import {UserInsert, UserPatch, UserRow} from "@/db/types/userTypes";
@@ -12,8 +12,15 @@ export class UserService extends KeyedRepoServiceBase<UserRow, number, UserInser
 
     async selectByEmail(email: string) {
         const [u] = await db.select({
-            id: users.id, email: users.email, username: users.username, name: users.name, createdAt: users.createdAt,
-        }).from(users).where(eq(users.email, email)).limit(1);
+            id: users.id,
+            email: users.email,
+            username: users.username,
+            name: users.name,
+            createdAt: users.createdAt,
+        })
+            .from(users)
+            .where(eq(users.email, email))
+            .limit(1);
         if (!u) return null;
         const ts = await db.select({ id: teams.id, name: teams.name })
             .from(memberships).innerJoin(teams, eq(teams.id, memberships.teamId))
