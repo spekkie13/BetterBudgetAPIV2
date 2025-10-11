@@ -13,4 +13,22 @@ export class TransactionService extends TeamScopedServiceBase<TransactionRow, nu
             (txn) => txn.isTransfer === false
         )
     }
+
+    async selectByType(teamId: number, type: string) {
+        let transactions = await this.selectAllByTeam(teamId);
+        switch (type) {
+            case "transfer":
+                transactions = transactions.filter(t => t.isTransfer === true);
+                return transactions;
+            case "income":
+                transactions = transactions.filter(t => t.amountCents > 0);
+                return transactions;
+            case "expense":
+                transactions = transactions.filter(t => t.amountCents < 0);
+                return transactions;
+            case "all":
+            default:
+                return transactions;
+        }
+    }
 }

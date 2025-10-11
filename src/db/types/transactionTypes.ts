@@ -18,7 +18,11 @@ export const TransactionQuery = z.object({
 export type TransactionQueryInput = z.infer<typeof TransactionQuery>;
 
 /** Parse route input to verify correctness */
-export const TransactionParams = z.object({ teamId: zTeamId, id: zMaybeId });
+export const TransactionParams = z.object({
+    teamId: zTeamId,
+    id: zMaybeId,
+    type: z.enum(['income', 'expense', 'transfer']).optional()
+});
 export type TransactionParamsInput = z.infer<typeof TransactionParams>;
 
 /** Collection query */
@@ -41,7 +45,6 @@ export const TransactionBody = z.object({
     cursor: z.string().nullable().optional(),
     month: z.string().regex(/^\d{4}-\d{2}$/, 'month must be YYYY-MM').optional(),
     mode: z.coerce.number().int().optional(),
-    type: z.enum(['income', 'expense', 'transfer']).optional(),
     limit: z.coerce.number().int().min(1).max(200).default(50),
 })
 export type TransactionBodyInput = z.infer<typeof TransactionBody>;

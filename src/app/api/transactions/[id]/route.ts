@@ -14,16 +14,24 @@ export async function OPTIONS(req: NextRequest) {
 
 export async function GET(req: NextRequest, ctx : any) {
     const { id } = (ctx as { params: { id: string } }).params;
+    const sp = new URL(req.url).searchParams;
     if (!Number.isInteger(id))
         return fail(req, 400, 'Invalid id');
 
     const parsed = TransactionParams.safeParse({
-        teamId: new URL(req.url).searchParams.get('teamId'),
+        teamId: sp.get('teamId'),
+        type: sp.get('type'),
     });
     if (!parsed.success || !Number.isInteger(parsed.data.teamId))
         return fail(req, 400, 'Invalid teamId');
 
-    const result = await controller.getTransaction(parsed.data.teamId, Number(id));
+    let result;
+    if (parsed.data.type !== undefined)
+        result = await controller.selectTransactionsByType(parsed.data.teamId, parsed.data.type);
+    else if (id !== undefined)
+        result = await controller.getTransaction(parsed.data.teamId, Number(id))
+    else
+        result = await controller.listAllByTeam(parsed.data.teamId);
     return isRequestSuccessful(result.status) ?
         ok(req, result.data) :
         fail(req, 500, 'Internal server error...');
