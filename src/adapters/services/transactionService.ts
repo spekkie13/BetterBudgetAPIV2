@@ -21,10 +21,10 @@ export class TransactionService extends TeamScopedServiceBase<TransactionRow, nu
                 transactions = transactions.filter(t => t.isTransfer === true);
                 return transactions;
             case "income":
-                transactions = transactions.filter(t => t.amountCents > 0);
+                transactions = transactions.filter(t => t.amountCents > 0 && t.isTransfer === false);
                 return transactions;
             case "expense":
-                transactions = transactions.filter(t => t.amountCents < 0);
+                transactions = transactions.filter(t => t.amountCents < 0 && t.isTransfer === false);
                 return transactions;
             case "all":
             default:
