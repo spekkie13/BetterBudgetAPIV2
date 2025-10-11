@@ -26,8 +26,10 @@ export async function GET(req: NextRequest, ctx : any) {
         return fail(req, 400, 'Invalid teamId');
 
     let result;
-    if (parsed.data.type !== undefined)
+    if (parsed.data.type !== undefined){
+        console.log(parsed.data.type);
         result = await controller.selectTransactionsByType(parsed.data.teamId, parsed.data.type);
+    }
     else if (id !== undefined)
         result = await controller.getTransaction(parsed.data.teamId, Number(id))
     else

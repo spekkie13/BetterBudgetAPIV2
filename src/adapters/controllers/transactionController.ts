@@ -36,7 +36,7 @@ export function makeTransactionController(svc: TransactionService) {
             return new ApiDataResponse({ data: null, status: 204, message: 'deleted transaction'});
         },
 
-        async selectTransactionsByType(teamId: number, type: string) {
+        async selectTransactionsByType(teamId: number, type: string | null) {
             const result = await svc.selectByType(teamId, type);
             return result ?
                 new ApiDataResponse({ data: result, status: 200, message: 'Successfully retrieved transactions' }) :

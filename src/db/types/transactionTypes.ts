@@ -21,7 +21,7 @@ export type TransactionQueryInput = z.infer<typeof TransactionQuery>;
 export const TransactionParams = z.object({
     teamId: zTeamId,
     id: zMaybeId,
-    type: z.enum(['income', 'expense', 'transfer']).optional()
+    type: z.enum(['income', 'expense', 'transfer', '']).nullable().optional()
 });
 export type TransactionParamsInput = z.infer<typeof TransactionParams>;
 

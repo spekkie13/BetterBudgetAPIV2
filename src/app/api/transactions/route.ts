@@ -13,19 +13,22 @@ export async function OPTIONS(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-    const { searchParams } = new URL(req.url);
-
+    const sp = new URL(req.url).searchParams;
     const parsed = TransactionParams.safeParse({
-        teamId: Number(searchParams.get('teamId') ?? ""),
+        teamId: sp.get('teamId'),
+        type: sp.get('type'),
     });
+    if (!parsed.success || !Number.isInteger(parsed.data.teamId))
+        return fail(req, 400, 'Invalid teamId');
 
-    if (!parsed.success)
-        return fail(req, 400, 'Invalid query');
-
-    const result = await controller.listAllByTeam(parsed.data.teamId);
+    let result;
+    if (parsed.data.type !== undefined)
+        result = await controller.selectTransactionsByType(parsed.data.teamId, parsed.data.type);
+    else
+        result = await controller.listAllByTeam(parsed.data.teamId);
     return isRequestSuccessful(result.status) ?
         ok(req, result.data) :
-        fail(req, 500, 'Internal Server Error...');
+        fail(req, 500, 'Internal server error...');
 }
 
 export async function POST(req: NextRequest) {

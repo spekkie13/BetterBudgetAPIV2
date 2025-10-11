@@ -14,11 +14,12 @@ export class TransactionService extends TeamScopedServiceBase<TransactionRow, nu
         )
     }
 
-    async selectByType(teamId: number, type: string) {
+    async selectByType(teamId: number, type: string | null) {
         let transactions = await this.selectAllByTeam(teamId);
         switch (type) {
             case "transfer":
                 transactions = transactions.filter(t => t.isTransfer === true);
+                console.log(transactions);
                 return transactions;
             case "income":
                 transactions = transactions.filter(t => t.amountCents > 0 && t.isTransfer === false);
