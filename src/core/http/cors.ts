@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server'
 // Put your dev + prod origins here (or from env)
 const ALLOWED_ORIGINS = [
     'http://localhost:3000',
+    'http://localhost:8081',
     'http://127.0.0.1:3000',
     process.env.APP_ORIGIN ?? '',        // e.g. https://app.example.com
 ].filter(Boolean)
