@@ -1,14 +1,14 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { corsHeaders } from '@/core/http/cors';
+import { NextRequest } from 'next/server';
 import { makeUserSettingsController } from '@/adapters/controllers/userSettingsController';
-import {UserSettingsService} from "@/adapters/services/userSettingsService";
-import {UserSettingsBody, UserSettingsInsert, UserSettingsParams} from "@/db/types/userSettingsTypes";
+import { UserSettingsService } from "@/adapters/services/userSettingsService";
+import { UserSettingsBody, UserSettingsInsert, UserSettingsParams } from "@/db/types/userSettingsTypes";
+import { ok, fail, isRequestSuccessful } from "@/core/http/Response";
 
 const svc = new UserSettingsService();
 const controller = makeUserSettingsController(svc);
 
 export async function OPTIONS() {
-    return new NextResponse(null, { status: 204, headers: corsHeaders });
+    return ok(null, '', 204);
 }
 
 export async function GET(req: NextRequest) {
@@ -16,13 +16,16 @@ export async function GET(req: NextRequest) {
     const userId = searchParams.get('userId') ?? "";
 
     const result = await controller.getUserSetting(userId);
-    return new NextResponse(JSON.stringify(result.body), { status: result.status, headers: corsHeaders });
+    return isRequestSuccessful(result.status) ?
+        ok(JSON.stringify(result.data)) :
+        fail(500, 'Internal server error...');
 }
 
 export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}));
     const upsert = UserSettingsBody.safeParse(body);
-    if (!upsert.success) return new NextResponse(JSON.stringify({ error: 'Invalid body'}), { status: 400, headers: corsHeaders });
+    if (!upsert.success)
+        return fail(400, 'Invalid body');
 
     const userSettingBody: UserSettingsInsert = {
         userId: upsert.data.userId,
@@ -32,27 +35,39 @@ export async function POST(req: NextRequest) {
     }
 
     const result = await controller.createUserSetting(userSettingBody);
-    return new NextResponse(JSON.stringify(result.body), { status: result.status, headers: corsHeaders });
+    return isRequestSuccessful(result.status) ?
+        ok(JSON.stringify(result.data)) :
+        fail(500, 'Internal server error...');
 }
 
 export async function PUT(req: NextRequest, ctx: any) {
     const { userId } = (ctx as { params: { userId: string } }).params;
 
     const params = UserSettingsParams.safeParse({ userId: userId });
-    if (!params.success) return new NextResponse(JSON.stringify({ error: 'Invalid userId' }), { status: 400, headers: corsHeaders });
+    if (!params.success)
+        return fail(400, 'Invalid user ID');
 
     const body = await req.json().catch(() => ({}));
     const parsed = UserSettingsBody.safeParse(body);
-    if (!parsed.success) return new NextResponse(JSON.stringify({ error: 'invalid body' }), { status: 400, headers: corsHeaders });
+    if (!parsed.success)
+        return fail(400, 'Invalid body');
 
     const result = await controller.updateUserSetting(Number(userId), body);
-    return new NextResponse(JSON.stringify(result.body), { status: result.status, headers: corsHeaders });
+    return isRequestSuccessful(result.status) ?
+        ok(JSON.stringify(result.data)) :
+        fail(500, 'Internal server error...');
 }
 
 export async function DELETE(req: NextRequest) {
     const searchParams = new URL(req.url).searchParams;
     const userId = searchParams.get('userId') ?? "";
 
-    const result = await controller.deleteUserSetting(userId);
-    return new NextResponse(JSON.stringify(result.body), { status: result.status, headers: corsHeaders });
+    const parsed = UserSettingsParams.safeParse({ userId: userId.toString()});
+    if (!parsed.success)
+        return fail(400, 'Invalid user ID');
+
+    const result = await controller.deleteUserSetting(parsed.data.userId);
+    return isRequestSuccessful(result.status) ?
+        ok(JSON.stringify(result.data)) :
+        fail(500, 'Internal server error...');
 }

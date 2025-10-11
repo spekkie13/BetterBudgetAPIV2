@@ -1,36 +1,40 @@
-import {CategorySlotPref, UserSettingsInsert, UserSettingsParams} from "@/db/types/userSettingsTypes";
-import {UserSettingsService} from "@/adapters/services/userSettingsService";
-import {ok} from "@/core/http/Response";
+import { CategorySlotPref, UserSettingsInsert } from "@/db/types/userSettingsTypes";
+import { UserSettingsService } from "@/adapters/services/userSettingsService";
+import { ApiDataResponse } from "@/core/http/ApiDataResponse";
 
 export function makeUserSettingsController(svc: UserSettingsService) {
     return {
         async getUserSetting(userId: string){
             const settings = await svc.selectById(Number(userId));
-            return settings
-                ? { status: 200, body: settings }
-                : { status: 404, body: { error: 'Settings not found' } };
+            return settings ?
+                new ApiDataResponse({ status: 200, data: settings, message: 'successfully patched category slots' }) :
+                new ApiDataResponse({ status: 404, data: null, message: 'Settings not found' })
         },
 
         async createUserSetting(body: UserSettingsInsert){
             const created = await svc.insert({ ...body });
-            return ok(created, 'budget created successfully',201);
+            return created ?
+                new ApiDataResponse({ data: created, status: 201, message: 'successfully created' }) :
+                new ApiDataResponse({ data: null, status: 400, message: 'Something went wrong' });
         },
 
         async updateUserSetting(id: number, body: UserSettingsInsert){
             const updated = await svc.updateById(id, body);
-            return updated ? ok(updated) : { status: 404, body: { error: 'budget not found' } };
+            return updated ?
+                new ApiDataResponse({ data: updated, status: 201, message: 'successfully updated' }) :
+                new ApiDataResponse({ data: null, status: 400, message: 'Something went wrong' });
         },
 
-        async deleteUserSetting(userId: string){
-            const parsed = UserSettingsParams.safeParse({ userId: userId.toString()});
-            if (!parsed.success) return { status: 400, body: { error: 'Invalid userId' } };
-
-            await svc.deleteById(parsed.data.userId);
-            return { status: 200, body: { message: 'Deleted' } };
+        async deleteUserSetting(userId: number){
+            await svc.deleteById(userId);
+            return new ApiDataResponse({ data: null, status: 201, message: 'successfully deleted' })
         },
 
         async saveCategorySlots(userId: number, preferences: CategorySlotPref[]){
-            await svc.saveCategorySlots(userId, preferences)
+            const result = await svc.saveCategorySlots(userId, preferences)
+            return result ?
+                new ApiDataResponse({ data: result, status: 201, message: 'successfully saved category slots' }) :
+                new ApiDataResponse({ data: null, status: 400, message: 'Something went wrong' });
         }
     }
 }

@@ -1,30 +1,8 @@
-// src/adapters/repo/makeTeamScopedRepo.ts
 import { and, eq, type SQL } from "drizzle-orm";
-import type { AnyPgColumn, PgTableWithColumns } from "drizzle-orm/pg-core";
+import type { AnyPgColumn } from "drizzle-orm/pg-core";
 import type { TeamScopedRepo } from "@/adapters/repo/factory/teamScopedRepo";
 import type { InsertOf, PatchOf, SelectOf } from "@/db/types/generic";
-
-/** ---------- Helpers ---------- **/
-
-type Table = PgTableWithColumns<any>;
-
-type ColData<T extends AnyPgColumn> =
-    T["_"]["notNull"] extends true ? T["_"]["data"] : T["_"]["data"] | null;
-
-type IdTuple<TCols extends readonly AnyPgColumn[]> = {
-    [I in keyof TCols]: TCols[I] extends AnyPgColumn ? ColData<TCols[I]> : never;
-};
-
-type IdNamed<TCols extends Record<string, AnyPgColumn>> = {
-    [K in keyof TCols]: ColData<TCols[K]>;
-};
-
-function andAll(parts: SQL[]): SQL {
-    return parts.reduce<SQL | undefined>(
-        (acc, c) => (acc ? and(acc, c) : c),
-        undefined
-    )!;
-}
+import {andAll, ColData, IdNamed, IdTuple, Table} from "@/adapters/repo/factory/repoHelpers";
 
 /** ---------- Overloads (3 shapes) ---------- **/
 

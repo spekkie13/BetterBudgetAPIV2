@@ -1,33 +1,50 @@
-import {AccountService} from "@/adapters/services/accountService";
-import {ok, fail} from "@/core/http/Response";
-import {AccountInsert, AccountPatch, AccountQueryInput} from "@/db/types/accountTypes";
+import { AccountService } from "@/adapters/services/accountService";
+import { AccountInsert, AccountPatch } from "@/db/types/accountTypes";
+import { ApiDataResponse } from "@/core/http/ApiDataResponse";
 
 export function makeAccountsController(svc: AccountService) {
     return {
-        async listAccounts(teamId: number, query: AccountQueryInput) {
-            const items = await svc.selectAllByTeam(teamId);
-            const filtered = query?.includeArchived ? items : items.filter(a => !a.isArchived);
-            return ok(filtered);
+        async listAccounts(teamId: number, includeArchived: boolean | undefined) {
+            let items = await svc.selectAllByTeam(teamId);
+            if (includeArchived) {
+                items = items.filter(a => !a.isArchived);
+            }
+            return items.length > 0 ?
+                new ApiDataResponse({ data: items, status: 200, message: 'request successful' }) :
+                new ApiDataResponse({ data: teamId, status: 404, message: 'no accounts found' });
         },
 
-        async getAccount(teamId: number, id: number) {
-            const row = await svc.selectByIdTeam(teamId, id);
-            return row ? ok(row) : fail(404, "Account not found");
+        async getAccount(teamId: number, id: number | undefined) {
+            let row = null;
+            if (id === undefined) {
+                row = await svc.selectAllByTeam(teamId);
+                return row ?
+                    new ApiDataResponse({ data: row, status: 200, message: 'request successful' }) :
+                    new ApiDataResponse({ data: teamId, status: 404, message: 'Account not found' });
+            }
+            row = await svc.selectByIdTeam(teamId, id);
+            return row ?
+                new ApiDataResponse({ data: row, status: 200, message: 'request successful' }) :
+                new ApiDataResponse({ data: teamId, status: 404, message: 'Account not found' });
         },
 
         async createAccount(teamId: number, body: AccountInsert) {
             const created = await svc.insert({ ...body, teamId });
-            return ok(created, 'Account created successfully',201);
+            return created ?
+                new ApiDataResponse({ data: created, status: 201, message: 'request successful' }) :
+                new ApiDataResponse({ data: body, status: 422, message: 'Account could not be created'})
         },
 
         async updateAccount(teamId: number, id: number, body: AccountPatch) {
             const updated = await svc.updateByIdTeam(teamId, id, body);
-            return updated ? ok(updated) : fail(404, "Account not found");
+            return updated ?
+                new ApiDataResponse({ data: updated, status: 201, message: 'request successful' }) :
+                new ApiDataResponse({ data: body, status: 422, message: 'Account could not be updated'})
         },
 
         async deleteAccount(teamId: number, id: number) {
             await svc.deleteByIdTeam(teamId, id);
-            return ok(null, 'account deleted successfully',204);
+            return new ApiDataResponse({ status: 204, data: null, message: 'account deleted successfully'});
         },
     };
 }

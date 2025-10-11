@@ -7,22 +7,27 @@ import { addMonthsUtc, monthStartEndUtc, monthStartUtc, monthToDate, toYmd } fro
 import { decodeDateCursor2, encodeDateCursor } from "@/core/cursor";
 import { toCents } from "@/core/cents";
 import { TeamBodyInput, TeamPatch } from "@/db/types/teamTypes";
+import { ApiDataResponse } from "@/core/http/ApiDataResponse";
 
 export function makeTeamsController(svc: TeamService) {
     return {
         async createTeam(body: TeamBodyInput) {
             const created = await svc.insert({ name: body.name });
-            return { status: 201, body: created };
+            return created ?
+                new ApiDataResponse({ data: created, status: 201, message: 'successfully created' }) :
+                new ApiDataResponse({ data: null, status: 400, message: 'No team created' });
         },
 
         async updateTeam(teamId: number, body: TeamPatch) {
             const updated = await svc.updateById(teamId, body);
-            return { status: 200, body: updated };
+            return updated ?
+                new ApiDataResponse({ data: updated, status: 201, message: 'successfully created' }) :
+                new ApiDataResponse({ data: null, status: 400, message: 'No team updated' });
         },
 
         async deleteTeam(teamId: number) {
             await svc.deleteById(teamId);
-            return { status: 204, body: null };
+            return new ApiDataResponse({ data: null, status: 204, message: 'successfully deleted' });
         },
 
         async getCategoryLines(teamId: number, categoryId: number, month: string, limit: number, cursor: string | null | undefined) {
@@ -82,7 +87,11 @@ export function makeTeamsController(svc: TeamService) {
             const last = items.at(-1);
             const nextCursor = last ? encodeDateCursor(last.posted_at, Number(last.txn_id)) : null;
 
-            return { status: 200, body: { items, nextCursor } };
+            return new ApiDataResponse({
+                data: { items, nextCursor },
+                status: 200,
+                message: 'Successfully fetched category lines',
+            })
         },
 
         async getSpendTrend(teamId: number, months: number) {
@@ -114,7 +123,9 @@ export function makeTeamsController(svc: TeamService) {
             }
 
             const points = monthStarts.map(ms => ({ period_month: toYmd(ms), spent_cents: bucket.get(toYmd(ms)) ?? 0 }));
-            return { status: 200, body: { points } };
+            return points ?
+                new ApiDataResponse({ data: points, status: 200, message: 'Successfully fetched spending trends'}) :
+                new ApiDataResponse({ data: null, status: 400, message: 'No spend trends fetched'})
         },
 
         async getBudget(teamId: number, month: string) {
@@ -157,20 +168,25 @@ export function makeTeamsController(svc: TeamService) {
                 total_remaining_cents: rows.reduce((acc, r) => acc + r.remaining_cents, 0),
             };
 
-            return {
+            return new ApiDataResponse({
                 status: 200,
-                body: { month, totals, categories: rows, period_month: monthToDate(month) },
-            };
+                data: { month, totals, categories: rows, period_month: monthToDate(month) },
+                message: 'Successfully fetched budget',
+            });
         },
 
         async getTeamById(teamId: number) {
             const team = await svc.selectById(teamId);
-            return team ? { status: 200, body: team } : { status: 404, body: { error: `Could not find a team with id ${teamId}` } };
+            return team ?
+                new ApiDataResponse({ data: team, status: 200, message: 'Successfully fetched team' }) :
+                new ApiDataResponse({ data: null, status: 404, message: 'No team found' });
         },
 
         async selectAll() {
             const teams = await svc.listAll()
-            return { status: 200, body: teams };
+            return (teams && teams.length > 0) ?
+                new ApiDataResponse({ data: teams, status: 200, message: 'Successfully fetched teams' }) :
+                new ApiDataResponse({ data: null, status: 404, message: 'No teams found' });
         }
     }
 }

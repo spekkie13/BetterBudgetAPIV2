@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { corsHeaders } from '@/core/http/cors';
+import { NextRequest } from 'next/server';
 import { makeTeamsController } from '@/adapters/controllers/teamsController';
-import {TeamBody, TeamQuery} from "@/db/types/teamTypes";
-import {TeamService} from "@/adapters/services/teamService";
+import { TeamBody, TeamQuery } from "@/db/types/teamTypes";
+import { TeamService } from "@/adapters/services/teamService";
+import { ok, fail, isRequestSuccessful } from "@/core/http/Response";
 
 const svc = new TeamService();
 const controller = makeTeamsController(svc);
@@ -10,26 +10,32 @@ const controller = makeTeamsController(svc);
 export async function GET(req: NextRequest) {
     const sp = new URL(req.url).searchParams;
     const parsed = TeamQuery.safeParse({ teamId: sp.get('teamId') ?? undefined });
-    if (!parsed.success) return new NextResponse(JSON.stringify({ error: 'Invalid teamId' }), { status: 400, headers: corsHeaders });
+    if (!parsed.success)
+        return fail(400, 'Invalid Team ID');
 
-    let result = null;
-    if (parsed.data.id !== undefined) {
+    let result;
+    if (parsed.data.id !== undefined)
         result = await controller.getTeamById(parsed.data.id);
-        return new NextResponse(JSON.stringify(result.body), { status: result.status, headers: corsHeaders });
-    }
-    result = await controller.selectAll();
-    return new NextResponse(JSON.stringify(result.body), { status: result.status, headers: corsHeaders });
+    else
+        result = await controller.selectAll();
+
+    return isRequestSuccessful(result.status) ?
+        ok(result.data) :
+        fail(500, 'Internal server error...');
 }
 
 export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}));
     const parsed = TeamBody.safeParse(body);
-    if (!parsed.success) return new NextResponse(JSON.stringify({ error: 'Missing team name' }), { status: 400, headers: corsHeaders });
+    if (!parsed.success)
+        return fail(400, 'Missing Team name');
 
     const result = await controller.createTeam(parsed.data);
-    return new NextResponse(JSON.stringify(result.body), { status: result.status, headers: corsHeaders });
+    return isRequestSuccessful(result.status) ?
+        ok(result.data) :
+        fail(500, 'Internal server error...');
 }
 
 export async function OPTIONS() {
-    return new NextResponse(null, { status: 204, headers: corsHeaders });
+    return ok(null, '', 204);
 }

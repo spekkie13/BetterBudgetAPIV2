@@ -1,7 +1,7 @@
 import {InferInsertModel, InferSelectModel} from "drizzle-orm";
 import {accounts} from "@/db/schema";
 import z from "zod";
-import {zBoolish, zCurrency, zId, zName, zTeamId, zType50} from "@/db/types/common";
+import {zBoolish, zCurrency, zId, zMaybeId, zName, zTeamId, zType50} from "@/db/types/common";
 
 /** all db Account types */
 export type AccountRow = InferSelectModel<typeof accounts>;
@@ -9,14 +9,14 @@ export type AccountInsert = InferInsertModel<typeof accounts>;
 export type AccountPatch = Partial<Pick<AccountInsert, 'name' | 'type' | 'currency' | 'isArchived'>>;
 
 export const AccountQuery = z.object({
-    id: zId,
+    id: zMaybeId,
     teamId: zTeamId,
-    includeArchived: zBoolish.default(false),
+    includeArchived: zBoolish.default(false).optional(),
 })
 export type AccountQueryInput = z.infer<typeof AccountQuery>;
 
 /** Parse route input to verify correctness */
-export const AccountParams = z.object({ teamId: zTeamId, id: zId });
+export const AccountParams = z.object({ teamId: zTeamId, id: zMaybeId });
 
 /** Collection query (?includeArchived=true|false) */
 export const AccountBody = z.object({

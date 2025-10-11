@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { corsHeaders } from '@/core/http/cors';
-import {BudgetParams, BudgetQuery} from "@/db/types/budgetTypes";
-import {TeamService} from "@/adapters/services/teamService";
-import {makeTeamsController} from "@/adapters/controllers/teamsController";
+import { NextRequest } from 'next/server';
+import { BudgetParams, BudgetQuery } from "@/db/types/budgetTypes";
+import { TeamService } from "@/adapters/services/teamService";
+import { makeTeamsController } from "@/adapters/controllers/teamsController";
+import { ok, fail, isRequestSuccessful } from "@/core/http/Response";
 
 const svc = new TeamService();
 const controller = makeTeamsController(svc);
@@ -11,12 +11,20 @@ export async function GET(req: NextRequest, ctx: any) {
     const { teamId } = (ctx as { params: { teamId: string } }).params;
 
     const paramsParsed = BudgetParams.safeParse({ teamId: teamId });
-    if (!paramsParsed.success) return new NextResponse(JSON.stringify({ error: 'Bad teamId' }), { status: 400, headers: corsHeaders });
+    if (!paramsParsed.success)
+        return fail(400, 'Invalid Team ID');
 
     const sp = new URL(req.url).searchParams;
     const queryParsed = BudgetQuery.safeParse({ month: sp.get('month') ?? '' });
-    if (!queryParsed.success || queryParsed.data.periodMonth === undefined) return new NextResponse(JSON.stringify({ error: 'Invalid month' }), { status: 400, headers: corsHeaders });
+    if (!queryParsed.success || queryParsed.data.periodMonth === undefined)
+        return fail(400, 'Invalid Month');
 
     const result = await controller.getBudget(paramsParsed.data.teamId, queryParsed.data.periodMonth);
-    return new NextResponse(JSON.stringify(result.body), { status: result.status, headers: corsHeaders });
+    return isRequestSuccessful(result.status) ?
+        ok(result.data) :
+        fail(500, 'Internal Server Error');
+}
+
+export async function OPTIONS() {
+    return ok(null, 'OK', 204);
 }

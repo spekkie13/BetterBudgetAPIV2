@@ -1,59 +1,66 @@
 import {BudgetService} from "@/adapters/services/budgetService";
-import {fail, ok} from "@/core/http/Response";
 import {BudgetInsert, BudgetPatch} from "@/db/types/budgetTypes";
-import {toHttpResult} from "@/core/http/errors";
+import {ApiDataResponse} from "@/core/http/ApiDataResponse";
 
 export function makeBudgetController(svc: BudgetService) {
     return {
         async getBudgets(teamId: number, budgetId?: number, categoryId?: number, month?: string) {
-            try {
-                // 1) /api/budgets?teamId=1&budgetId=123
-                if (budgetId !== 0 && budgetId !== undefined && budgetId !== null) {
-                    const budget = await svc.selectByIdTeam(teamId, budgetId);
-                    return { status: 200, body: budget ?? {} };
-                }
-
-                // 2) /api/budgets?teamId=1&categoryId=2&month=YYYY-MM
-                if (categoryId !== undefined && month) {
-                    const budget = await svc.selectByMonth(teamId, month, categoryId);
-                    return { status: 200, body: budget ?? {} };
-                }
-
-                // 3) /api/budgets?teamId=1&categoryId=2
-                if (categoryId !== 0) {
-                    let rows = await svc.selectAllByTeam(teamId);
-                    rows = rows.filter(r => r.categoryId === categoryId);
-                    return { status: 200, body: rows };
-                }
-
-                // 4) /api/budgets?teamId=1&month=YYYY-MM
-                if (month) {
-                    let rows = await svc.selectAllByTeam(teamId);
-                    rows = rows.filter(r => r.periodMonth === month);
-                    return { status: 200, body: rows };
-                }
-
-                // 5) /api/budgets?teamId=1
-                const rows = await svc.selectAllByTeam(teamId);
-                return { status: 200, body: rows };
-            } catch (e) {
-                return toHttpResult(e);
+            // 1) /api/budgets?teamId=1&budgetId=123
+            if (budgetId !== 0 && budgetId !== undefined && budgetId !== null) {
+                const budget = await svc.selectByIdTeam(teamId, budgetId);
+                return budget ?
+                    new ApiDataResponse({ data: budget, status: 200, message: 'request successful'}) :
+                    new ApiDataResponse({ data: null, status: 404, message: 'No budgets found'});
             }
+
+            // 2) /api/budgets?teamId=1&categoryId=2&month=YYYY-MM
+            if (categoryId !== undefined && month) {
+                const budget = await svc.selectByMonth(teamId, month, categoryId);
+                return budget ?
+                    new ApiDataResponse({ data: budget, status: 200, message: 'request successful'}) :
+                    new ApiDataResponse({ data: null, status: 404, message: 'No budgets found'});                }
+
+            // 3) /api/budgets?teamId=1&categoryId=2
+            if (categoryId !== 0) {
+                let rows = await svc.selectAllByTeam(teamId);
+                rows = rows.filter(r => r.categoryId === categoryId);
+                return rows.length > 0 ?
+                    new ApiDataResponse({ data: rows, status: 200, message: 'request successful'}) :
+                    new ApiDataResponse({ data: null, status: 404, message: 'No budgets found'});                }
+
+            // 4) /api/budgets?teamId=1&month=YYYY-MM
+            if (month) {
+                let rows = await svc.selectAllByTeam(teamId);
+                rows = rows.filter(r => r.periodMonth === month);
+                return rows.length > 0 ?
+                    new ApiDataResponse({ data: rows, status: 200, message: 'request successful'}) :
+                    new ApiDataResponse({ data: null, status: 404, message: 'No budgets found'});                }
+
+            // 5) /api/budgets?teamId=1
+            const rows = await svc.selectAllByTeam(teamId);
+            return rows.length > 0 ?
+                new ApiDataResponse({ data: rows, status: 200, message: 'request successful'}) :
+                new ApiDataResponse({ data: null, status: 404, message: 'No budgets found'});
+
         },
 
         async createBudget(teamId: number, body: BudgetInsert) {
-            const created = await svc.insert({ ...body, teamId });        // ✅ add teamId, and await
-            return ok(created, 'budget created successfully',201);
+            const created = await svc.insert({ ...body, teamId });
+            return created ?
+                new ApiDataResponse({ data: created, status: 201, message: 'successfully created' }) :
+                new ApiDataResponse({ data: null, status: 400, message: 'No budget created' });
         },
 
         async updateBudget(teamId: number, id: number, body: BudgetPatch) {
             const updated = await svc.updateByIdTeam(teamId, id, body);
-            return updated ? ok(updated) : fail(404, "budget not found");
-        },
+            return updated ?
+                new ApiDataResponse({ data: updated, status: 201, message: 'successfully updated' }) :
+                new ApiDataResponse({ data: null, status: 400, message: 'No budget updated' });
+            },
 
         async deleteBudget(teamId: number, id: number) {
             await svc.deleteByIdTeam(teamId, id);
-            return ok(null, 'budget deleted successfully',204);
+            return new ApiDataResponse({ data: null, status: 204, message: 'successfully deleted' });
         },
     }
 }

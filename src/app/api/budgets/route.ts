@@ -1,14 +1,14 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { corsHeaders } from '@/core/http/cors';
-import {BudgetService} from "@/adapters/services/budgetService";
-import {makeBudgetController} from "@/adapters/controllers/budgetController";
-import {BudgetBody, BudgetParams, BudgetQuery} from "@/db/types/budgetTypes";
+import { NextRequest } from 'next/server';
+import { BudgetService } from "@/adapters/services/budgetService";
+import { makeBudgetController } from "@/adapters/controllers/budgetController";
+import { BudgetBody, BudgetParams, BudgetQuery } from "@/db/types/budgetTypes";
+import { ok, fail, isRequestSuccessful } from "@/core/http/Response";
 
 const svc = new BudgetService();
 const controller = makeBudgetController(svc);
 
 export async function OPTIONS() {
-    return new NextResponse(null, { status: 204, headers: corsHeaders });
+    ok(null, '', 204);
 }
 
 export async function GET(req: NextRequest) {
@@ -16,12 +16,8 @@ export async function GET(req: NextRequest) {
     const teamId = sp.get("teamId");
 
     const parsed = BudgetParams.safeParse({ teamId });
-    if (!parsed.success) {
-        return new NextResponse(
-            JSON.stringify({ error: "Invalid teamId" }),
-            { status: 400, headers: corsHeaders }
-        );
-    }
+    if (!parsed.success)
+        return fail(400, 'Invalid Team ID');
 
     const parsedQuery = BudgetQuery.safeParse({
         teamId: sp.get("teamId"),
@@ -29,13 +25,8 @@ export async function GET(req: NextRequest) {
         categoryId: sp.get("categoryId") ?? 0,
         month: sp.get("periodMonth"),
     });
-    console.log(parsedQuery);
-    if (!parsedQuery.success) {
-        return new NextResponse(
-            JSON.stringify({ error: "Invalid query" }),
-            { status: 400, headers: corsHeaders }
-        );
-    }
+    if (!parsedQuery.success)
+        return fail(400, 'Invalid Query');
 
     const result = await controller.getBudgets(
         parsedQuery.data.teamId,
@@ -43,20 +34,22 @@ export async function GET(req: NextRequest) {
         parsedQuery.data.categoryId,
         parsedQuery.data.periodMonth
     );
-    return new NextResponse(JSON.stringify(result.body), {
-        status: result.status,
-        headers: corsHeaders,
-    });
+
+    return isRequestSuccessful(result.status) ?
+        ok(JSON.stringify(result.data)) :
+        fail(500, 'Internal server error...');
 }
 
 export async function POST(req: NextRequest, ctx: any) {
     const { teamId } = (ctx as { params: { teamId: string; } }).params;
     const p = BudgetParams.safeParse({ teamId: teamId });
-    if (!p.success) return new NextResponse(JSON.stringify({ error: 'Invalid teamId' }), { status: 400, headers: corsHeaders});
+    if (!p.success)
+        return fail(400, 'Invalid Team ID');
 
     const body = await req.json().catch(() => ({}));
     const b = BudgetBody.safeParse(body);
-    if (!b.success) return new NextResponse(JSON.stringify({ error: 'invalid body' }), {status: 400, headers: corsHeaders});
+    if (!b.success)
+        return fail(400, 'Invalid Body');
 
     const budgetBody = {
         teamId: p.data.teamId,
@@ -67,5 +60,7 @@ export async function POST(req: NextRequest, ctx: any) {
     }
 
     const result = await controller.createBudget(p.data.teamId, budgetBody);
-    return new NextResponse(JSON.stringify(result.body), { status: result.status, headers: corsHeaders})
+    return isRequestSuccessful(result.status) ?
+        ok(JSON.stringify(result.data)) :
+        fail(500, 'Internal server error...');
 }

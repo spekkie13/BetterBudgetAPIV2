@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { corsHeaders } from '@/core/http/cors';
+import { NextRequest } from 'next/server';
 import { makeTeamsController } from '@/adapters/controllers/teamsController';
-import {TeamBody, TeamParams, TeamPatch} from "@/db/types/teamTypes";
-import {TeamService} from "@/adapters/services/teamService";
+import { TeamBody, TeamParams, TeamPatch } from "@/db/types/teamTypes";
+import { TeamService } from "@/adapters/services/teamService";
+import { ok, fail, isRequestSuccessful } from "@/core/http/Response";
 
 const svc = new TeamService();
 const controller = makeTeamsController(svc);
@@ -11,21 +11,26 @@ export async function GET(_req: NextRequest, ctx: any) {
     const { id } = (ctx as { params: { id: string } }).params;
 
     const parsed = TeamParams.safeParse({ id: id });
-    if (!parsed.success) return new NextResponse(JSON.stringify({ error: 'Invalid ID' }), { status: 400, headers: corsHeaders });
+    if (!parsed.success)
+        return fail(400, 'Invalid ID');
 
     const result = await controller.getTeamById(parsed.data.id);
-    return new NextResponse(result.body === null ? null : JSON.stringify(result.body), { status: result.status, headers: corsHeaders });
+    return isRequestSuccessful(result.status) ?
+        ok(result.data) :
+        fail(500, 'Internal server error...');
 }
 
 export async function PUT(req: NextRequest, ctx: any) {
     const { id } = (ctx as { params: { id: string } }).params;
 
     const params = TeamParams.safeParse({ id: id });
-    if (!params.success) return new NextResponse(JSON.stringify({ error: 'Invalid ID' }), { status: 400, headers: corsHeaders });
+    if (!params.success)
+        return fail(400, 'Invalid ID');
 
     const body = await req.json().catch(() => ({}));
     const bodyParsed = TeamBody.safeParse(body);
-    if (!bodyParsed.success) return new NextResponse(JSON.stringify({ error: 'Missing/invalid name' }), { status: 400, headers: corsHeaders });
+    if (!bodyParsed.success)
+        return fail(400, 'Missing/Invalid name');
 
     const updateBody: TeamPatch = {
         id: params.data.id,
@@ -33,15 +38,24 @@ export async function PUT(req: NextRequest, ctx: any) {
         createdAt: new Date(bodyParsed.data.createdAt) ?? new Date(),
     }
     const result = await controller.updateTeam(params.data.id, updateBody);
-    return new NextResponse(JSON.stringify(result.body), { status: result.status, headers: corsHeaders });
+    return isRequestSuccessful(result.status) ?
+        ok(result.data) :
+        fail(500, 'Internal server error...');
 }
 
 export async function DELETE(_req: NextRequest, ctx: any) {
     const { id } = (ctx as { params: { id: string } }).params;
 
     const parsed = TeamParams.safeParse({ id: id });
-    if (!parsed.success) return new NextResponse(JSON.stringify({ error: 'Invalid ID' }), { status: 400, headers: corsHeaders });
+    if (!parsed.success)
+        return fail(400, 'Invalid ID');
 
     const result = await controller.deleteTeam(parsed.data.id);
-    return new NextResponse(null, { status: result.status, headers: corsHeaders });
+    return isRequestSuccessful(result.status) ?
+        ok(result.data) :
+        fail(500, 'Internal server error...');
+}
+
+export async function OPTIONS() {
+    return ok(null, 'OK', 204);
 }

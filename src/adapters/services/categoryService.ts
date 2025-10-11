@@ -29,14 +29,12 @@ export class CategoryService extends TeamScopedServiceBase<CategoryRow, number, 
     }
 
     async ensureAllExistForTeam(teamId: number, catIds: number[]) {
-        if (catIds.length === 0) return;
+        if (catIds.length === 0) return false;
         const rows = await db
             .select({ id: categories.id })
             .from(categories)
             .where(and(eq(categories.teamId, teamId), inArray(categories.id, catIds)));
-        if (rows.length !== catIds.length) {
-            throw new Error('One or more split categories are invalid for this team.');
-        }
+        return rows.length === catIds.length;
     }
 
     async patchCategorySlotsController(body: unknown) {

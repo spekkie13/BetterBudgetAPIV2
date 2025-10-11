@@ -1,7 +1,23 @@
-export type ApiDataResponse<T> = {
+export interface IResponse<T> {
+    data: T;
+    status: number;
+    message: string;
+    error?: string;
+    success?: boolean;
+}
+
+export class ApiDataResponse<T> implements IResponse<T> {
     data: T
+    status: number
+    message: string
     error?: string
-    status?: number
     success?: boolean
-    message?: string
+
+    constructor(data: IResponse<T>) {
+        this.data = data.data;
+        this.error = data.error;
+        this.status = data.status;
+        this.success = data.success;
+        this.message = data.message;
+    }
 }

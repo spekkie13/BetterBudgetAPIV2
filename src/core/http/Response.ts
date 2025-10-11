@@ -10,3 +10,9 @@ export function fail(status = 400, message: string) {
     const body: ApiDataResponse<null> = { data: null, message, status, success: false };
     return jsonWithCors(body, status);
 }
+
+export function isRequestSuccessful(status: number | undefined): boolean {
+    if (status === undefined)
+        return false;
+    return status >= 200 && status < 300;
+}

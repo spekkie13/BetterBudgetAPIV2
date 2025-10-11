@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { corsHeaders } from '@/core/http/cors';
+import { NextRequest } from 'next/server';
 import { makeCategoryController } from '@/adapters/controllers/categoryController';
-import {CategoryService} from "@/adapters/services/categoryService";
-import {CategoryParams} from "@/db/types/categoryTypes";
+import { CategoryService } from "@/adapters/services/categoryService";
+import { CategoryParams } from "@/db/types/categoryTypes";
+import { ok, fail, isRequestSuccessful } from "@/core/http/Response";
 
 const svc = new CategoryService();
 const controller = makeCategoryController(svc);
@@ -12,12 +12,14 @@ export async function POST(_req: NextRequest, ctx: any) {
 
     const params = CategoryParams.safeParse({ teamId: teamId, id: id });
     if (!params.success || params.data.id === null || params.data.id === undefined)
-        return new NextResponse(JSON.stringify({ error: 'invalid params'}), { status: 400, headers: corsHeaders})
+        return fail(400, 'Invalid Params');
 
     const result = await controller.ensureAllExists(params.data.teamId, [params.data.id]);
-    return new NextResponse(JSON.stringify(result.body), { status: result.status, headers: corsHeaders})
+    return isRequestSuccessful(result.status) ?
+        ok(result.data) :
+        fail(500, 'Internal Server Error');
 }
 
 export async function OPTIONS() {
-    return new NextResponse(null, { status: 204, headers: corsHeaders });
+    return ok(null, '', 204);
 }
