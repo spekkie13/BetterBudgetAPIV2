@@ -3,6 +3,7 @@ import { makeCategoryController } from '@/adapters/controllers/categoryControlle
 import { CategoryService } from "@/adapters/services/categoryService";
 import { CategoryParams } from "@/db/types/categoryTypes";
 import { ok, fail, isRequestSuccessful } from "@/core/http/Response";
+import {preflightResponse} from "@/core/http/cors";
 
 const svc = new CategoryService();
 const controller = makeCategoryController(svc);
@@ -20,6 +21,6 @@ export async function POST(_req: NextRequest, ctx: any) {
         fail(500, 'Internal Server Error');
 }
 
-export async function OPTIONS() {
-    return ok(null, '', 204);
+export async function OPTIONS(req: NextRequest) {
+    return preflightResponse(req);
 }

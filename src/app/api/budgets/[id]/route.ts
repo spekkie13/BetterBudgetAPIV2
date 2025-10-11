@@ -3,12 +3,13 @@ import { ok, fail, isRequestSuccessful } from "@/core/http/Response";
 import { BudgetService } from "@/adapters/services/budgetService";
 import { makeBudgetController } from "@/adapters/controllers/budgetController";
 import { BudgetBody, BudgetInsert, BudgetParams, BudgetQuery } from "@/db/types/budgetTypes";
+import {preflightResponse} from "@/core/http/cors";
 
 const svc = new BudgetService();
 const controller = makeBudgetController(svc);
 
-export async function OPTIONS() {
-    return ok(null, 'OK', 204);
+export async function OPTIONS(req: NextRequest) {
+    return preflightResponse(req);
 }
 
 export async function GET(_req: NextRequest, ctx: any) {

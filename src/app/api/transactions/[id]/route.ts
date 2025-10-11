@@ -3,12 +3,13 @@ import { TransactionService } from '@/adapters/services/transactionService';
 import { TransactionBody, TransactionInsert, TransactionParams } from "@/db/types/transactionTypes";
 import { makeTransactionController } from "@/adapters/controllers/transactionController";
 import { ok, fail, isRequestSuccessful } from "@/core/http/Response";
+import {preflightResponse} from "@/core/http/cors";
 
 const svc = new TransactionService();
 const controller = makeTransactionController(svc);
 
-export async function OPTIONS() {
-    return ok(null, '', 204);
+export async function OPTIONS(req: NextRequest) {
+    return preflightResponse(req);
 }
 
 export async function GET(req: NextRequest, ctx : any) {

@@ -3,6 +3,7 @@ import { getTeamSettingsById } from '@/adapters/services/teamSettingsService'
 import { runAutoRollover } from '@/adapters/services/teamSettingsService'
 import { ok, fail } from "@/core/http/Response";
 import { BodySchema } from "@/db/types/periodTypes";
+import {preflightResponse} from "@/core/http/cors";
 
 export async function POST(req: NextRequest) {
     const json = await req.json()
@@ -18,4 +19,8 @@ export async function POST(req: NextRequest) {
     return result.performed ?
         ok(result) :
         fail(500, 'Internal Server Error');
+}
+
+export async function OPTIONS(req: NextRequest) {
+    return preflightResponse(req);
 }

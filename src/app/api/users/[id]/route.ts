@@ -3,12 +3,13 @@ import { makeUserController } from '@/adapters/controllers/userController';
 import { UserBody, UserParams } from "@/db/types/userTypes";
 import { UserService } from "@/adapters/services/userService";
 import { ok, fail, isRequestSuccessful } from "@/core/http/Response";
+import {preflightResponse} from "@/core/http/cors";
 
 const svc = new UserService();
 const controller = makeUserController(svc);
 
-export async function OPTIONS() {
-    return ok(null, '', 204)
+export async function OPTIONS(req: NextRequest) {
+    return preflightResponse(req);
 }
 
 // GET /api/users/[id]

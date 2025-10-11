@@ -3,12 +3,13 @@ import { makeUserSettingsController } from '@/adapters/controllers/userSettingsC
 import { UserSettingsService } from "@/adapters/services/userSettingsService";
 import { UserSettingsBody, UserSettingsInsert, UserSettingsParams } from "@/db/types/userSettingsTypes";
 import { ok, fail, isRequestSuccessful } from "@/core/http/Response";
+import {preflightResponse} from "@/core/http/cors";
 
 const svc = new UserSettingsService();
 const controller = makeUserSettingsController(svc);
 
-export async function OPTIONS() {
-    return ok(null, '', 204);
+export async function OPTIONS(req: NextRequest) {
+    return preflightResponse(req);
 }
 
 export async function GET(req: NextRequest) {

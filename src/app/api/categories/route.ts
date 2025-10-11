@@ -3,6 +3,7 @@ import { CategoryService } from "@/adapters/services/categoryService";
 import { makeCategoryController } from "@/adapters/controllers/categoryController";
 import { CategoryBody, CategoryInsert, CategoryParams, CategoryQuery } from "@/db/types/categoryTypes";
 import { ok, fail, isRequestSuccessful } from "@/core/http/Response";
+import {preflightResponse} from "@/core/http/cors";
 
 const svc = new CategoryService();
 const controller = makeCategoryController(svc);
@@ -100,6 +101,6 @@ export async function DELETE(_req: NextRequest, ctx: any) {
         fail(500, 'Internal server error...');
 }
 
-export async function OPTIONS() {
-    ok(null, '', 204);
+export async function OPTIONS(req: NextRequest) {
+    return preflightResponse(req);
 }

@@ -3,13 +3,14 @@ import { makeAccountsController } from "@/adapters/controllers/accountsControlle
 import { AccountService } from "@/adapters/services/accountService";
 import { AccountBody, AccountInsert, AccountParams } from "@/db/types/accountTypes";
 import { ok, fail, isRequestSuccessful } from "@/core/http/Response";
+import {preflightResponse} from "@/core/http/cors";
 
 
 const svc = new AccountService();
 const controller = makeAccountsController(svc);
 
-export async function OPTIONS() {
-    return ok(null, 'OK', 204);
+export async function OPTIONS(req: NextRequest) {
+    return preflightResponse(req);
 }
 
 export async function GET(_req: NextRequest, ctx: any) {

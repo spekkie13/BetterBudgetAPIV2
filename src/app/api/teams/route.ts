@@ -3,6 +3,7 @@ import { makeTeamsController } from '@/adapters/controllers/teamsController';
 import { TeamBody, TeamQuery } from "@/db/types/teamTypes";
 import { TeamService } from "@/adapters/services/teamService";
 import { ok, fail, isRequestSuccessful } from "@/core/http/Response";
+import {preflightResponse} from "@/core/http/cors";
 
 const svc = new TeamService();
 const controller = makeTeamsController(svc);
@@ -36,6 +37,6 @@ export async function POST(req: NextRequest) {
         fail(500, 'Internal server error...');
 }
 
-export async function OPTIONS() {
-    return ok(null, '', 204);
+export async function OPTIONS(req: NextRequest) {
+    return preflightResponse(req);
 }

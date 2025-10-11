@@ -3,12 +3,13 @@ import { makeUserController } from '@/adapters/controllers/userController';
 import { UserBody, UserQuery } from "@/db/types/userTypes";
 import { UserService } from "@/adapters/services/userService";
 import { ok, fail, isRequestSuccessful } from "@/core/http/Response";
+import {preflightResponse} from "@/core/http/cors";
 
 const svc = new UserService();
 const controller = makeUserController(svc);
 
-export async function OPTIONS() {
-    return ok(null, '', 204);
+export async function OPTIONS(req: NextRequest) {
+    return preflightResponse(req);
 }
 
 // GET /api/users?userId=&teamId=&email=
@@ -31,7 +32,9 @@ export async function GET(req: NextRequest) {
 
     if (parsed.data.email !== undefined){
         result = await controller.getUserByEmail(parsed.data.email);
-        return isRequestSuccessful(result.status) ? ok(JSON.stringify(result.data)) : fail(400, 'Invalid query');
+        return isRequestSuccessful(result.status)
+            ? ok(JSON.stringify(result.data))
+            : fail(400, 'Invalid query');
     }
 
     if (parsed.data.teamId !== 0){

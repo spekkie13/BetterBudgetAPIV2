@@ -3,6 +3,7 @@ import { makeTeamsController } from '@/adapters/controllers/teamsController';
 import { SpendTrendParams, SpendTrendQuery } from "@/db/types/trendTypes";
 import { TeamService } from "@/adapters/services/teamService";
 import { ok, fail, isRequestSuccessful } from "@/core/http/Response";
+import {preflightResponse} from "@/core/http/cors";
 
 const svc = new TeamService();
 const controller = makeTeamsController(svc);
@@ -25,6 +26,6 @@ export async function GET(req: NextRequest, ctx: any) {
         fail(500, 'Internal Server Error');
 }
 
-export async function OPTIONS() {
-    return ok(null, 'OK', 204);
+export async function OPTIONS(req: NextRequest) {
+    return preflightResponse(req);
 }
