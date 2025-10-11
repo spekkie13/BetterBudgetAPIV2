@@ -18,15 +18,15 @@ export async function GET(req: NextRequest) {
 
     const result = await controller.getUserSetting(userId);
     return isRequestSuccessful(result.status) ?
-        ok(JSON.stringify(result.data)) :
-        fail(500, 'Internal server error...');
+        ok(req, result.data) :
+        fail(req, 500, 'Internal server error...');
 }
 
 export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}));
     const upsert = UserSettingsBody.safeParse(body);
     if (!upsert.success)
-        return fail(400, 'Invalid body');
+        return fail(req, 400, 'Invalid body');
 
     const userSettingBody: UserSettingsInsert = {
         userId: upsert.data.userId,
@@ -37,8 +37,8 @@ export async function POST(req: NextRequest) {
 
     const result = await controller.createUserSetting(userSettingBody);
     return isRequestSuccessful(result.status) ?
-        ok(JSON.stringify(result.data)) :
-        fail(500, 'Internal server error...');
+        ok(req, result.data) :
+        fail(req, 500, 'Internal server error...');
 }
 
 export async function PUT(req: NextRequest, ctx: any) {
@@ -46,17 +46,17 @@ export async function PUT(req: NextRequest, ctx: any) {
 
     const params = UserSettingsParams.safeParse({ userId: userId });
     if (!params.success)
-        return fail(400, 'Invalid user ID');
+        return fail(req, 400, 'Invalid user ID');
 
     const body = await req.json().catch(() => ({}));
     const parsed = UserSettingsBody.safeParse(body);
     if (!parsed.success)
-        return fail(400, 'Invalid body');
+        return fail(req, 400, 'Invalid body');
 
     const result = await controller.updateUserSetting(Number(userId), body);
     return isRequestSuccessful(result.status) ?
-        ok(JSON.stringify(result.data)) :
-        fail(500, 'Internal server error...');
+        ok(req, result.data) :
+        fail(req, 500, 'Internal server error...');
 }
 
 export async function DELETE(req: NextRequest) {
@@ -65,10 +65,10 @@ export async function DELETE(req: NextRequest) {
 
     const parsed = UserSettingsParams.safeParse({ userId: userId.toString()});
     if (!parsed.success)
-        return fail(400, 'Invalid user ID');
+        return fail(req, 400, 'Invalid user ID');
 
     const result = await controller.deleteUserSetting(parsed.data.userId);
     return isRequestSuccessful(result.status) ?
-        ok(JSON.stringify(result.data)) :
-        fail(500, 'Internal server error...');
+        ok(req, result.data) :
+        fail(req, 500, 'Internal server error...');
 }

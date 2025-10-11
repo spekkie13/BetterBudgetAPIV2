@@ -8,17 +8,17 @@ import {preflightResponse} from "@/core/http/cors";
 const svc = new TeamService();
 const controller = makeTeamsController(svc);
 
-export async function GET(_req: NextRequest, ctx: any) {
+export async function GET(req: NextRequest, ctx: any) {
     const { id } = (ctx as { params: { id: string } }).params;
 
     const parsed = TeamParams.safeParse({ id: id });
     if (!parsed.success)
-        return fail(400, 'Invalid ID');
+        return fail(req, 400, 'Invalid ID');
 
     const result = await controller.getTeamById(parsed.data.id);
     return isRequestSuccessful(result.status) ?
-        ok(result.data) :
-        fail(500, 'Internal server error...');
+        ok(req, result.data) :
+        fail(req, 500, 'Internal server error...');
 }
 
 export async function PUT(req: NextRequest, ctx: any) {
@@ -26,12 +26,12 @@ export async function PUT(req: NextRequest, ctx: any) {
 
     const params = TeamParams.safeParse({ id: id });
     if (!params.success)
-        return fail(400, 'Invalid ID');
+        return fail(req, 400, 'Invalid ID');
 
     const body = await req.json().catch(() => ({}));
     const bodyParsed = TeamBody.safeParse(body);
     if (!bodyParsed.success)
-        return fail(400, 'Missing/Invalid name');
+        return fail(req, 400, 'Missing/Invalid name');
 
     const updateBody: TeamPatch = {
         id: params.data.id,
@@ -40,21 +40,21 @@ export async function PUT(req: NextRequest, ctx: any) {
     }
     const result = await controller.updateTeam(params.data.id, updateBody);
     return isRequestSuccessful(result.status) ?
-        ok(result.data) :
-        fail(500, 'Internal server error...');
+        ok(req, result.data) :
+        fail(req, 500, 'Internal server error...');
 }
 
-export async function DELETE(_req: NextRequest, ctx: any) {
+export async function DELETE(req: NextRequest, ctx: any) {
     const { id } = (ctx as { params: { id: string } }).params;
 
     const parsed = TeamParams.safeParse({ id: id });
     if (!parsed.success)
-        return fail(400, 'Invalid ID');
+        return fail(req, 400, 'Invalid ID');
 
     const result = await controller.deleteTeam(parsed.data.id);
     return isRequestSuccessful(result.status) ?
-        ok(result.data) :
-        fail(500, 'Internal server error...');
+        ok(req, result.data) :
+        fail(req, 500, 'Internal server error...');
 }
 
 export async function OPTIONS(req: NextRequest) {

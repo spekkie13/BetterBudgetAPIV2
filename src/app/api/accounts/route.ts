@@ -18,17 +18,19 @@ export async function GET(req: NextRequest) {
 
     const parsedParams = AccountParams.safeParse({ teamId: teamId });
     if (!parsedParams.success)
-        return fail(400, 'Invalid params');
+        return fail(req, 400, 'Invalid params');
 
     const parsedQuery = AccountQuery.safeParse({
         teamId: teamId,
         includeArchived: searchParams.get("includeArchived") ?? false,
     });
     if (!parsedQuery.success)
-        return fail(400, 'Invalid query');
+        return fail(req, 400, 'Invalid query');
 
     const result = await controller.listAccounts(parsedParams.data.teamId, parsedQuery.data.includeArchived);
-    return isRequestSuccessful(result.status) ? ok(result) : fail(result.status, result.message);
+    return isRequestSuccessful(result.status) ?
+        ok(req, result.data) :
+        fail(req, 500, 'Internal server error...');
 }
 
 export async function POST(req: NextRequest, ctx: any) {
@@ -36,12 +38,12 @@ export async function POST(req: NextRequest, ctx: any) {
 
     const params = AccountParams.safeParse({ teamId: teamId });
     if (!params.success)
-        return fail(400, 'Invalid Team ID');
+        return fail(req, 400, 'Invalid Team ID');
 
     const reqBody = await req.json().catch(() => ({}));
     const parsedBody = AccountBody.safeParse(reqBody);
     if (!parsedBody.success)
-        return fail(400, 'Invalid Body');
+        return fail(req, 400, 'Invalid Body');
 
     const accountBody: AccountInsert = {
         teamId: params.data.teamId,
@@ -51,5 +53,7 @@ export async function POST(req: NextRequest, ctx: any) {
     }
 
     const result = await controller.createAccount(params.data.teamId, accountBody);
-    return isRequestSuccessful(result.status) ? ok(result) : fail(result.status, result.message);
+    return isRequestSuccessful(result.status) ?
+        ok(req, result.data) :
+        fail(req, 500, 'Internal server error...');
 }

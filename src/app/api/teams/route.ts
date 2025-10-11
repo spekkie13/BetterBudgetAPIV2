@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
     const sp = new URL(req.url).searchParams;
     const parsed = TeamQuery.safeParse({ teamId: sp.get('teamId') ?? undefined });
     if (!parsed.success)
-        return fail(400, 'Invalid Team ID');
+        return fail(req, 400, 'Invalid Team ID');
 
     let result;
     if (parsed.data.id !== undefined)
@@ -21,20 +21,20 @@ export async function GET(req: NextRequest) {
         result = await controller.selectAll();
 
     return isRequestSuccessful(result.status) ?
-        ok(result.data) :
-        fail(500, 'Internal server error...');
+        ok(req, result.data) :
+        fail(req, 500, 'Internal server error...');
 }
 
 export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}));
     const parsed = TeamBody.safeParse(body);
     if (!parsed.success)
-        return fail(400, 'Missing Team name');
+        return fail(req, 400, 'Missing Team name');
 
     const result = await controller.createTeam(parsed.data);
     return isRequestSuccessful(result.status) ?
-        ok(result.data) :
-        fail(500, 'Internal server error...');
+        ok(req, result.data) :
+        fail(req, 500, 'Internal server error...');
 }
 
 export async function OPTIONS(req: NextRequest) {

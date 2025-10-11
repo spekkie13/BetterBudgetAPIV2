@@ -20,13 +20,12 @@ export async function GET(req: NextRequest) {
     });
 
     if (!parsed.success)
-        return fail(400, 'Invalid query');
+        return fail(req, 400, 'Invalid query');
 
-    // ── Fetch ──────────────────────────────────────────────────────────────────
     const result = await controller.listAllByTeam(parsed.data.teamId);
     return isRequestSuccessful(result.status) ?
-        ok(result.data) :
-        fail(500, 'Internal Server Error...');
+        ok(req, result.data) :
+        fail(req, 500, 'Internal Server Error...');
 }
 
 export async function POST(req: NextRequest) {
@@ -48,17 +47,17 @@ export async function POST(req: NextRequest) {
 
         const requireInt = (ok: boolean, msg: string) => {
             if (!ok)
-                return fail(400, msg);
+                return fail(req, 400, msg);
         };
 
         if (Number.isNaN(postedAt.getTime()))
-            return fail(400,'Invalid postedAt/date/createdAt');
+            return fail(req, 400,'Invalid postedAt/date/createdAt');
 
         if (!Number.isInteger(teamId))
-            return fail(400,'Invalid teamId');
+            return fail(req, 400,'Invalid teamId');
 
         if (!Number.isFinite(amountCents))
-            return fail(400,'Invalid amountCents');
+            return fail(req, 400,'Invalid amountCents');
 
         const isTransfer = Boolean(body?.isTransfer) ||
             (Number.isInteger(fromAccountId) && Number.isInteger(toAccountId));
@@ -67,10 +66,10 @@ export async function POST(req: NextRequest) {
             requireInt(Number.isInteger(fromAccountId) && Number.isInteger(toAccountId), 'Invalid account ids');
 
             if (fromAccountId === toAccountId)
-                return fail(400,'fromAccountId and toAccountId must differ');
+                return fail(req, 400,'fromAccountId and toAccountId must differ');
 
             if (amountCents <= 0)
-                return fail(400,'Transfer amountCents must be > 0');
+                return fail(req, 400,'Transfer amountCents must be > 0');
 
             //create leg 1
             const outLeg = await controller.createTransaction(teamId, {
@@ -111,8 +110,8 @@ export async function POST(req: NextRequest) {
             });
 
             return isRequestSuccessful(result.status) ?
-                ok(result.data) :
-                fail(500, 'Internal Server Error...');
+                ok(req, result.data) :
+                fail(req, 500, 'Internal Server Error...');
         }
 
         requireInt(Number.isInteger(accountId), 'Invalid accountId');
@@ -136,9 +135,9 @@ export async function POST(req: NextRequest) {
         };
 
         const created = await controller.createTransaction(teamId, transactionData);
-        return ok(created, 'Transaction created', 201);
+        return ok(req, created, 'Transaction created', 201);
     } catch (error) {
         console.error('POST /api/transactions error:', error);
-        return fail(500, 'Internal server error');
+        return fail(req, 500, 'Internal server error');
     }
 }

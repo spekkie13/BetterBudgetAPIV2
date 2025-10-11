@@ -15,6 +15,6 @@ export async function PATCH(req: NextRequest) {
     const body = await req.json().catch(() => ({}));
     const result = await controller.patchCategorySlots(body);
     return isRequestSuccessful(result.status) ?
-        ok(result.data) :
-        fail(500, 'Internal Server Error');
+        ok(req, result.data) :
+        fail(req, 500, 'Internal Server Error');
 }

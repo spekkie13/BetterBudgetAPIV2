@@ -11,14 +11,14 @@ export async function POST(req: NextRequest) {
 
     const settings = await getTeamSettingsById(teamId)
     if (!settings)
-        return fail(404, 'No settings found');
+        return fail(req, 404, 'No settings found');
 
     const now = nowISO ? new Date(nowISO) : new Date()
     const result = await runAutoRollover({ now, settings, teamId })
 
     return result.performed ?
-        ok(result) :
-        fail(500, 'Internal Server Error');
+        ok(req, result) :
+        fail(req, 500, 'Internal Server Error');
 }
 
 export async function OPTIONS(req: NextRequest) {

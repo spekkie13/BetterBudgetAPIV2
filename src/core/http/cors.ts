@@ -19,7 +19,7 @@ function resolveOrigin(req: Request) {
 }
 
 /** For normal responses (GET/POST/etc) */
-export function jsonWithCors(data: any, status = 200, req?: Request) {
+export function jsonWithCors(req: Request, data: any, status = 200) {
     const origin = req ? resolveOrigin(req) : ''
     const res = NextResponse.json(data, { status })
 

@@ -14,18 +14,19 @@ export async function OPTIONS(req: NextRequest) {
 
 export async function GET(req: NextRequest, ctx : any) {
     const { id } = (ctx as { params: { id: string } }).params;
-    if (!Number.isInteger(id)) return fail(400, 'Invalid id');
+    if (!Number.isInteger(id))
+        return fail(req, 400, 'Invalid id');
 
     const parsed = TransactionParams.safeParse({
         teamId: new URL(req.url).searchParams.get('teamId'),
     });
     if (!parsed.success || !Number.isInteger(parsed.data.teamId))
-        return fail(400, 'Invalid teamId');
+        return fail(req, 400, 'Invalid teamId');
 
     const result = await controller.getTransaction(parsed.data.teamId, Number(id));
     return isRequestSuccessful(result.status) ?
-        ok(result.data) :
-        fail(500, 'Internal server error...');
+        ok(req, result.data) :
+        fail(req, 500, 'Internal server error...');
 }
 
 export async function PUT(req: NextRequest, ctx : any) {
@@ -35,18 +36,18 @@ export async function PUT(req: NextRequest, ctx : any) {
 
     const params = TransactionParams.safeParse({ id: id, teamId: teamId });
     if (!params.success)
-        return fail(400, 'Invalid params');
+        return fail(req, 400, 'Invalid params');
 
     const body = await req.json();
     if (!Number.isInteger(id))
-        return fail(400,'Valid id is required');
+        return fail(req, 400,'Valid id is required');
 
     if (!Number.isInteger(teamId))
-        return fail(400,'Valid teamId is required');
+        return fail(req, 400,'Valid teamId is required');
 
     const parsedBody = TransactionBody.safeParse(body);
     if (!parsedBody.success)
-        return fail(400, 'Invalid body');
+        return fail(req, 400, 'Invalid body');
 
     const transactionBody: TransactionInsert = {
         id: params.data.id ?? 0,
@@ -68,8 +69,8 @@ export async function PUT(req: NextRequest, ctx : any) {
 
     const result = await controller.updateTransaction(id, teamId, transactionBody);
     return isRequestSuccessful(result.status) ?
-        ok(result.data) :
-        fail(500, 'Internal server error...');
+        ok(req, result.data) :
+        fail(req, 500, 'Internal server error...');
 }
 
 export async function DELETE(req: NextRequest, ctx : any) {
@@ -82,15 +83,15 @@ export async function DELETE(req: NextRequest, ctx : any) {
         const teamId = Number(teamIdStr);
 
         if (!Number.isInteger(id))
-            return fail(400,'Valid id is required');
+            return fail(req, 400,'Valid id is required');
 
         if (!Number.isInteger(teamId))
-            return fail(400,'Valid teamId is required');
+            return fail(req, 400,'Valid teamId is required');
 
         await controller.deleteTransaction(teamId,  id);
-        return ok(204, 'Transaction deleted');
+        return ok(req, 204, 'Transaction deleted');
     } catch (error) {
         console.error('DELETE /api/transactions/[id] error:', error);
-        return fail(500, 'Failed to delete transaction');
+        return fail(req, 500, 'Failed to delete transaction');
     }
 }

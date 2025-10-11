@@ -12,12 +12,12 @@ export async function OPTIONS(req: NextRequest) {
     return preflightResponse(req);
 }
 
-export async function GET(_req: NextRequest, ctx: any) {
+export async function GET(req: NextRequest, ctx: any) {
     const { teamId, id, categoryId, month } = (ctx as { params: { teamId: string; id: string; categoryId: string; month: string; } }).params;
 
     const params = BudgetQuery.safeParse({ teamId: teamId, id: id, categoryId: categoryId, periodMonth: month });
     if (!params.success)
-        return fail(400, 'Invalid parameters')
+        return fail(req, 400, 'Invalid parameters')
 
     const result = await controller.getBudgets(
         params.data.teamId,
@@ -25,7 +25,9 @@ export async function GET(_req: NextRequest, ctx: any) {
         params.data.categoryId,
         params.data.periodMonth
     )
-    return isRequestSuccessful(result.status) ? ok(result) : fail(result.status, result.message);
+    return isRequestSuccessful(result.status) ?
+        ok(req, result.data) :
+        fail(req, 500, 'Internal Server Error');
 }
 
 export async function PUT(req: NextRequest, ctx: any) {
@@ -33,12 +35,12 @@ export async function PUT(req: NextRequest, ctx: any) {
 
     const parsedParams = BudgetParams.safeParse({ teamId: teamId, id: id });
     if (!parsedParams.success || parsedParams.data.id === undefined)
-        return fail(400, 'Invalid parameters');
+        return fail(req, 400, 'Invalid parameters');
 
     const body = await req.json().catch(() => ({}));
     const parsedBody = BudgetBody.safeParse(body);
     if (!parsedBody.success)
-        return fail(400, 'Invalid body');
+        return fail(req, 400, 'Invalid body');
 
     const budgetBody: BudgetInsert = {
         id: parsedParams.data.id,
@@ -51,19 +53,19 @@ export async function PUT(req: NextRequest, ctx: any) {
 
     const result = await controller.updateBudget(parsedParams.data.teamId, parsedParams.data.id, budgetBody);
     return isRequestSuccessful(result.status) ?
-        ok(result.data) :
-        fail(500, 'Internal Server Error');
+        ok(req, result.data) :
+        fail(req, 500, 'Internal Server Error');
 }
 
-export async function DELETE(_req: NextRequest, ctx: any) {
+export async function DELETE(req: NextRequest, ctx: any) {
     const { teamId, id } = (ctx as { params: { teamId: string; id: string } }).params;
 
     const parsedParams = BudgetParams.safeParse({ teamId: teamId, id: id });
     if (!parsedParams.success || parsedParams.data.id === undefined)
-        return fail(400, 'Invalid parameters');
+        return fail(req, 400, 'Invalid parameters');
 
     const result = await controller.deleteBudget(parsedParams.data.teamId, parsedParams.data.id);
     return isRequestSuccessful(result.status) ?
-        ok(result.data) :
-        fail(500, 'Internal Server Error');
+        ok(req, result.data) :
+        fail(req, 500, 'Internal Server Error');
 }

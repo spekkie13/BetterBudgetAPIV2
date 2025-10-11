@@ -13,17 +13,17 @@ export async function GET(req: NextRequest, ctx: any) {
 
     const paramsParsed = BudgetParams.safeParse({ teamId: teamId });
     if (!paramsParsed.success)
-        return fail(400, 'Invalid Team ID');
+        return fail(req, 400, 'Invalid Team ID');
 
     const sp = new URL(req.url).searchParams;
     const queryParsed = BudgetQuery.safeParse({ month: sp.get('month') ?? '' });
     if (!queryParsed.success || queryParsed.data.periodMonth === undefined)
-        return fail(400, 'Invalid Month');
+        return fail(req, 400, 'Invalid Month');
 
     const result = await controller.getBudget(paramsParsed.data.teamId, queryParsed.data.periodMonth);
     return isRequestSuccessful(result.status) ?
-        ok(result.data) :
-        fail(500, 'Internal Server Error');
+        ok(req, result.data) :
+        fail(req, 500, 'Internal Server Error');
 }
 
 export async function OPTIONS(req: NextRequest) {

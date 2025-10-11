@@ -13,15 +13,17 @@ export async function OPTIONS(req: NextRequest) {
     return preflightResponse(req);
 }
 
-export async function GET(_req: NextRequest, ctx: any) {
+export async function GET(req: NextRequest, ctx: any) {
     const { teamId, id } = (ctx as { params: { teamId: string; id: string } }).params;
 
     const params = AccountParams.safeParse({ teamId: teamId, id: id });
     if (!params.success)
-        return fail(400, 'Invalid parameters')
+        return fail(req, 400, 'Invalid parameters')
 
     const result = await controller.getAccount(params.data.teamId, params.data.id);
-    return isRequestSuccessful(result.status) ? ok(result) : fail(result.status, result.message);
+    return isRequestSuccessful(result.status) ?
+        ok(req, result.data) :
+        fail(req, result.status, result.message);
 }
 
 export async function PUT(req: NextRequest, ctx: any) {
@@ -29,12 +31,12 @@ export async function PUT(req: NextRequest, ctx: any) {
 
     const params = AccountParams.safeParse({ teamId: teamId, id: id });
     if (!params.success)
-        return fail(400, 'Invalid parameters')
+        return fail(req, 400, 'Invalid parameters')
 
     const reqBody = await req.json().catch(() => ({}));
     const parsedBody = AccountBody.safeParse(reqBody);
     if (!parsedBody.success)
-        return fail(400, 'Invalid body')
+        return fail(req, 400, 'Invalid body')
 
     const accountBody: AccountInsert = {
         teamId: params.data.teamId,
@@ -45,16 +47,20 @@ export async function PUT(req: NextRequest, ctx: any) {
         isArchived: parsedBody.data.isArchived ?? false,
     }
     const result = await controller.updateAccount(params.data.teamId, parsedBody.data.id, accountBody);
-    return isRequestSuccessful(result.status) ? ok(result) : fail(result.status, result.message);
+    return isRequestSuccessful(result.status) ?
+        ok(req, result.data) :
+        fail(req, 500, 'Internal server error...');
 }
 
-export async function DELETE(_req: NextRequest, ctx: any) {
+export async function DELETE(req: NextRequest, ctx: any) {
     const { teamId, id } = (ctx as { params: { teamId: string; id: string } }).params;
 
     const p = AccountParams.safeParse({ teamId: teamId, id: id });
     if (!p.success || p.data.id === null || p.data.id === undefined)
-        return fail(400, 'Invalid parameters')
+        return fail(req, 400, 'Invalid parameters')
 
     const result = await controller.deleteAccount(p.data.teamId, p.data.id);
-    return isRequestSuccessful(result.status) ? ok(result) : fail(result.status, result.message);
+    return isRequestSuccessful(result.status) ?
+        ok(req, result.data) :
+        fail(req, 500, 'Internal server error...');
 }

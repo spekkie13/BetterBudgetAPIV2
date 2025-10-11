@@ -13,7 +13,7 @@ export async function GET(req: NextRequest, ctx: any) {
 
     const paramsParsed = LinesParams.safeParse({ teamId: teamId, categoryId: categoryId });
     if (!paramsParsed.success)
-        return fail(400, 'Invalid Params');
+        return fail(req, 400, 'Invalid Params');
 
     const sp = new URL(req.url).searchParams;
     const queryParsed = LinesQuery.safeParse({
@@ -23,7 +23,7 @@ export async function GET(req: NextRequest, ctx: any) {
     });
 
     if (!queryParsed.success || queryParsed.data.month === undefined)
-        return fail(400, 'Invalid Query');
+        return fail(req, 400, 'Invalid Query');
 
     const result = await controller.getCategoryLines(
         paramsParsed.data.teamId,
@@ -34,8 +34,8 @@ export async function GET(req: NextRequest, ctx: any) {
     )
 
     return isRequestSuccessful(result.status) ?
-        ok(result.data) :
-        fail(500, 'Internal Server Error');
+        ok(req, result.data) :
+        fail(req, 500, 'Internal Server Error');
 }
 
 export async function OPTIONS(req: NextRequest) {

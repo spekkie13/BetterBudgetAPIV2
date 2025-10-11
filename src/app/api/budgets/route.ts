@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
 
     const parsed = BudgetParams.safeParse({ teamId });
     if (!parsed.success)
-        return fail(400, 'Invalid Team ID');
+        return fail(req, 400, 'Invalid Team ID');
 
     const parsedQuery = BudgetQuery.safeParse({
         teamId: sp.get("teamId"),
@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
         month: sp.get("periodMonth"),
     });
     if (!parsedQuery.success)
-        return fail(400, 'Invalid Query');
+        return fail(req, 400, 'Invalid Query');
 
     const result = await controller.getBudgets(
         parsedQuery.data.teamId,
@@ -37,20 +37,20 @@ export async function GET(req: NextRequest) {
     );
 
     return isRequestSuccessful(result.status) ?
-        ok(JSON.stringify(result.data)) :
-        fail(500, 'Internal server error...');
+        ok(req, result.data) :
+        fail(req, 500, 'Internal server error...');
 }
 
 export async function POST(req: NextRequest, ctx: any) {
     const { teamId } = (ctx as { params: { teamId: string; } }).params;
     const p = BudgetParams.safeParse({ teamId: teamId });
     if (!p.success)
-        return fail(400, 'Invalid Team ID');
+        return fail(req, 400, 'Invalid Team ID');
 
     const body = await req.json().catch(() => ({}));
     const b = BudgetBody.safeParse(body);
     if (!b.success)
-        return fail(400, 'Invalid Body');
+        return fail(req, 400, 'Invalid Body');
 
     const budgetBody = {
         teamId: p.data.teamId,
@@ -62,6 +62,6 @@ export async function POST(req: NextRequest, ctx: any) {
 
     const result = await controller.createBudget(p.data.teamId, budgetBody);
     return isRequestSuccessful(result.status) ?
-        ok(JSON.stringify(result.data)) :
-        fail(500, 'Internal server error...');
+        ok(req, result.data) :
+        fail(req, 500, 'Internal server error...');
 }

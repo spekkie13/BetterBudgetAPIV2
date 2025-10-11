@@ -12,7 +12,6 @@ export async function OPTIONS(req: NextRequest) {
     return preflightResponse(req);
 }
 
-// GET /api/users?userId=&teamId=&email=
 export async function GET(req: NextRequest) {
     const sp = new URL(req.url).searchParams;
     const parsed = UserQuery.safeParse({
@@ -21,36 +20,41 @@ export async function GET(req: NextRequest) {
         email: sp.get('email') ?? "",
     });
     if (!parsed.success) {
-        return fail(400, 'Invalid query')
+        return fail(req, 400, 'Invalid query')
     }
 
     let result;
     if (parsed.data.userId !== 0){
         result = await controller.getUser(parsed.data.userId);
-        return isRequestSuccessful(result.status) ? ok(JSON.stringify(result.data)) : fail(400, 'Invalid query');
+        return isRequestSuccessful(result.status) ?
+            ok(req, result.data) :
+            fail(req, 400, 'Invalid query');
     }
 
     if (parsed.data.email !== undefined){
         result = await controller.getUserByEmail(parsed.data.email);
         return isRequestSuccessful(result.status)
-            ? ok(JSON.stringify(result.data))
-            : fail(400, 'Invalid query');
+            ? ok(req, result.data)
+            : fail(req, 400, 'Invalid query');
     }
 
     if (parsed.data.teamId !== 0){
         result = await controller.getUserByTeamId(parsed.data.teamId);
-        return isRequestSuccessful(result.status) ? ok(JSON.stringify(result.data)) : fail(400, 'Invalid query');
+        return isRequestSuccessful(result.status) ?
+            ok(req, result.data) :
+            fail(req, 400, 'Invalid query');
     }
 }
 
-// POST /api/users
 export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}));
     const parsed = UserBody.safeParse(body);
-    if (!parsed.success) {
-        return fail(400, 'Invalid body');
-    }
+    if (!parsed.success)
+        return fail(req, 400, 'Invalid body');
+
 
     const result = await controller.createUser(parsed.data);
-    return isRequestSuccessful(result.status) ? ok(JSON.stringify(result.data)) : fail(500, 'Internal server error...');
+    return isRequestSuccessful(result.status) ?
+        ok(req, result.data) :
+        fail(req, 500, 'Internal server error...');
 }
