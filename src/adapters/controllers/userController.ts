@@ -1,6 +1,7 @@
 import { UserService } from '@/adapters/services/userService';
 import { UserBodyInput } from "@/db/types/userTypes";
 import { ApiDataResponse } from "@/core/http/ApiDataResponse";
+import {BudgetService} from "@/adapters/services/budgetService";
 
 export function makeUserController(svc: UserService) {
     return {
@@ -41,8 +42,14 @@ export function makeUserController(svc: UserService) {
             })
         },
 
-        async getUserByEmail(email: string) {
+        async getUserByEmail(email: string, updateBudgets: boolean = false) {
             const user = await svc.selectByEmail(email);
+            if (user && updateBudgets) {
+                console.log('updating budgets');
+                const budgetService = new BudgetService();
+                const fromDate = new Date();
+                await budgetService.ensureBudgetsForAllCategories(user.teams[0].id, fromDate);
+            }
             return user ?
                 new ApiDataResponse({data: user, status: 200, message: 'successfully fetched user'}) :
                 new ApiDataResponse({data: null, status: 404, message: 'No user found'});
