@@ -4,15 +4,13 @@ import {db} from "@/db/client";
 import {budgets, categories} from "@/db/schema";
 import {and, desc, eq, inArray, lte} from "drizzle-orm";
 import {BudgetInsert, BudgetPatch, BudgetRow, makeBudgetKey} from "@/db/types/budgetTypes";
+import {generateMonthKeys} from "@/core/date";
 
 type EnsureOpts = {
     horizonMonths?: number          // default 12
     defaultWhenNoHistory?: number   // default 0 (insert 0 when no prior budget exists)
     includeArchivedCategories?: boolean // if you have a deleted/archived flag
 }
-
-const pad = (n: number) => String(n).padStart(2, '0');
-const yyyymm01 = (d: Date) => `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-01`;
 
 export class BudgetService extends TeamScopedServiceBase<BudgetRow, number, number, BudgetInsert, BudgetPatch> {
     constructor(){
@@ -36,18 +34,16 @@ export class BudgetService extends TeamScopedServiceBase<BudgetRow, number, numb
 
     async ensureBudgetsForAllCategories(
         teamId: number,
-        fromMonth: Date,
+        fromMonthStr: string,
         opts: EnsureOpts = {}
     ) {
         const horizon = opts.horizonMonths ?? 12
         const defaultWhenNoHistory = opts.defaultWhenNoHistory ?? 0
 
         // ✅ Use helper
-        const months = generateMonthSeries(fromMonth, horizon)
+        const months = generateMonthKeys(fromMonthStr, horizon)
         if (months.length === 0) return
-
-        const monthKeys = months.map(yyyymm01)
-        const endStr = monthKeys[monthKeys.length - 1]
+        const endStr = months[months.length - 1];
 
         await db.transaction(async (tx) => {
             //await tx.execute(sql`SELECT pg_advisory_xact_lock(${teamId})`)
@@ -57,6 +53,7 @@ export class BudgetService extends TeamScopedServiceBase<BudgetRow, number, numb
                 .select({ id: categories.id })
                 .from(categories)
                 .where(eq(categories.teamId, teamId))
+
             if (catRows.length === 0) return
             const categoryIds = catRows.map(c => c.id)
 
@@ -68,7 +65,7 @@ export class BudgetService extends TeamScopedServiceBase<BudgetRow, number, numb
                     and(
                         eq(budgets.teamId, teamId),
                         inArray(budgets.categoryId, categoryIds),
-                        inArray(budgets.periodMonth, monthKeys)
+                        inArray(budgets.periodMonth, months)
                     )
                 )
 
@@ -108,25 +105,21 @@ export class BudgetService extends TeamScopedServiceBase<BudgetRow, number, numb
             }
 
             // 4️⃣ Compute missing rows
-            const rows: {
-                teamId: number
-                categoryId: number
-                periodMonth: string
-                amountCents: number
-                rollover: boolean
-            }[] = []
+            type Row = typeof budgets.$inferInsert;
+            const rows: Row[] = [];
 
             for (const catId of categoryIds) {
                 const history = byCat.get(catId) ?? []
-                for (const mStr of monthKeys) {
-                    const key = keyOf(catId, mStr)
-                    if (exists.has(key)) continue
-
-                    const found = history.find(h => h.periodMonth <= mStr)
-                    const amount = found ? found.amountCents : defaultWhenNoHistory
-                    const rollover = found ? found.rollover : false
-
-                    rows.push({ teamId, categoryId: catId, periodMonth: mStr, amountCents: amount, rollover })
+                for (const m of months) {
+                    if (exists.has(keyOf(catId, m))) continue;
+                    const found = history.find(h => h.periodMonth <= m)
+                    rows.push({
+                        teamId,
+                        categoryId: catId,
+                        periodMonth: m,
+                        amountCents: found ? found.amountCents : defaultWhenNoHistory,
+                        rollover: found ? found.rollover : false,
+                    })
                 }
             }
 
@@ -136,23 +129,4 @@ export class BudgetService extends TeamScopedServiceBase<BudgetRow, number, numb
             await tx.insert(budgets).values(rows as any).onConflictDoNothing()
         })
     }
-}
-
-function generateMonthSeries(fromMonth: Date, horizonMonths: number): Date[] {
-    const start = firstOfMonthUTC(fromMonth);
-    const n = Math.max(0, Math.floor(horizonMonths));
-    const out: Date[] = [];
-    for (let i = 0; i < n; i++) {
-        out.push(addMonthsUTC(start, i));
-    }
-    return out;
-}
-
-function firstOfMonthUTC(d: Date): Date {
-    return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1, 0, 0, 0, 0));
-}
-
-function addMonthsUTC(firstOfMonth: Date, n: number): Date {
-    // assumes input is already first-of-month UTC
-    return new Date(Date.UTC(firstOfMonth.getUTCFullYear(), firstOfMonth.getUTCMonth() + n, 1, 0, 0, 0, 0));
 }

@@ -1,7 +1,9 @@
 import { UserService } from '@/adapters/services/userService';
 import { UserBodyInput } from "@/db/types/userTypes";
 import { ApiDataResponse } from "@/core/http/ApiDataResponse";
-import {BudgetService} from "@/adapters/services/budgetService";
+import { BudgetService } from "@/adapters/services/budgetService";
+import {addMonthsStr, currentMonthStr, toMonthStartString} from "@/core/date";
+import {applyRolloverForMonth} from "@/core/budgetCalculator";
 
 export function makeUserController(svc: UserService) {
     return {
@@ -47,8 +49,13 @@ export function makeUserController(svc: UserService) {
             if (user && updateBudgets) {
                 console.log('updating budgets');
                 const budgetService = new BudgetService();
-                const fromDate = new Date();
+                const fromDate = toMonthStartString(new Date());
                 await budgetService.ensureBudgetsForAllCategories(user.teams[0].id, fromDate);
+
+                const startMonth = currentMonthStr();
+                const prevMonth = addMonthsStr(startMonth, -1);
+
+                await applyRolloverForMonth(user.teams[0].id, prevMonth);
             }
             return user ?
                 new ApiDataResponse({data: user, status: 200, message: 'successfully fetched user'}) :

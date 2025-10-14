@@ -3,7 +3,7 @@ import { categories, txn, transactionSplits } from '@/db/schema';
 import { and, eq, gte, lt, isNull, or, SQL, inArray } from 'drizzle-orm';
 import { getMonthSummary } from '@/adapters/services/summaryService';
 import { TeamService } from '@/adapters/services/teamService';
-import { addMonthsUtc, monthStartEndUtc, monthStartUtc, monthToDate, toYmd } from "@/core/date";
+import { addMonthsUTC, monthStartEndUtc, firstOfMonthUTC, monthToDate, toYmd } from "@/core/date";
 import { decodeDateCursor2, encodeDateCursor } from "@/core/cursor";
 import { toCents } from "@/core/cents";
 import { TeamBodyInput, TeamPatch } from "@/db/types/teamTypes";
@@ -96,11 +96,11 @@ export function makeTeamsController(svc: TeamService) {
 
         async getSpendTrend(teamId: number, months: number) {
             const now = new Date();
-            const currentStart = monthStartUtc(now);
+            const currentStart = firstOfMonthUTC(now);
             const monthStarts: Date[] = [];
-            for (let i = months - 1; i >= 0; i--) monthStarts.push(addMonthsUtc(currentStart, -i));
+            for (let i = months - 1; i >= 0; i--) monthStarts.push(addMonthsUTC(currentStart, -i));
             const rangeStart = monthStarts[0];
-            const rangeEnd = addMonthsUtc(currentStart, 1);
+            const rangeEnd = addMonthsUTC(currentStart, 1);
 
             const rows = await db
                 .select({ postedAt: txn.postedAt, amountCents: txn.amountCents })
@@ -118,7 +118,7 @@ export function makeTeamsController(svc: TeamService) {
             for (const d of monthStarts) bucket.set(toYmd(d), 0);
 
             for (const r of rows) {
-                const key = toYmd(monthStartUtc(new Date(r.postedAt)));
+                const key = toYmd(firstOfMonthUTC(new Date(r.postedAt)));
                 bucket.set(key, (bucket.get(key) ?? 0) + (-Number(r.amountCents)));
             }
 
