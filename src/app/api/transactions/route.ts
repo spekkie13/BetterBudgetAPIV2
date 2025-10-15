@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
             const n = Number(v);
             return Number.isInteger(n) ? n : NaN;
         };
-        const postedAtStr = body?.postedAt ?? body?.date ?? body?.createdAt;
+        const postedAtStr = body?.postedAt ?? body?.date ?? body?.createdAt ?? new Date().toISOString();
         const postedAt = new Date(postedAtStr ?? NaN);
 
         const fromAccountId = int(body?.fromAccountId ?? body?.fromAccountID);
