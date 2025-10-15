@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
                 transferGroupId: body?.transferGroupId ?? 0,
                 id: 0,
             })
-            console.log('outleg: ', outLeg)
+
             //create leg 2
             const result = await controller.createTransaction(teamId, {
                 teamId,
@@ -112,7 +112,6 @@ export async function POST(req: NextRequest) {
                 id: 0,
             });
 
-            console.log('leg 2 result: ', result);
             return isRequestSuccessful(result.status) ?
                 ok(req, result.data) :
                 fail(req, 500, 'Internal Server Error...');
@@ -143,7 +142,7 @@ export async function POST(req: NextRequest) {
         console.log(created);
         return ok(req, created, 'Transaction created', 201);
     } catch (error) {
-        console.error('POST /api/transactions error:');
+        console.error('POST /api/transactions error:', error);
         return fail(req, 500, 'Internal server error');
     }
 }
