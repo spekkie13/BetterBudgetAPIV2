@@ -19,7 +19,6 @@ export class TransactionService extends TeamScopedServiceBase<TransactionRow, nu
         switch (type) {
             case "transfer":
                 transactions = transactions.filter(t => t.isTransfer === true);
-                console.log(transactions);
                 return transactions;
             case "income":
                 transactions = transactions.filter(t => t.amountCents > 0 && t.isTransfer === false);

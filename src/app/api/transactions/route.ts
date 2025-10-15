@@ -140,6 +140,7 @@ export async function POST(req: NextRequest) {
         const created = await controller.createTransaction(teamId, transactionData);
         return ok(req, created, 'Transaction created', 201);
     } catch (error) {
+        console.log('error is happening here')
         console.error('POST /api/transactions error:', error);
         return fail(req, 500, 'Internal server error');
     }
