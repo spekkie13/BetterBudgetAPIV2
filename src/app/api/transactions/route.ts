@@ -39,8 +39,8 @@ export async function POST(req: NextRequest) {
             const n = Number(v);
             return Number.isInteger(n) ? n : NaN;
         };
-        const postedAtStr = body?.postedAt ?? body?.date ?? body?.createdAt ?? new Date().toISOString();
-        const postedAt = new Date(postedAtStr ?? NaN);
+        const postedAtStr: string = body?.postedAt ?? body?.date ?? body?.createdAt ?? new Date().toISOString();
+        const postedAt = new Date(postedAtStr);
 
         const fromAccountId = int(body?.fromAccountId ?? body?.fromAccountID);
         const toAccountId   = int(body?.toAccountId   ?? body?.toAccountID);
@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
                 teamId,
                 accountId,
                 amountCents: amountCents * -1,
-                postedAt: postedAtStr,
+                postedAt: postedAt,
                 categoryId: body.categoryId ?? null,
                 payee: body?.payee ?? null,
                 memo: body?.description ?? body?.memo ?? null,
@@ -98,14 +98,14 @@ export async function POST(req: NextRequest) {
                 teamId,
                 accountId,
                 amountCents,
-                postedAt: postedAtStr,
+                postedAt: postedAt,
                 categoryId: null,
                 payee: null,
                 memo: body?.memo ?? 'Transfer',
                 createdBy: body?.createdBy ?? null,
-                createdAt: body.createdAt ?? new Date().toISOString(),
-                updatedAt: body.updatedAt ?? new Date().toISOString(),
-                deletedAt: body.deletedAt,
+                createdAt: postedAt,
+                updatedAt: postedAt,
+                deletedAt: body.deletedAt ?? null,
                 currency: body?.currency,
                 isTransfer: true,
                 transferGroupId: outLeg.data?.id ?? null,
@@ -123,13 +123,13 @@ export async function POST(req: NextRequest) {
             teamId,
             accountId,
             amountCents,
-            postedAt: postedAtStr,
+            postedAt: postedAt,
             categoryId: body.categoryId ?? null,
             payee: body?.payee ?? null,
             memo: body?.description ?? body?.memo ?? null,
             createdBy: body?.createdBy ?? null,
-            createdAt: body.createdAt ?? new Date(),
-            updatedAt: body.updatedAt ?? new Date(),
+            createdAt: postedAt,
+            updatedAt: postedAt,
             deletedAt: body.deletedAt ?? null,
             currency: body?.currency,
             isTransfer: body?.isTransfer ?? false,
