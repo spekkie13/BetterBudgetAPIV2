@@ -1,6 +1,6 @@
-import {TransactionService} from "@/adapters/services/transactionService";
-import {TransactionInsert, TransactionPatch} from "@/db/types/transactionTypes";
-import {ApiDataResponse} from "@/core/http/ApiDataResponse";
+import { TransactionService } from "@/adapters/services/transactionService";
+import { TransactionPatch } from "@/db/types/transactionTypes";
+import { ApiDataResponse } from "@/core/http/ApiDataResponse";
 
 export function makeTransactionController(svc: TransactionService) {
     return {
@@ -17,7 +17,7 @@ export function makeTransactionController(svc: TransactionService) {
                 new ApiDataResponse({ data: row, status: 200, message: 'Successfully retrieved transaction'}) :
                 new ApiDataResponse({ data: null, status: 404, message: 'No transaction found' });        },
 
-        async createTransaction(teamId: number, body: TransactionInsert) {
+        async createTransaction(teamId: number, body: any) {
             const created = await svc.insert({ ...body, teamId });
             return created ?
                 new ApiDataResponse({ data: created, status: 201, message: 'created new transaction'}) :

@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { ok, fail, isRequestSuccessful } from '@/core/http/Response';
 import { makeTransactionController } from '@/adapters/controllers/transactionController';
 import { TransactionService } from '@/adapters/services/transactionService';
-import { TransactionInsert, TransactionParams } from "@/db/types/transactionTypes";
+import { TransactionParams } from "@/db/types/transactionTypes";
 import {preflightResponse} from "@/core/http/cors";
 
 const svc = new TransactionService();
@@ -118,25 +118,26 @@ export async function POST(req: NextRequest) {
 
         requireInt(Number.isInteger(accountId), 'Invalid accountId');
 
-        const transactionData: TransactionInsert = {
-            teamId,
-            accountId,
-            amountCents,
-            postedAt: postedAt,
-            categoryId: body.categoryId ?? null,
-            payee: body?.payee ?? null,
-            memo: body?.description ?? body?.memo ?? null,
-            createdBy: body?.createdBy ?? null,
-            createdAt: postedAt,
-            updatedAt: postedAt,
-            deletedAt: body.deletedAt ?? null,
-            currency: body?.currency,
-            isTransfer: body?.isTransfer ?? false,
-            transferGroupId: body?.transferGroupId ?? null,
-            id: 0,
+        const { id: _ignore, ...rest } = body ?? {};
+
+        // build a safe row (Dates for timestamps; omit createdAt/updatedAt so defaultNow() fills them)
+        const row = {
+            teamId: Number(rest.teamId),
+            accountId: Number(rest.accountId ?? rest.fromAccountId ?? rest.fromAccountID),
+            amountCents: Number(rest.amountCents),
+            currency: rest.currency ?? 'EUR',
+            postedAt: new Date(rest.postedAt ?? rest.date ?? rest.createdAt), // must be Date
+            payee: rest.payee ?? null,
+            memo: rest.memo ?? rest.description ?? null,
+            categoryId: rest.categoryId != null ? Number(rest.categoryId) : null,
+            isTransfer: !!rest.isTransfer,
+            transferGroupId: rest.transferGroupId ?? null,
+            createdBy: Number.isInteger(rest.createdBy) ? Number(rest.createdBy) : null,
+            // createdAt/updatedAt omitted → defaultNow()
+            deletedAt: rest.deletedAt ? new Date(rest.deletedAt) : null,
         };
 
-        const created = await controller.createTransaction(teamId, transactionData);
+        const created = await controller.createTransaction(teamId, row);
         return ok(req, created, 'Transaction created', 201);
     } catch (error) {
         console.error('POST /api/transactions error:', error);
