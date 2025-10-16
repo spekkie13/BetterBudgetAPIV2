@@ -34,7 +34,6 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        console.log(body);
         const int = (v: unknown) => {
             const n = Number(v);
             return Number.isInteger(n) ? n : NaN;
@@ -137,9 +136,7 @@ export async function POST(req: NextRequest) {
             id: 0,
         };
 
-        console.log('transaction data: ', transactionData);
         const created = await controller.createTransaction(teamId, transactionData);
-        console.log(created);
         return ok(req, created, 'Transaction created', 201);
     } catch (error) {
         console.error('POST /api/transactions error:', error);
