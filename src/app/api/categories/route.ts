@@ -32,10 +32,13 @@ export async function GET(req: NextRequest) {
         fail(req, 500, 'Internal server error...');
 }
 
-export async function PUT(req: NextRequest, ctx: any) {
-    const { teamId, id } = (ctx as { params: { teamId: string; id: string } }).params;
+export async function PUT(req: NextRequest) {
+    const sp = new URL(req.url).searchParams;
+    const teamId = sp.get("teamId");
+    const id = sp.get("id");
+    // const { teamId, id } = (ctx as { params: { teamId: string; id: string } }).params;
 
-    const params = CategoryParams.safeParse({ teamId: teamId, id: id });
+    const params = CategoryParams.safeParse({ id: id, teamId: teamId });
     if (!params.success)
         return fail(req, 400, 'Invalid Params')
 
@@ -53,7 +56,7 @@ export async function PUT(req: NextRequest, ctx: any) {
         icon: parsedBody.data.icon ?? "",
         parentId: parsedBody.data.parentId ?? 0,
     };
-
+    console.log(categoryBody);
     const result = await controller.updateCategory(params.data.teamId, params.data.id ?? 0, categoryBody);
     return isRequestSuccessful(result.status) ?
         ok(req, result.data) :

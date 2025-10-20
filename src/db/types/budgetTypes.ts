@@ -30,7 +30,7 @@ export type BudgetParamsInput = z.infer<typeof BudgetParams>;
 /** Collection query */
 export const BudgetBody = z.object({
     teamId: zTeamId,
-    id: zId,
+    id: zMaybeId,
     categoryId: zId,
     periodMonth: zMonth,
     amountCents: zCents,

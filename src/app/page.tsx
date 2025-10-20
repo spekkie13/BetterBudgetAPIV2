@@ -41,6 +41,22 @@ export default function HomePage() {
         log(`Created expense: ${JSON.stringify(data)}`)
     }
 
+    const updateCategoryAndBudget = async () => {
+        let res = await fetch(`/api/budgets?id=125&teamId=1`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                teamId: 1,
+                categoryId: 1,
+                periodMonth: '2025-10',
+                amountCents: 100000,
+                rollover: false
+            }),
+        })
+        let data = await res.json()
+        log(`Created budget: ${JSON.stringify(data)}`)
+    }
+
     return (
         <div className="p-8 space-y-4">
             <h1 className="text-2xl font-bold">API Test Page</h1>
@@ -48,6 +64,7 @@ export default function HomePage() {
             <div className="space-x-2">
                 <button onClick={createCategory} className="btn">Create Category</button>
                 <button onClick={createBudget} className="btn">Create Budget</button>
+                <button onClick={updateCategoryAndBudget} className="btn">Update Budget</button>
             </div>
 
             <div className="mt-8">

@@ -28,7 +28,7 @@ export const CategoryBody = z.object({
     type: zType50,
     color: z.string().trim().min(1).optional(),
     icon: z.string().trim().min(1).optional(),
-    parentId: z.number().int().optional(),
+    parentId: z.number().int().optional().nullable(),
 }).refine(
     (val) =>
         ['teamId', 'name', 'type', 'color', 'icon', 'parentId'].some((k) =>
