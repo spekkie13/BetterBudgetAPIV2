@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
         teamId: sp.get("teamId"),
         budgetId: sp.get("id"),
         categoryId: sp.get("categoryId") ?? 0,
-        month: sp.get("periodMonth"),
+        periodMonth: sp.get("periodMonth"),
     });
     if (!parsedQuery.success)
         return fail(req, 400, 'Invalid Query');
