@@ -4,7 +4,7 @@ import {ApiDataResponse} from "@/core/http/ApiDataResponse";
 
 export function makeBudgetController(svc: BudgetService) {
     return {
-        async getBudgets(teamId: number, budgetId?: number, categoryId?: number, month?: string) {
+        async getBudgets(teamId: number, budgetId?: number, categoryId?: number, month?: string | null) {
             // 1) /api/budgets?teamId=1&budgetId=123
             if (budgetId !== 0 && budgetId !== undefined && budgetId !== null) {
                 const budget = await svc.selectByIdTeam(teamId, budgetId);

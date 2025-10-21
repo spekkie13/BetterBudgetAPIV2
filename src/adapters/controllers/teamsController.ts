@@ -30,7 +30,14 @@ export function makeTeamsController(svc: TeamService) {
             return new ApiDataResponse({ data: null, status: 204, message: 'successfully deleted' });
         },
 
-        async getCategoryLines(teamId: number, categoryId: number, month: string, limit: number, cursor: string | null | undefined) {
+        async getCategoryLines(teamId: number, categoryId: number, month: string | null, limit: number, cursor: string | null | undefined) {
+            if (month === null)
+                return new ApiDataResponse({
+                    data: null,
+                    status: 400,
+                    message: 'month is required to fetch category lines'
+                })
+
             const { start, end } = monthStartEndUtc(month);
             const cur = decodeDateCursor2(cursor);
 
@@ -128,7 +135,13 @@ export function makeTeamsController(svc: TeamService) {
                 new ApiDataResponse({ data: null, status: 400, message: 'No spend trends fetched'})
         },
 
-        async getBudget(teamId: number, month: string) {
+        async getBudget(teamId: number, month: string | null) {
+            if (month === null)
+                return new ApiDataResponse({
+                    data: null,
+                    status: 400,
+                    message: 'month is required to fetch budget'
+                })
             const summary = await getMonthSummary(teamId, month);
 
             const catIds = summary.map(s => s.categoryId);
