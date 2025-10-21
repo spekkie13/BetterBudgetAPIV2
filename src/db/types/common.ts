@@ -14,7 +14,7 @@ export const zTeamId = z.union([z.number().int(), z.string()])
 
 export const zMaybeId = zId.optional();
 
-export const zMonth = z.string().regex(/^\d{4}-\d{2}$/, 'Invalid month (YYYY-MM)').optional();
+export const zMonth = z.string().regex(/^\d{4}-\d{2}$/, 'Invalid month (YYYY-MM)').optional().nullable();
 export const zMonths = z.coerce.number().int().min(1).max(36).default(6);
 
 export const zCents = z.union([z.string(), z.number()])
