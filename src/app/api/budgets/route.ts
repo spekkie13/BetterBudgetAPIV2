@@ -1,10 +1,9 @@
 import { NextRequest } from 'next/server';
 import { BudgetService } from "@/adapters/services/budgetService";
 import { makeBudgetController } from "@/adapters/controllers/budgetController";
-import {BudgetBody, BudgetInsert, BudgetParams, BudgetQuery} from "@/db/types/budgetTypes";
+import {BudgetBody, BudgetParams, BudgetQuery} from "@/db/types/budgetTypes";
 import { ok, fail, isRequestSuccessful } from "@/core/http/Response";
 import {preflightResponse} from "@/core/http/cors";
-import {toMonthStartString} from "@/core/date";
 
 const svc = new BudgetService();
 const controller = makeBudgetController(svc);
@@ -77,20 +76,14 @@ export async function PUT(req: NextRequest) {
 
     const body = await req.json().catch(() => ({}));
     const parsedBody = BudgetBody.safeParse(body);
-    console.log(parsedBody);
     if (!parsedBody.success)
         return fail(req, 400, 'Invalid body');
 
-    const date = new Date(parsedBody.data.periodMonth ?? "");
-    const budgetBody: BudgetInsert = {
-        id: parsedParams.data.id,
-        teamId: parsedParams.data.teamId,
-        categoryId: parsedBody.data.categoryId ?? 0,
-        periodMonth: toMonthStartString(date) ?? "",
+    const budgetBody = {
         amountCents: parsedBody.data.amountCents ?? 0,
         rollover: parsedBody.data.rollover ?? false,
     }
-
+    console.log(budgetBody);
     const result = await controller.updateBudget(parsedParams.data.teamId, parsedParams.data.id, budgetBody);
     console.log(result);
     return isRequestSuccessful(result.status) ?

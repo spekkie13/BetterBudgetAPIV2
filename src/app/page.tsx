@@ -42,7 +42,7 @@ export default function HomePage() {
     }
 
     const updateCategoryAndBudget = async () => {
-        let res = await fetch(`/api/budgets?id=125&teamId=1`, {
+        let res = await fetch(`/api/budgets?id=2&teamId=1`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
