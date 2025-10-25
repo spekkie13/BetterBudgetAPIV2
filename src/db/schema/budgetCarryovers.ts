@@ -1,4 +1,3 @@
-// db/schema/budgetCarryovers.ts
 import { bigint, date, integer, pgTable, primaryKey, timestamp } from "drizzle-orm/pg-core";
 import { teams } from "@/db/schema/teams";
 import { categories } from "@/db/schema/categories";
@@ -16,7 +15,6 @@ export const budgetCarryovers = pgTable(
             .defaultNow(),
     },
     (t) => [
-        // idempotency per (team, category, month)
         primaryKey({ columns: [t.teamId, t.categoryId, t.fromMonth] }),
     ]
 );
