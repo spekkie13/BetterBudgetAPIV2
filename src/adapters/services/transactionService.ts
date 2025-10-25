@@ -7,13 +7,6 @@ export class TransactionService extends TeamScopedServiceBase<TransactionRow, nu
         super(makeTransactionRepo());
     }
 
-    async selectNonTransfers(teamId: number) {
-        const transactions = await this.selectAllByTeam(teamId);
-        return transactions.filter(
-            (txn) => txn.isTransfer === false
-        )
-    }
-
     async selectByType(teamId: number, type: string | null) {
         let transactions = await this.selectAllByTeam(teamId);
         switch (type) {

@@ -1,4 +1,3 @@
-// app/api/_utils/cors.ts
 import { NextResponse } from 'next/server'
 
 // Put your dev + prod origins here (or from env)

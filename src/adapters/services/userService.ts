@@ -47,8 +47,6 @@ export class UserService extends KeyedRepoServiceBase<UserRow, number, UserInser
 
 // Types
 type TeamLite = { id: number; name: string };
-type UserLite = { id: number; email: string; username: string; name: string; createdAt: Date };
-export type UserWithTeams = UserLite & { teams: TeamLite[] };
 
 // ---------- internal helper ----------
 async function teamsForUserIds(userIds: number[]): Promise<Map<number, TeamLite[]>> {
@@ -64,24 +62,4 @@ async function teamsForUserIds(userIds: number[]): Promise<Map<number, TeamLite[
         map.get(r.userId)!.push({ id: r.teamId, name: r.teamName });
     }
     return map;
-}
-
-// ---------- Reads ----------
-export async function getUsers(): Promise<UserWithTeams[]> {
-    const rows = await db.select({
-        id: users.id, email: users.email, username: users.username, name: users.name, createdAt: users.createdAt,
-    }).from(users);
-    const tmap = await teamsForUserIds(rows.map(r => r.id));
-    return rows.map(u => ({ ...u, teams: tmap.get(u.id) ?? [] }));
-}
-
-export async function getUserById(id: number): Promise<UserWithTeams | null> {
-    const [u] = await db.select({
-        id: users.id, email: users.email, username: users.username, name: users.name, createdAt: users.createdAt,
-    }).from(users).where(eq(users.id, id)).limit(1);
-    if (!u) return null;
-    const ts = await db.select({ id: teams.id, name: teams.name })
-        .from(memberships).innerJoin(teams, eq(teams.id, memberships.teamId))
-        .where(eq(memberships.userId, u.id));
-    return { ...u, teams: ts };
 }

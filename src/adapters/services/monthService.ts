@@ -1,4 +1,3 @@
-// services/monthService.ts
 import { db } from '@/db/client';
 import { and, desc, eq, gte, lt, lte, isNull, inArray } from 'drizzle-orm';
 import { toYmd } from '@/core/date';

@@ -6,11 +6,4 @@ export class AccountService extends TeamScopedServiceBase<AccountRow, number, nu
     constructor() {
         super(makeAccountRepo())
     }
-
-    async getCurrency(teamId: number, accountId: number) {
-        const acc = await this.selectByIdTeam(teamId, accountId);
-        if (acc) {
-            return acc.currency;
-        }
-    }
 }

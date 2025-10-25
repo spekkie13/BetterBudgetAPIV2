@@ -3,7 +3,7 @@ import {TeamScopedServiceBase} from "@/adapters/services/factory/teamScopedServi
 import {CategoryInsert, CategoryPatch, CategoryRow, CategorySlotsBody} from "@/db/types/categoryTypes";
 import {db} from "@/db/client";
 import {categories} from "@/db/schema";
-import {and, eq, ilike, inArray} from "drizzle-orm";
+import {and, eq, inArray} from "drizzle-orm";
 import {UserSettingsService} from "@/adapters/services/userSettingsService";
 import {makeUserSettingsController} from "@/adapters/controllers/userSettingsController";
 
@@ -13,19 +13,6 @@ const controller = makeUserSettingsController(service);
 export class CategoryService extends TeamScopedServiceBase<CategoryRow, number, number, CategoryInsert, CategoryPatch>{
     constructor() {
         super(makeCategoryRepo())
-    }
-
-    async selectByName(teamId: number, name: string): Promise<CategoryRow[]> {
-        return db
-            .select()
-            .from(categories)
-            .where(
-                and(
-                    eq(categories.teamId, teamId),
-                    ilike(categories.name, name)
-                )
-            )
-            .limit(1);
     }
 
     async ensureAllExistForTeam(teamId: number, catIds: number[]) {

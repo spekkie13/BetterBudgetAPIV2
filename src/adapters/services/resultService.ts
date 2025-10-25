@@ -1,4 +1,3 @@
-// services/resultService.ts
 import { getMonthSummary } from '@/adapters/services/summaryService';
 import {monthToDate} from "@/core/date";
 import {toCents} from "@/core/cents";

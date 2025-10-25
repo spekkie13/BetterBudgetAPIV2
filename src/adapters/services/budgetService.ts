@@ -2,7 +2,7 @@ import {makeBudgetRepo} from "@/adapters/repo/budgetRepo";
 import {TeamScopedServiceBase} from "@/adapters/services/factory/teamScopedServiceBase";
 import {db} from "@/db/client";
 import {budgets, categories} from "@/db/schema";
-import {and, desc, eq, inArray, lte} from "drizzle-orm";
+import {and, desc, eq, inArray, lte, sql} from "drizzle-orm";
 import {BudgetInsert, BudgetPatch, BudgetRow, makeBudgetKey} from "@/db/types/budgetTypes";
 import {generateMonthKeys} from "@/core/date";
 
@@ -32,11 +32,7 @@ export class BudgetService extends TeamScopedServiceBase<BudgetRow, number, numb
         return rows[0] ?? null;
     }
 
-    async ensureBudgetsForAllCategories(
-        teamId: number,
-        fromMonthStr: string,
-        opts: EnsureOpts = {}
-    ) {
+    async ensureBudgetsForAllCategories(teamId: number, fromMonthStr: string, opts: EnsureOpts = {}) {
         const horizon = opts.horizonMonths ?? 12
         const defaultWhenNoHistory = opts.defaultWhenNoHistory ?? 0
 
@@ -46,7 +42,7 @@ export class BudgetService extends TeamScopedServiceBase<BudgetRow, number, numb
         const endStr = months[months.length - 1];
 
         await db.transaction(async (tx) => {
-            //await tx.execute(sql`SELECT pg_advisory_xact_lock(${teamId})`)
+            await tx.execute(sql`SELECT pg_advisory_xact_lock(${teamId})`)
 
             // 1️⃣ All categories in team
             const catRows = await tx
