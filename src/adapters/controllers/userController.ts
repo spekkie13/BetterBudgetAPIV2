@@ -4,6 +4,7 @@ import { ApiDataResponse } from "@/core/http/ApiDataResponse";
 import { BudgetService } from "@/adapters/services/budgetService";
 import {addMonthsStr, currentMonthStr, toMonthStartString} from "@/core/date";
 import {applyRolloverForMonth} from "@/core/budgetCalculator";
+import {CategoryService} from "@/adapters/services/categoryService";
 
 export function makeUserController(svc: UserService) {
     return {
@@ -44,19 +45,23 @@ export function makeUserController(svc: UserService) {
             })
         },
 
-        async getUserByEmail(email: string, updateBudgets: boolean = false) {
+        async getUserByEmail(email: string) {
             const user = await svc.selectByEmail(email);
-            if (user && updateBudgets) {
-                console.log('updating budgets');
-                const budgetService = new BudgetService();
-                const fromDate = toMonthStartString(new Date());
-                await budgetService.ensureBudgetsForAllCategories(user.teams[0].id, fromDate);
+            if (user) {
+                const updateBudgets = await this.ensureUserBudgets(user.teams[0].id);
+                if (updateBudgets) {
+                    console.log('updating budgets');
+                    const budgetService = new BudgetService();
+                    const fromDate = toMonthStartString(new Date());
+                    await budgetService.ensureBudgetsForAllCategories(user.teams[0].id, fromDate);
 
-                const startMonth = currentMonthStr();
-                const prevMonth = addMonthsStr(startMonth, -1);
+                    const startMonth = currentMonthStr();
+                    const prevMonth = addMonthsStr(startMonth, -1);
 
-                await applyRolloverForMonth(user.teams[0].id, prevMonth);
+                    await applyRolloverForMonth(user.teams[0].id, prevMonth);
+                }
             }
+
             return user ?
                 new ApiDataResponse({data: user, status: 200, message: 'successfully fetched user'}) :
                 new ApiDataResponse({data: null, status: 404, message: 'No user found'});
@@ -67,6 +72,17 @@ export function makeUserController(svc: UserService) {
             return users ?
                 new ApiDataResponse({data: users, status: 200, message: 'successfully fetched users'}) :
                 new ApiDataResponse({data: null, status: 404, message: 'No users found'});
+        },
+
+        async ensureUserBudgets(teamId: number) {
+            const budgetService = new BudgetService();
+            const categoryService = new CategoryService();
+
+            let budgets = await budgetService.selectAllByTeam(teamId);
+            budgets = budgets.filter(budget => budget.periodMonth > toMonthStartString(new Date()));
+            let categories = await categoryService.selectAllByTeam(teamId);
+
+            return categories.length * 11 !== budgets.length;
         }
     }
 }

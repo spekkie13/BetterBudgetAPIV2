@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
     }
 
     if (parsed.data.email !== undefined){
-        result = await controller.getUserByEmail(parsed.data.email, true);
+        result = await controller.getUserByEmail(parsed.data.email);
         return isRequestSuccessful(result.status)
             ? ok(req, result.data)
             : fail(req, 400, 'Invalid query');
