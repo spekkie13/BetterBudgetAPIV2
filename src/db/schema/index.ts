@@ -3,6 +3,7 @@ export * from './budgets'
 export * from "./budgetCarryovers";
 export * from './categories'
 export * from './memberships'
+export * from './recurring_rules'
 export * from './teams'
 export * from './transactions'
 export * from './transaction_splits'
