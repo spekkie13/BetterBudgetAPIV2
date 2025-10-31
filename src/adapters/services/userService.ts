@@ -37,9 +37,9 @@ export class UserService extends KeyedRepoServiceBase<UserRow, number, UserInser
         return base.map(u => ({ ...u, teams: tmap.get(u.id) ?? [] }));
     }
 
-    async createUser(data: { username: string; name: string; email: string }) {
+    async createUser(data: { supabaseUid: string, username: string; name: string; email: string }) {
         const [created] = await db.insert(users).values(data).returning({
-            id: users.id, username: users.username, name: users.name, email: users.email, createdAt: users.createdAt,
+            id: users.id, uuid: users.supabaseUid, username: users.username, name: users.name, email: users.email, createdAt: users.createdAt,
         });
         return created;
     }

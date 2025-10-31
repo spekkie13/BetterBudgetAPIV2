@@ -22,6 +22,7 @@ export type UserParamsInput = z.infer<typeof UserParams>;
 /** Collection query */
 export const UserBody = z.object({
     id: zId,
+    supabaseUid: z.string().trim().min(1),
     teamId: zTeamId,
     email: zEmail,
     username: z.string().trim().min(1),
