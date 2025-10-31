@@ -47,6 +47,8 @@ export function makeUserController(svc: UserService) {
 
         async getUserByEmail(email: string) {
             const user = await svc.selectByEmail(email);
+            console.log(user);
+
             if (user) {
                 const updateBudgets = await this.ensureUserBudgets(user.teams[0].id);
                 if (updateBudgets) {

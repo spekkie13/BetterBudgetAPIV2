@@ -13,6 +13,7 @@ export class UserService extends KeyedRepoServiceBase<UserRow, number, UserInser
     async selectByEmail(email: string) {
         const [u] = await db.select({
             id: users.id,
+            token: users.supabaseUid,
             email: users.email,
             username: users.username,
             name: users.name,
@@ -29,9 +30,17 @@ export class UserService extends KeyedRepoServiceBase<UserRow, number, UserInser
     }
 
     async selectByTeamId(teamId: number) {
-        const base = await db.select({
-            id: users.id, email: users.email, username: users.username, name: users.name, createdAt: users.createdAt,
-        }).from(memberships).innerJoin(users, eq(users.id, memberships.userId))
+        const base = await db
+            .select({
+                id: users.id,
+                token: users.supabaseUid,
+                email: users.email,
+                username: users.username,
+                name: users.name,
+                createdAt: users.createdAt,
+            })
+            .from(memberships)
+            .innerJoin(users, eq(users.id, memberships.userId))
             .where(eq(memberships.teamId, teamId));
         const tmap = await teamsForUserIds(base.map(u => u.id));
         return base.map(u => ({ ...u, teams: tmap.get(u.id) ?? [] }));
@@ -39,7 +48,7 @@ export class UserService extends KeyedRepoServiceBase<UserRow, number, UserInser
 
     async createUser(data: { supabaseUid: string, username: string; name: string; email: string }) {
         const [created] = await db.insert(users).values(data).returning({
-            id: users.id, uuid: users.supabaseUid, username: users.username, name: users.name, email: users.email, createdAt: users.createdAt,
+            id: users.id, token: users.supabaseUid, username: users.username, name: users.name, email: users.email, createdAt: users.createdAt,
         });
         return created;
     }
