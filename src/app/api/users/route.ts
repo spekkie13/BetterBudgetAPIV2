@@ -22,7 +22,6 @@ export async function GET(req: NextRequest) {
         return fail(req, 400, 'Email address is required');
 
     const userData = await controller.getUserByEmail(email);
-    // console.log(userData.data);
     const user: User = User.create(userData.data);
     const team: Team = Team.create(userData.data?.teams[0]);
     console.log(team);

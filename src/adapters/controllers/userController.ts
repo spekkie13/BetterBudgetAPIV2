@@ -51,7 +51,6 @@ export function makeUserController(svc: UserService) {
             if (user) {
                 const updateBudgets = await this.ensureUserBudgets(user.teams[0].id);
                 if (updateBudgets) {
-                    console.log('updating budgets');
                     const budgetService = new BudgetService();
                     const fromDate = toMonthStartString(new Date());
                     await budgetService.ensureBudgetsForAllCategories(user.teams[0].id, fromDate);

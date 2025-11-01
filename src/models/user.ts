@@ -1,6 +1,6 @@
 export class User {
     id: number;
-    uuid: string;
+    token: string;
     email: string;
     username: string;
     name: string;
@@ -8,7 +8,7 @@ export class User {
 
     private constructor(user: any){
         this.id = user.id;
-        this.uuid = user.uuid;
+        this.token = user.token;
         this.email = user.email;
         this.username = user.username;
         this.name = user.name;
@@ -22,7 +22,7 @@ export class User {
     static empty() {
         return new User({
             id: 0,
-            uuid: "",
+            token: "",
             email: "",
             username: "",
             name: "",
