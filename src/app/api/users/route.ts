@@ -4,9 +4,7 @@ import { UserBody } from "@/db/types/userTypes";
 import { UserService } from "@/adapters/services/userService";
 import { ok, fail, isRequestSuccessful } from "@/core/http/Response";
 import { preflightResponse } from "@/core/http/cors";
-import { getUserByToken } from "@/core/http/requestHelpers";
 import {User} from "@/models/user";
-import {UserWithTeam} from "@/models/userWithTeams";
 import {Team} from "@/models/team";
 
 const svc = new UserService();
@@ -17,15 +15,16 @@ export async function OPTIONS(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-    const userWithTeam: UserWithTeam = await getUserByToken(req.headers.get('authorization'));
-    const user: User = userWithTeam.user
-    const team: Team = userWithTeam.team;
+    const email = new URL(req.url).searchParams.get('email');
 
-    // if (User.isEmpty(user)) {
-    //     return fail(req, 401, 'Invalid authorization');
-    // }
+    if (email === null)
+        return fail(req, 400, 'Email address is required');
 
+    const userData = await controller.getUserByEmail(email);
+    const user = User.create(userData.data);
+    const team = Team.create(userData.data?.teams);
     let result;
+
     if (user.id !== 0){
         result = await controller.getUser(user.id);
         return isRequestSuccessful(result.status) ?
