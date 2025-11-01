@@ -25,7 +25,7 @@ export class UserService extends KeyedRepoServiceBase<UserRow, number, UserInser
         if (!u) return null;
 
         const ts = await db
-            .select({ id: teams.id, name: teams.name })
+            .select({ id: teams.id, name: teams.name, createdAt: teams.createdAt })
             .from(memberships)
             .innerJoin(teams, eq(teams.id, memberships.teamId))
             .where(eq(memberships.userId, u.id));

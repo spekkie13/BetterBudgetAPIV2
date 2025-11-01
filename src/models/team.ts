@@ -6,7 +6,7 @@ export class Team {
     private constructor(team: any){
         this.id = team.id;
         this.name = team.name;
-        this.createdAt = team.created_at;
+        this.createdAt = team.createdAt;
     }
 
     static create(team: any) {
