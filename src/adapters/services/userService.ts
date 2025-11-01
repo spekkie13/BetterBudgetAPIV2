@@ -23,8 +23,11 @@ export class UserService extends KeyedRepoServiceBase<UserRow, number, UserInser
             .where(eq(users.email, email))
             .limit(1);
         if (!u) return null;
-        const ts = await db.select({ id: teams.id, name: teams.name })
-            .from(memberships).innerJoin(teams, eq(teams.id, memberships.teamId))
+
+        const ts = await db
+            .select({ id: teams.id, name: teams.name })
+            .from(memberships)
+            .innerJoin(teams, eq(teams.id, memberships.teamId))
             .where(eq(memberships.userId, u.id));
         return { ...u, teams: ts };
     }
@@ -42,8 +45,10 @@ export class UserService extends KeyedRepoServiceBase<UserRow, number, UserInser
             .where(eq(users.supabaseUid, token))
             .limit(1);
         if (!u) return null;
-        const ts = await db.select({ id: teams.id, name: teams.name })
-            .from(memberships).innerJoin(teams, eq(teams.id, memberships.teamId))
+        const ts = await db
+            .select({ id: teams.id, name: teams.name })
+            .from(memberships)
+            .innerJoin(teams, eq(teams.id, memberships.teamId))
             .where(eq(memberships.userId, u.id));
         return { ...u, teams: ts };
     }

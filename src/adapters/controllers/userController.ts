@@ -8,12 +8,12 @@ import {CategoryService} from "@/adapters/services/categoryService";
 
 export function makeUserController(svc: UserService) {
     return {
-        async listUsers() {
-            const items = await svc.listAll();
-            return items ?
-                new ApiDataResponse({data: items, status: 200, message: 'successfully listed users'}) :
-                new ApiDataResponse({data: null, status: 404, message: 'No users found'});
-        },
+        // async listUsers() {
+        //     const items = await svc.listAll();
+        //     return items ?
+        //         new ApiDataResponse({data: items, status: 200, message: 'successfully listed users'}) :
+        //         new ApiDataResponse({data: null, status: 404, message: 'No users found'});
+        // },
 
         async getUser(id: number) {
             const user = await svc.selectById(id);

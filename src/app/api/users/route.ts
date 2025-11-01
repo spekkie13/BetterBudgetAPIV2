@@ -6,6 +6,7 @@ import { ok, fail, isRequestSuccessful } from "@/core/http/Response";
 import { preflightResponse } from "@/core/http/cors";
 import {User} from "@/models/user";
 import {Team} from "@/models/team";
+import {UserWithTeam} from "@/models/userWithTeams";
 
 const svc = new UserService();
 const controller = makeUserController(svc);
@@ -21,30 +22,15 @@ export async function GET(req: NextRequest) {
         return fail(req, 400, 'Email address is required');
 
     const userData = await controller.getUserByEmail(email);
-    const user = User.create(userData.data);
-    const team = Team.create(userData.data?.teams);
-    let result;
 
-    if (user.id !== 0){
-        result = await controller.getUser(user.id);
-        return isRequestSuccessful(result.status) ?
-            ok(req, result.data) :
-            fail(req, 400, 'Invalid query');
-    }
+    const user: User = User.create(userData.data);
+    const team: Team = Team.create(userData.data?.teams);
+    const userWithTeam = new UserWithTeam(user, team);
 
-    if (user.email !== undefined){
-        result = await controller.getUserByEmail(user.email);
-        return isRequestSuccessful(result.status)
-            ? ok(req, result.data)
-            : fail(req, 400, 'Invalid query');
-    }
-
-    if (team.id !== 0){
-        result = await controller.getUserByTeamId(team.id);
-        return isRequestSuccessful(result.status) ?
-            ok(req, result.data) :
-            fail(req, 400, 'Invalid query');
-    }
+    if (userWithTeam)
+        return ok(req, userWithTeam);
+    else
+        return fail(req, 400, 'Invalid query');
 }
 
 export async function POST(req: NextRequest) {
