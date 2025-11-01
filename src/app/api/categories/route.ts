@@ -4,6 +4,9 @@ import { makeCategoryController } from "@/adapters/controllers/categoryControlle
 import { CategoryBody, CategoryInsert, CategoryParams, CategoryQuery } from "@/db/types/categoryTypes";
 import { ok, fail, isRequestSuccessful } from "@/core/http/Response";
 import {preflightResponse} from "@/core/http/cors";
+import {UserWithTeam} from "@/models/userWithTeams";
+import {getUserByToken} from "@/core/http/requestHelpers";
+import {Team} from "@/models/team";
 
 const svc = new CategoryService();
 const controller = makeCategoryController(svc);
@@ -33,12 +36,13 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
-    const sp = new URL(req.url).searchParams;
-    const teamId = sp.get("teamId");
-    const id = sp.get("id");
-    // const { teamId, id } = (ctx as { params: { teamId: string; id: string } }).params;
+    const userWithTeam: UserWithTeam = await getUserByToken(req.headers.get('authorization'));
+    const team: Team = userWithTeam.team;
 
-    const params = CategoryParams.safeParse({ id: id, teamId: teamId });
+    const sp = new URL(req.url).searchParams;
+    const id = sp.get("id");
+
+    const params = CategoryParams.safeParse({ id: id });
     if (!params.success)
         return fail(req, 400, 'Invalid Params')
 
@@ -49,26 +53,23 @@ export async function PUT(req: NextRequest) {
 
     const categoryBody: CategoryInsert = {
         id: params.data.id,
-        teamId: params.data.teamId,
+        teamId: team.id,
         name: parsedBody.data.name ?? "",
         color: parsedBody.data.color ?? "",
         type: parsedBody.data.type as 'income' | 'expense' | 'transfer',
         icon: parsedBody.data.icon ?? "",
         parentId: parsedBody.data.parentId ?? 0,
     };
-    console.log(categoryBody);
-    const result = await controller.updateCategory(params.data.teamId, params.data.id ?? 0, categoryBody);
+
+    const result = await controller.updateCategory(team.id, params.data.id ?? 0, categoryBody);
     return isRequestSuccessful(result.status) ?
         ok(req, result.data) :
         fail(req, 500, 'Internal server error...');
 }
 
-export async function POST(req: NextRequest, ctx: any) {
-    const { teamId } = (ctx as { params: { teamId: string; } }).params;
-
-    const params = CategoryParams.safeParse({ teamId: teamId })
-    if (!params.success)
-        return fail(req, 400, 'Invalid teamId')
+export async function POST(req: NextRequest) {
+    const userWithTeam: UserWithTeam = await getUserByToken(req.headers.get('authorization'));
+    const team: Team = userWithTeam.team;
 
     const reqBody = await req.json().catch(() => ({}));
     const parsedBody = CategoryBody.safeParse(reqBody);
@@ -76,7 +77,7 @@ export async function POST(req: NextRequest, ctx: any) {
         return fail(req, 400, 'Invalid body')
 
     const categoryBody: CategoryInsert = {
-        teamId: params.data.teamId,
+        teamId: team.id,
         name: parsedBody.data.name ?? "",
         color: parsedBody.data.color ?? "",
         type: parsedBody.data.type as 'income' | 'expense' | 'transfer',
@@ -84,21 +85,24 @@ export async function POST(req: NextRequest, ctx: any) {
         parentId: parsedBody.data.parentId ?? 0,
     };
 
-    const result = await controller.createCategory(params.data.teamId, categoryBody);
+    const result = await controller.createCategory(team.id, categoryBody);
     return isRequestSuccessful(result.status) ?
         ok(req, result.data) :
         fail(req, 500, 'Internal server error...');
 }
 
 export async function DELETE(req: NextRequest, ctx: any) {
-    const { teamId, id } = (ctx as { params: { teamId: string; id: string } }).params;
-    const params = CategoryParams.safeParse({ teamId: teamId, id: id });
+    const userWithTeam: UserWithTeam = await getUserByToken(req.headers.get('authorization'));
+    const team: Team = userWithTeam.team;
+
+    const { id } = (ctx as { params: { id: string } }).params;
+    const params = CategoryParams.safeParse({ id: id });
     if (!params.success)
         return fail(req, 400, 'Invalid params');
     if (params.data.id === undefined)
         return fail(req, 400, 'Invalid Id');
 
-    const result = await controller.deleteCategory(params.data.teamId, params.data.id);
+    const result = await controller.deleteCategory(team.id, params.data.id);
     return isRequestSuccessful(result.status) ?
         ok(req, result.data) :
         fail(req, 500, 'Internal server error...');

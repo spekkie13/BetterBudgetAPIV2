@@ -10,13 +10,14 @@ export type UserPatch = Partial<Pick<UserInsert, 'email' | 'username' | 'name'>>
 
 export const UserQuery = z.object({
     userId: zId,
+    token: z.string().trim().min(1).optional().nullable(),
     teamId: zTeamId,
     email: zEmail,
 })
 export type UserQueryInput = z.infer<typeof UserQuery>;
 
 /** Parse route input to verify correctness */
-export const UserParams = z.object({ teamId: zTeamId, id: zId });
+export const UserParams = z.object({ id: zId });
 export type UserParamsInput = z.infer<typeof UserParams>;
 
 /** Collection query */

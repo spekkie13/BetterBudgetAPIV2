@@ -1,9 +1,12 @@
 import { NextRequest } from 'next/server';
 import {AccountService} from "@/adapters/services/accountService";
 import {makeAccountsController} from "@/adapters/controllers/accountsController";
-import {AccountBody, AccountInsert, AccountParams, AccountQuery} from "@/db/types/accountTypes";
+import {AccountBody, AccountInsert} from "@/db/types/accountTypes";
 import {ok, fail, isRequestSuccessful} from "@/core/http/Response";
 import {preflightResponse} from "@/core/http/cors";
+import {UserWithTeam} from "@/models/userWithTeams";
+import {getUserByToken} from "@/core/http/requestHelpers";
+import {Team} from "@/models/team";
 
 const svc = new AccountService();
 const controller = makeAccountsController(svc);
@@ -14,31 +17,19 @@ export async function OPTIONS(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
     const searchParams = new URL(req.url).searchParams;
-    const teamId = searchParams.get("teamId");
+    const includeArchived = searchParams.has("includeArchived");
+    const userWithTeam: UserWithTeam = await getUserByToken(req.headers.get('authorization'));
+    const team: Team = userWithTeam.team;
 
-    const parsedParams = AccountParams.safeParse({ teamId: teamId });
-    if (!parsedParams.success)
-        return fail(req, 400, 'Invalid params');
-
-    const parsedQuery = AccountQuery.safeParse({
-        teamId: teamId,
-        includeArchived: searchParams.get("includeArchived") ?? false,
-    });
-    if (!parsedQuery.success)
-        return fail(req, 400, 'Invalid query');
-
-    const result = await controller.listAccounts(parsedParams.data.teamId, parsedQuery.data.includeArchived);
+    const result = await controller.listAccounts(team.id, includeArchived);
     return isRequestSuccessful(result.status) ?
         ok(req, result.data) :
         fail(req, 500, 'Internal server error...');
 }
 
-export async function POST(req: NextRequest, ctx: any) {
-    const { teamId } = (ctx as { params: { teamId: string; id: string } }).params;
-
-    const params = AccountParams.safeParse({ teamId: teamId });
-    if (!params.success)
-        return fail(req, 400, 'Invalid Team ID');
+export async function POST(req: NextRequest) {
+    const userWithTeam: UserWithTeam = await getUserByToken(req.headers.get('authorization'));
+    const team: Team = userWithTeam.team;
 
     const reqBody = await req.json().catch(() => ({}));
     const parsedBody = AccountBody.safeParse(reqBody);
@@ -46,13 +37,13 @@ export async function POST(req: NextRequest, ctx: any) {
         return fail(req, 400, 'Invalid Body');
 
     const accountBody: AccountInsert = {
-        teamId: params.data.teamId,
+        teamId: team.id,
         name: parsedBody.data.name ?? "",
         type: parsedBody.data.type ?? "",
         currency: parsedBody.data.currency,
     }
 
-    const result = await controller.createAccount(params.data.teamId, accountBody);
+    const result = await controller.createAccount(team.id, accountBody);
     return isRequestSuccessful(result.status) ?
         ok(req, result.data) :
         fail(req, 500, 'Internal server error...');

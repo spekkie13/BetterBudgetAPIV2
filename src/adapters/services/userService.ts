@@ -29,6 +29,25 @@ export class UserService extends KeyedRepoServiceBase<UserRow, number, UserInser
         return { ...u, teams: ts };
     }
 
+    async selectByToken(token: string) {
+        const [u] = await db.select({
+            id: users.id,
+            token: users.supabaseUid,
+            email: users.email,
+            username: users.username,
+            name: users.name,
+            createdAt: users.createdAt,
+        })
+            .from(users)
+            .where(eq(users.supabaseUid, token))
+            .limit(1);
+        if (!u) return null;
+        const ts = await db.select({ id: teams.id, name: teams.name })
+            .from(memberships).innerJoin(teams, eq(teams.id, memberships.teamId))
+            .where(eq(memberships.userId, u.id));
+        return { ...u, teams: ts };
+    }
+
     async selectByTeamId(teamId: number) {
         const base = await db
             .select({

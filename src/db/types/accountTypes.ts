@@ -10,13 +10,9 @@ export type AccountPatch = Partial<Pick<AccountInsert, 'name' | 'type' | 'curren
 
 export const AccountQuery = z.object({
     id: zMaybeId,
-    teamId: zTeamId,
     includeArchived: zBoolish.default(false).optional(),
 })
 export type AccountQueryInput = z.infer<typeof AccountQuery>;
-
-/** Parse route input to verify correctness */
-export const AccountParams = z.object({ teamId: zTeamId, id: zMaybeId });
 
 /** Collection query (?includeArchived=true|false) */
 export const AccountBody = z.object({

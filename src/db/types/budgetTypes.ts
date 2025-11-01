@@ -1,7 +1,7 @@
 import {InferInsertModel, InferSelectModel} from "drizzle-orm";
 import {budgets} from "@/db/schema";
 import { z } from 'zod';
-import {zBoolish, zCents, zId, zMaybeId, zMonth, zTeamId} from "@/db/types/common";
+import {zBoolish, zCents, zId, zMaybeId, zMonth } from "@/db/types/common";
 import {monthToDate} from "@/core/date";
 
 /** all db Budget types*/
@@ -11,7 +11,6 @@ export type BudgetPatch = Partial<Pick<BudgetInsert, 'categoryId' | 'periodMonth
 
 export const BudgetQuery = z.object({
     id: zMaybeId,
-    teamId: zTeamId,
     categoryId: zMaybeId,
     periodMonth: zMonth,
 })
@@ -24,12 +23,11 @@ export function makeBudgetKey(teamId: number, categoryId: number, month: string 
 }
 
 /** Parse route input to verify correctness */
-export const BudgetParams = z.object({ teamId: zTeamId, id: zMaybeId });
+export const BudgetParams = z.object({ id: zMaybeId });
 export type BudgetParamsInput = z.infer<typeof BudgetParams>;
 
 /** Collection query */
 export const BudgetBody = z.object({
-    teamId: zTeamId,
     id: zMaybeId,
     categoryId: zId,
     periodMonth: zMonth,

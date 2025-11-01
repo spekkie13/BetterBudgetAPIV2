@@ -4,18 +4,23 @@ import { CategoryService } from "@/adapters/services/categoryService";
 import { CategoryParams } from "@/db/types/categoryTypes";
 import { ok, fail, isRequestSuccessful } from "@/core/http/Response";
 import {preflightResponse} from "@/core/http/cors";
+import {UserWithTeam} from "@/models/userWithTeams";
+import {getUserByToken} from "@/core/http/requestHelpers";
+import {Team} from "@/models/team";
 
 const svc = new CategoryService();
 const controller = makeCategoryController(svc);
 
 export async function POST(req: NextRequest, ctx: any) {
-    const { teamId, id } = (ctx as { params: { teamId: string; id: string } }).params;
+    const userWithTeam: UserWithTeam = await getUserByToken(req.headers.get('authorization'));
+    const team: Team = userWithTeam.team;
+    const { id } = (ctx as { params: { id: string } }).params;
 
-    const params = CategoryParams.safeParse({ teamId: teamId, id: id });
+    const params = CategoryParams.safeParse({ id: id });
     if (!params.success || params.data.id === null || params.data.id === undefined)
         return fail(req, 400, 'Invalid Params');
 
-    const result = await controller.ensureAllExists(params.data.teamId, [params.data.id]);
+    const result = await controller.ensureAllExists(team.id, [params.data.id]);
     return isRequestSuccessful(result.status) ?
         ok(req, result.data) :
         fail(req, 500, 'Internal Server Error');

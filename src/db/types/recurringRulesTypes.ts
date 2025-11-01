@@ -15,7 +15,7 @@ export const RecurringRulesQuery = z.object({
 export type RecurringRulesQueryInput = z.infer<typeof RecurringRulesQuery>;
 
 /** Parse route input to verify correctness */
-export const RecurringRulesParams = z.object({ teamId: zTeamId, id: zMaybeId });
+export const RecurringRulesParams = z.object({ id: zMaybeId });
 
 /** Collection query (?includeArchived=true|false) */
 export const RecurringRulesBody = z.object({

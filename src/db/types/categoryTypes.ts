@@ -17,7 +17,7 @@ export const CategoryQuery = z.object({
 /** create a composite category key object */
 
 /** Parse route input to verify correctness */
-export const CategoryParams = z.object({ teamId: zTeamId, id: zMaybeId });
+export const CategoryParams = z.object({ id: zMaybeId });
 export type CategoryParamsInput = z.infer<typeof CategoryParams>;
 
 /** Collection query */

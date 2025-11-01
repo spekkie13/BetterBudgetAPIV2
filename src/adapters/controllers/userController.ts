@@ -1,5 +1,5 @@
 import { UserService } from '@/adapters/services/userService';
-import { UserBodyInput } from "@/db/types/userTypes";
+import {UserBodyInput} from "@/db/types/userTypes";
 import { ApiDataResponse } from "@/core/http/ApiDataResponse";
 import { BudgetService } from "@/adapters/services/budgetService";
 import {addMonthsStr, currentMonthStr, toMonthStartString} from "@/core/date";
@@ -8,12 +8,12 @@ import {CategoryService} from "@/adapters/services/categoryService";
 
 export function makeUserController(svc: UserService) {
     return {
-        // async listUsers(query: UserQueryInput) {
-        //     const items = await svc.listAll();
-        //     return items ?
-        //         new ApiDataResponse({data: items, status: 200, message: 'successfully listed users'}) :
-        //         new ApiDataResponse({data: null, status: 404, message: 'No users found'});
-        // },
+        async listUsers() {
+            const items = await svc.listAll();
+            return items ?
+                new ApiDataResponse({data: items, status: 200, message: 'successfully listed users'}) :
+                new ApiDataResponse({data: null, status: 404, message: 'No users found'});
+        },
 
         async getUser(id: number) {
             const user = await svc.selectById(id);
@@ -47,7 +47,6 @@ export function makeUserController(svc: UserService) {
 
         async getUserByEmail(email: string) {
             const user = await svc.selectByEmail(email);
-            console.log(user);
 
             if (user) {
                 const updateBudgets = await this.ensureUserBudgets(user.teams[0].id);
@@ -71,6 +70,13 @@ export function makeUserController(svc: UserService) {
 
         async getUserByTeamId(teamId: number) {
             const users = await svc.selectByTeamId(teamId);
+            return users ?
+                new ApiDataResponse({data: users, status: 200, message: 'successfully fetched users'}) :
+                new ApiDataResponse({data: null, status: 404, message: 'No users found'});
+        },
+
+        async getUserByToken(token: string) {
+            const users = await svc.selectByToken(token);
             return users ?
                 new ApiDataResponse({data: users, status: 200, message: 'successfully fetched users'}) :
                 new ApiDataResponse({data: null, status: 404, message: 'No users found'});

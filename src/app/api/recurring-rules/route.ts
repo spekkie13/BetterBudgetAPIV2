@@ -3,7 +3,10 @@ import { ok, fail, isRequestSuccessful } from "@/core/http/Response";
 import { preflightResponse } from "@/core/http/cors";
 import { makeRecurringRulesController } from "@/adapters/controllers/recurringRulesController";
 import { RecurringRulesService } from "@/adapters/services/recurringRulesService";
-import { RecurringRulesBody, RecurringRulesInsert, RecurringRulesParams, RecurringRulesQuery } from "@/db/types/recurringRulesTypes";
+import { RecurringRulesBody } from "@/db/types/recurringRulesTypes";
+import {UserWithTeam} from "@/models/userWithTeams";
+import {getUserByToken} from "@/core/http/requestHelpers";
+import {Team} from "@/models/team";
 
 const svc = new RecurringRulesService();
 const controller = makeRecurringRulesController(svc);
@@ -13,41 +16,26 @@ export async function OPTIONS(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-    const searchParams = new URL(req.url).searchParams;
-    const teamId = searchParams.get("teamId");
+    const userWithTeam: UserWithTeam = await getUserByToken(req.headers.get('authorization'));
+    const team: Team = userWithTeam.team;
 
-    const parsedParams = RecurringRulesParams.safeParse({ teamId: teamId });
-    if (!parsedParams.success)
-        return fail(req, 400, 'Invalid params');
-
-    const parsedQuery = RecurringRulesQuery.safeParse({
-        teamId: teamId,
-    });
-
-    if (!parsedQuery.success)
-        return fail(req, 400, 'Invalid query');
-
-    const result = await controller.listRules(parsedParams.data.teamId);
+    const result = await controller.listRules(team.id);
     return isRequestSuccessful(result.status) ?
         ok(req, result.data) :
         fail(req, 500, 'Internal server error...');
 }
 
-export async function POST(req: NextRequest, ctx: any) {
-    const { teamId } = (ctx as { params: { teamId: string; id: string } }).params;
-
-    const params = RecurringRulesParams.safeParse({ teamId: teamId });
-    if (!params.success)
-        return fail(req, 400, 'Invalid Team ID');
+export async function POST(req: NextRequest) {
+    const userWithTeam: UserWithTeam = await getUserByToken(req.headers.get('authorization'));
+    const team: Team = userWithTeam.team;
 
     const reqBody = await req.json().catch(() => ({}));
     const parsedBody = RecurringRulesBody.safeParse(reqBody);
     if (!parsedBody.success)
         return fail(req, 400, 'Invalid Body');
 
-    const ruleBody: RecurringRulesInsert = {
-        teamId: params.data.teamId,
-        id: params.data.id,
+    const ruleBody = {
+        teamId: team.id,
         categoryId: parsedBody.data.categoryId,
         name: parsedBody.data.name ?? "",
         amountCents: Number(parsedBody.data.amountCents),
@@ -55,7 +43,7 @@ export async function POST(req: NextRequest, ctx: any) {
         active: parsedBody.data.active ?? true,
     }
 
-    const result = await controller.createRule(params.data.teamId, ruleBody);
+    const result = await controller.createRule(team.id, ruleBody);
     return isRequestSuccessful(result.status) ?
         ok(req, result.data) :
         fail(req, 500, 'Internal server error...');
