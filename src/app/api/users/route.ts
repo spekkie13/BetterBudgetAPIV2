@@ -21,9 +21,9 @@ export async function GET(req: NextRequest) {
     const user: User = userWithTeam.user
     const team: Team = userWithTeam.team;
 
-    if (User.isEmpty(user)) {
-        return fail(req, 401, 'Invalid authorization');
-    }
+    // if (User.isEmpty(user)) {
+    //     return fail(req, 401, 'Invalid authorization');
+    // }
 
     let result;
     if (user.id !== 0){
