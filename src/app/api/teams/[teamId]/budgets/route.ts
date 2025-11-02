@@ -12,11 +12,15 @@ const svc = new TeamService();
 const controller = makeTeamsController(svc);
 
 export async function GET(req: NextRequest) {
-    const userWithTeam: UserWithTeam = await getUserByToken(req.headers.get('authorization'));
+    const token = req.headers.get('authorization')?.split('Bearer ')[1];
+    if (!token)
+        return fail(req, 401, 'Invalid token');
+
+    const userWithTeam: UserWithTeam = await getUserByToken(token);
     const team: Team = userWithTeam.team;
 
-    const sp = new URL(req.url).searchParams;
-    const queryParsed = BudgetQuery.safeParse({ month: sp.get('month') });
+    const searchParams = new URL(req.url).searchParams;
+    const queryParsed = BudgetQuery.safeParse({ month: searchParams.get('month') });
     if (!queryParsed.success || queryParsed.data.periodMonth === undefined)
         return fail(req, 400, 'Invalid Month');
 

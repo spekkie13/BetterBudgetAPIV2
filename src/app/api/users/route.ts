@@ -14,7 +14,7 @@ export async function OPTIONS(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-    const token = req.headers.get('authorization');
+    const token = req.headers.get('authorization')?.split('Bearer ')[1];
     if (!token) {
         return fail(req, 401, 'Invalid authorization');
     }

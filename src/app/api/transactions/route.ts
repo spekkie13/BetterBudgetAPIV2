@@ -4,6 +4,8 @@ import { makeTransactionController } from '@/adapters/controllers/transactionCon
 import { TransactionService } from '@/adapters/services/transactionService';
 import { TransactionParams } from "@/db/types/transactionTypes";
 import {preflightResponse} from "@/core/http/cors";
+import {Team, UserWithTeam} from "@/models";
+import {getUserByToken} from "@/core/http/requestHelpers";
 
 const svc = new TransactionService();
 const controller = makeTransactionController(svc);
@@ -13,25 +15,37 @@ export async function OPTIONS(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
+    const token = req.headers.get('authorization')?.split('Bearer ')[1];
+    if (!token)
+        return fail(req, 401, 'Invalid token');
+
+    const userWithTeam: UserWithTeam = await getUserByToken(token);
+    const team: Team = userWithTeam.team;
+
     const sp = new URL(req.url).searchParams;
     const parsed = TransactionParams.safeParse({
-        teamId: sp.get('teamId'),
         type: sp.get('type'),
     });
-    if (!parsed.success || !Number.isInteger(parsed.data.teamId))
+    if (!parsed.success || !Number.isInteger(team.id))
         return fail(req, 400, 'Invalid teamId');
 
     let result;
     if (parsed.data.type !== undefined)
-        result = await controller.selectTransactionsByType(parsed.data.teamId, parsed.data.type);
+        result = await controller.selectTransactionsByType(team.id, parsed.data.type);
     else
-        result = await controller.listAllByTeam(parsed.data.teamId);
+        result = await controller.listAllByTeam(team.id);
     return isRequestSuccessful(result.status) ?
         ok(req, result.data) :
         fail(req, 500, 'Internal server error...');
 }
 
 export async function POST(req: NextRequest) {
+    const token = req.headers.get('authorization')?.split('Bearer ')[1];
+    if (!token)
+        return fail(req, 401, 'Invalid token');
+
+    const userWithTeam: UserWithTeam = await getUserByToken(token);
+    const team: Team = userWithTeam.team;
     try {
         const body = await req.json();
         const int = (v: unknown) => {
@@ -44,7 +58,6 @@ export async function POST(req: NextRequest) {
         const fromAccountId = int(body?.fromAccountId ?? body?.fromAccountID);
         const toAccountId   = int(body?.toAccountId   ?? body?.toAccountID);
         const accountId     = int(body?.accountId ?? body?.fromAccountId ?? body?.fromAccountID);
-        const teamId        = int(body?.teamId);
         const amountCents   = Number(body?.amountCents);
 
         const requireInt = (ok: boolean, msg: string) => {
@@ -55,7 +68,7 @@ export async function POST(req: NextRequest) {
         if (Number.isNaN(postedAt.getTime()))
             return fail(req, 400,'Invalid postedAt/date/createdAt');
 
-        if (!Number.isInteger(teamId))
+        if (!Number.isInteger(team.id))
             return fail(req, 400,'Invalid teamId');
 
         if (!Number.isFinite(amountCents))
@@ -74,8 +87,8 @@ export async function POST(req: NextRequest) {
                 return fail(req, 400,'Transfer amountCents must be > 0');
 
             //create leg 1
-            const outLeg = await controller.createTransaction(teamId, {
-                teamId,
+            const outLeg = await controller.createTransaction(team.id, {
+                teamId: team.id,
                 accountId,
                 amountCents: amountCents * -1,
                 postedAt: postedAt,
@@ -93,8 +106,8 @@ export async function POST(req: NextRequest) {
             })
 
             //create leg 2
-            const result = await controller.createTransaction(teamId, {
-                teamId,
+            const result = await controller.createTransaction(team.id, {
+                teamId: team.id,
                 accountId,
                 amountCents,
                 postedAt: postedAt,
@@ -137,7 +150,7 @@ export async function POST(req: NextRequest) {
             deletedAt: rest.deletedAt ? new Date(rest.deletedAt) : null,
         };
 
-        const created = await controller.createTransaction(teamId, row);
+        const created = await controller.createTransaction(team.id, row);
         return ok(req, created, 'Transaction created', 201);
     } catch (error) {
         console.error('POST /api/transactions error:', error);

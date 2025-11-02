@@ -4,6 +4,8 @@ import { TransactionBody, TransactionInsert, TransactionParams } from "@/db/type
 import { makeTransactionController } from "@/adapters/controllers/transactionController";
 import { ok, fail, isRequestSuccessful } from "@/core/http/Response";
 import {preflightResponse} from "@/core/http/cors";
+import {Team, UserWithTeam} from "@/models";
+import {getUserByToken} from "@/core/http/requestHelpers";
 
 const svc = new TransactionService();
 const controller = makeTransactionController(svc);
@@ -13,6 +15,13 @@ export async function OPTIONS(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest, ctx : any) {
+    const token = req.headers.get('authorization')?.split('Bearer ')[1];
+    if (!token)
+        return fail(req, 401, 'Invalid token');
+
+    const userWithTeam: UserWithTeam = await getUserByToken(token);
+    const team: Team = userWithTeam.team;
+
     const { id } = (ctx as { params: { id: string } }).params;
     const sp = new URL(req.url).searchParams;
     if (!Number.isInteger(id))
@@ -22,29 +31,35 @@ export async function GET(req: NextRequest, ctx : any) {
         teamId: sp.get('teamId'),
         type: sp.get('type'),
     });
-    if (!parsed.success || !Number.isInteger(parsed.data.teamId))
+    if (!parsed.success || !Number.isInteger(team.id))
         return fail(req, 400, 'Invalid teamId');
 
     let result;
     if (parsed.data.type !== undefined){
         console.log(parsed.data.type);
-        result = await controller.selectTransactionsByType(parsed.data.teamId, parsed.data.type);
+        result = await controller.selectTransactionsByType(team.id, parsed.data.type);
     }
     else if (id !== undefined)
-        result = await controller.getTransaction(parsed.data.teamId, Number(id))
+        result = await controller.getTransaction(team.id, Number(id))
     else
-        result = await controller.listAllByTeam(parsed.data.teamId);
+        result = await controller.listAllByTeam(team.id);
     return isRequestSuccessful(result.status) ?
         ok(req, result.data) :
         fail(req, 500, 'Internal server error...');
 }
 
 export async function PUT(req: NextRequest, ctx : any) {
-    const { idStr, teamIdStr } = (ctx as { params: { idStr: string; teamIdStr: string } }).params;
-    const id = Number(idStr);
-    const teamId = Number(teamIdStr);
+    const token = req.headers.get('authorization')?.split('Bearer ')[1];
+    if (!token)
+        return fail(req, 401, 'Invalid token');
 
-    const params = TransactionParams.safeParse({ id: id, teamId: teamId });
+    const userWithTeam: UserWithTeam = await getUserByToken(token);
+    const team: Team = userWithTeam.team;
+
+    const { idStr } = (ctx as { params: { idStr: string } }).params;
+    const id = Number(idStr);
+
+    const params = TransactionParams.safeParse({ id: id });
     if (!params.success)
         return fail(req, 400, 'Invalid params');
 
@@ -52,7 +67,7 @@ export async function PUT(req: NextRequest, ctx : any) {
     if (!Number.isInteger(id))
         return fail(req, 400,'Valid id is required');
 
-    if (!Number.isInteger(teamId))
+    if (!Number.isInteger(team.id))
         return fail(req, 400,'Valid teamId is required');
 
     const parsedBody = TransactionBody.safeParse(body);
@@ -61,7 +76,7 @@ export async function PUT(req: NextRequest, ctx : any) {
 
     const transactionBody: TransactionInsert = {
         id: params.data.id ?? 0,
-        teamId: params.data.teamId,
+        teamId: team.id,
         accountId: parsedBody.data.accountId,
         amountCents: parsedBody.data.amountCents ?? 0,
         currency: parsedBody.data.currency,
@@ -77,28 +92,32 @@ export async function PUT(req: NextRequest, ctx : any) {
         deletedAt: new Date(parsedBody.data.deletedAt ?? ""),
     }
 
-    const result = await controller.updateTransaction(id, teamId, transactionBody);
+    const result = await controller.updateTransaction(id, team.id, transactionBody);
     return isRequestSuccessful(result.status) ?
         ok(req, result.data) :
         fail(req, 500, 'Internal server error...');
 }
 
 export async function DELETE(req: NextRequest, ctx : any) {
+    const token = req.headers.get('authorization')?.split('Bearer ')[1];
+    if (!token)
+        return fail(req, 401, 'Invalid token');
+
+    const userWithTeam: UserWithTeam = await getUserByToken(token);
+    const team: Team = userWithTeam.team;
+
     const { idStr } = (ctx as { params: { idStr: string } }).params;
 
     try {
         const id = Number(idStr);
-        let body = await req.json();
-        const teamIdStr = body?.teamId ?? new URL(req.url).searchParams.get('teamId');
-        const teamId = Number(teamIdStr);
 
         if (!Number.isInteger(id))
             return fail(req, 400,'Valid id is required');
 
-        if (!Number.isInteger(teamId))
+        if (!Number.isInteger(team.id))
             return fail(req, 400,'Valid teamId is required');
 
-        await controller.deleteTransaction(teamId,  id);
+        await controller.deleteTransaction(team.id, id);
         return ok(req, 204, 'Transaction deleted');
     } catch (error) {
         console.error('DELETE /api/transactions/[id] error:', error);

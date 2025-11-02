@@ -12,16 +12,19 @@ const svc = new CategoryService();
 const controller = makeCategoryController(svc);
 
 export async function GET(req: NextRequest) {
+    const token = req.headers.get('authorization')?.split('Bearer ')[1];
+    if (!token)
+        return fail(req, 401, 'Invalid token');
+
+    const userWithTeam: UserWithTeam = await getUserByToken(token);
+    const team: Team = userWithTeam.team;
+
     const searchParams = new URL(req.url).searchParams;
-    const teamId = searchParams.get("teamId");
     const id = searchParams.get("id");
     const type = searchParams.get("type");
 
-    const parsedParams = CategoryParams.safeParse({ teamId });
-    if (!parsedParams.success) return fail(req, 400, 'Invalid TeamId')
-
     const parsedQuery = CategoryQuery.safeParse({
-        teamId: teamId,
+        teamId: team.id,
         id: id,
         type: type
     });
@@ -36,7 +39,11 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
-    const userWithTeam: UserWithTeam = await getUserByToken(req.headers.get('authorization'));
+    const token = req.headers.get('authorization')?.split('Bearer ')[1];
+    if (!token)
+        return fail(req, 401, 'Invalid token');
+
+    const userWithTeam: UserWithTeam = await getUserByToken(token);
     const team: Team = userWithTeam.team;
 
     const sp = new URL(req.url).searchParams;
@@ -68,7 +75,11 @@ export async function PUT(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-    const userWithTeam: UserWithTeam = await getUserByToken(req.headers.get('authorization'));
+    const token = req.headers.get('authorization')?.split('Bearer ')[1];
+    if (!token)
+        return fail(req, 401, 'Invalid token');
+
+    const userWithTeam: UserWithTeam = await getUserByToken(token);
     const team: Team = userWithTeam.team;
 
     const reqBody = await req.json().catch(() => ({}));
@@ -92,7 +103,11 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest, ctx: any) {
-    const userWithTeam: UserWithTeam = await getUserByToken(req.headers.get('authorization'));
+    const token = req.headers.get('authorization')?.split('Bearer ')[1];
+    if (!token)
+        return fail(req, 401, 'Invalid token');
+
+    const userWithTeam: UserWithTeam = await getUserByToken(token);
     const team: Team = userWithTeam.team;
 
     const { id } = (ctx as { params: { id: string } }).params;

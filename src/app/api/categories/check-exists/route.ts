@@ -12,7 +12,11 @@ const svc = new CategoryService();
 const controller = makeCategoryController(svc);
 
 export async function POST(req: NextRequest, ctx: any) {
-    const userWithTeam: UserWithTeam = await getUserByToken(req.headers.get('authorization'));
+    const token = req.headers.get('authorization')?.split('Bearer ')[1];
+    if (!token)
+        return fail(req, 401, 'Invalid token');
+
+    const userWithTeam: UserWithTeam = await getUserByToken(token);
     const team: Team = userWithTeam.team;
     const { id } = (ctx as { params: { id: string } }).params;
 

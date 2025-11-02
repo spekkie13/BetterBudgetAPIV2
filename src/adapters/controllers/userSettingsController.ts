@@ -4,8 +4,8 @@ import { ApiDataResponse } from "@/core/http/ApiDataResponse";
 
 export function makeUserSettingsController(svc: UserSettingsService) {
     return {
-        async getUserSetting(userId: string){
-            const settings = await svc.selectById(Number(userId));
+        async getUserSetting(userId: number){
+            const settings = await svc.selectById(userId);
             return settings ?
                 new ApiDataResponse({ status: 200, data: settings, message: 'successfully patched category slots' }) :
                 new ApiDataResponse({ status: 404, data: null, message: 'Settings not found' })

@@ -16,7 +16,11 @@ export async function OPTIONS(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-    const userWithTeam: UserWithTeam = await getUserByToken(req.headers.get('authorization'));
+    const token = req.headers.get('authorization')?.split('Bearer ')[1];
+    if (!token)
+        return fail(req, 401, 'Invalid token');
+
+    const userWithTeam: UserWithTeam = await getUserByToken(token);
     const user: User = userWithTeam.user;
 
     const result = await controller.getUser(user.id);
@@ -26,7 +30,11 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
-    const userWithTeam: UserWithTeam = await getUserByToken(req.headers.get('authorization'));
+    const token = req.headers.get('authorization')?.split('Bearer ')[1];
+    if (!token)
+        return fail(req, 401, 'Invalid token');
+
+    const userWithTeam: UserWithTeam = await getUserByToken(token);
     const user: User = userWithTeam.user;
 
     const body = await req.json().catch(() => ({}));
@@ -41,7 +49,11 @@ export async function PUT(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-    const userWithTeam: UserWithTeam = await getUserByToken(req.headers.get('authorization'));
+    const token = req.headers.get('authorization')?.split('Bearer ')[1];
+    if (!token)
+        return fail(req, 401, 'Invalid token');
+
+    const userWithTeam: UserWithTeam = await getUserByToken(token);
     const user: User = userWithTeam.user;
 
     const result = await controller.deleteUser(user.id);

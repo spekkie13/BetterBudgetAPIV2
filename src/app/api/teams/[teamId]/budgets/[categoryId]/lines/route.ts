@@ -4,14 +4,23 @@ import { LinesParams, LinesQuery } from "@/db/types/linesTypes";
 import { TeamService } from "@/adapters/services/teamService";
 import { ok, fail, isRequestSuccessful } from "@/core/http/Response";
 import {preflightResponse} from "@/core/http/cors";
+import {Team, UserWithTeam} from "@/models";
+import {getUserByToken} from "@/core/http/requestHelpers";
 
 const svc = new TeamService();
 const controller = makeTeamsController(svc);
 
 export async function GET(req: NextRequest, ctx: any) {
-    const { teamId, categoryId } = (ctx as { params: { teamId: string; categoryId: string; } }).params;
+    const token = req.headers.get('authorization')?.split('Bearer ')[1];
+    if (!token)
+        return fail(req, 401, 'Invalid token');
 
-    const paramsParsed = LinesParams.safeParse({ teamId: teamId, categoryId: categoryId });
+    const userWithTeam: UserWithTeam = await getUserByToken(token);
+    const team: Team = userWithTeam.team;
+
+    const { categoryId } = (ctx as { params: { categoryId: string; } }).params;
+
+    const paramsParsed = LinesParams.safeParse({ categoryId: categoryId });
     if (!paramsParsed.success)
         return fail(req, 400, 'Invalid Params');
 
@@ -26,7 +35,7 @@ export async function GET(req: NextRequest, ctx: any) {
         return fail(req, 400, 'Invalid Query');
 
     const result = await controller.getCategoryLines(
-        paramsParsed.data.teamId,
+        team.id,
         paramsParsed.data.categoryId,
         queryParsed.data.month,
         queryParsed.data.limit,

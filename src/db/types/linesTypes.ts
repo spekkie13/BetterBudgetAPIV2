@@ -3,7 +3,6 @@ import {zId, zLimit, zMonth, zTeamId} from "@/db/types/common";
 import {zCursor2} from "@/core/cursor";
 
 export const LinesParams = z.object({
-    teamId: zTeamId,
     categoryId: zId,
 });
 
