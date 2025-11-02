@@ -29,8 +29,4 @@ export class User {
             createdAt: "",
         })
     }
-
-    static isEmpty(user: User) {
-        return user === User.empty();
-    }
 }

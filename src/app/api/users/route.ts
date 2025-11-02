@@ -4,9 +4,7 @@ import { UserBody } from "@/db/types/userTypes";
 import { UserService } from "@/adapters/services/userService";
 import { ok, fail, isRequestSuccessful } from "@/core/http/Response";
 import { preflightResponse } from "@/core/http/cors";
-import {User} from "@/models/user";
-import {Team} from "@/models/team";
-import {UserWithTeam} from "@/models/userWithTeams";
+import { User, Team, UserWithTeam } from "@/models";
 
 const svc = new UserService();
 const controller = makeUserController(svc);
@@ -16,21 +14,20 @@ export async function OPTIONS(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-    const email = new URL(req.url).searchParams.get('email');
+    const token = req.headers.get('authorization');
+    if (!token) {
+        return fail(req, 401, 'Invalid authorization');
+    }
 
-    if (email === null)
-        return fail(req, 400, 'Email address is required');
-
-    const userData = await controller.getUserByEmail(email);
+    const userData = await controller.getUserByToken(token);
     const user: User = User.create(userData.data);
     const team: Team = Team.create(userData.data?.teams[0]);
-    console.log(team);
     const userWithTeam = new UserWithTeam(user, team);
 
     if (userWithTeam)
         return ok(req, userWithTeam);
     else
-        return fail(req, 400, 'Invalid query');
+        return fail(req, 404, 'User not found');
 }
 
 export async function POST(req: NextRequest) {

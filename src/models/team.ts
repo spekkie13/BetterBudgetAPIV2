@@ -20,8 +20,4 @@ export class Team {
             createdAt: new Date(),
         })
     }
-
-    static isEmpty(team: Team) {
-        return team === Team.empty();
-    }
 }
