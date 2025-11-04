@@ -13,7 +13,7 @@ export async function getUserByToken(token: string | null) : Promise<UserWithTea
 
     let userData = await controller.getUserByToken(token);
     let user: User = User.create(userData.data);
-    let team: Team = Team.create(userData.data?.teams)
+    let team: Team = Team.create(userData.data?.teams[0])
 
     return new UserWithTeam(user, team);
 }
