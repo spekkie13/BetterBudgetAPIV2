@@ -26,8 +26,8 @@ export async function GET(req: NextRequest) {
     const parsed = TransactionParams.safeParse({
         type: sp.get('type'),
     });
-    if (!parsed.success || !Number.isInteger(team.id))
-        return fail(req, 400, 'Invalid teamId');
+    if (!parsed.success)
+        return fail(req, 400, 'Invalid parameters');
 
     let result;
     if (parsed.data.type !== undefined)
@@ -67,9 +67,6 @@ export async function POST(req: NextRequest) {
 
         if (Number.isNaN(postedAt.getTime()))
             return fail(req, 400,'Invalid postedAt/date/createdAt');
-
-        if (!Number.isInteger(team.id))
-            return fail(req, 400,'Invalid teamId');
 
         if (!Number.isFinite(amountCents))
             return fail(req, 400,'Invalid amountCents');
