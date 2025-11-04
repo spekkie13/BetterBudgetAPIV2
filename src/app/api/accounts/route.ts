@@ -16,10 +16,16 @@ export async function OPTIONS(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
+    const token = req.headers.get('authorization')?.split('Bearer ')[1];
+
+    if (!token)
+        return fail(req, 401, 'Invalid token');
+
+    const userWithTeam: UserWithTeam = await getUserByToken(token);
+    const team: Team = userWithTeam.team;
+
     const searchParams = new URL(req.url).searchParams;
     const includeArchived = searchParams.has("includeArchived");
-    const userWithTeam: UserWithTeam = await getUserByToken(req.headers.get('authorization'));
-    const team: Team = userWithTeam.team;
 
     const result = await controller.listAccounts(team.id, includeArchived);
     return isRequestSuccessful(result.status) ?
