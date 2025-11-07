@@ -15,7 +15,8 @@ export function makeTransactionController(svc: TransactionService) {
             const row = await svc.selectByIdTeam(teamId, id);
             return row ?
                 new ApiDataResponse({ data: row, status: 200, message: 'Successfully retrieved transaction'}) :
-                new ApiDataResponse({ data: null, status: 404, message: 'No transaction found' });        },
+                new ApiDataResponse({ data: null, status: 404, message: 'No transaction found' });
+        },
 
         async createTransaction(teamId: number, body: any) {
             const created = await svc.insert({ ...body, teamId });

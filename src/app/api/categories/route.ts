@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
         color: parsedBody.data.color ?? "",
         type: parsedBody.data.type as 'income' | 'expense' | 'transfer',
         icon: parsedBody.data.icon ?? "",
-        parentId: parsedBody.data.parentId ?? 0,
+        parentId: parsedBody.data.parentId,
     };
 
     const result = await controller.createCategory(team.id, categoryBody);
