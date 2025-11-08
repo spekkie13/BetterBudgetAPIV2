@@ -2,10 +2,8 @@ import { NextRequest } from 'next/server';
 import { TransactionService } from '@/adapters/services/transactionService';
 import { TransactionBody, TransactionInsert, TransactionParams } from "@/db/types/transactionTypes";
 import { makeTransactionController } from "@/adapters/controllers/transactionController";
-import { ok, fail, isRequestSuccessful } from "@/core/http/Response";
-import {preflightResponse} from "@/core/http/cors";
-import {Team, UserWithTeam} from "@/models";
-import {getUserByToken} from "@/core/http/requestHelpers";
+import { ok, fail, preflightResponse, isRequestSuccessful, getUserDataByToken } from "@/core/http/ApiHelpers";
+import { Team, UserWithTeam } from "@/models";
 
 const svc = new TransactionService();
 const controller = makeTransactionController(svc);
@@ -15,11 +13,10 @@ export async function OPTIONS(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest, ctx : any) {
-    const token = req.headers.get('authorization')?.split('Bearer ')[1];
-    if (!token)
+    const userWithTeam: UserWithTeam | null = await getUserDataByToken(req);
+    if (!userWithTeam)
         return fail(req, 401, 'Invalid token');
 
-    const userWithTeam: UserWithTeam = await getUserByToken(token);
     const team: Team = userWithTeam.team;
 
     const { id } = (ctx as { params: { id: string } }).params;
@@ -49,11 +46,10 @@ export async function GET(req: NextRequest, ctx : any) {
 }
 
 export async function PUT(req: NextRequest, ctx : any) {
-    const token = req.headers.get('authorization')?.split('Bearer ')[1];
-    if (!token)
+    const userWithTeam: UserWithTeam | null = await getUserDataByToken(req);
+    if (!userWithTeam)
         return fail(req, 401, 'Invalid token');
 
-    const userWithTeam: UserWithTeam = await getUserByToken(token);
     const team: Team = userWithTeam.team;
 
     const { idStr } = (ctx as { params: { idStr: string } }).params;
@@ -99,11 +95,10 @@ export async function PUT(req: NextRequest, ctx : any) {
 }
 
 export async function DELETE(req: NextRequest, ctx : any) {
-    const token = req.headers.get('authorization')?.split('Bearer ')[1];
-    if (!token)
+    const userWithTeam: UserWithTeam | null = await getUserDataByToken(req);
+    if (!userWithTeam)
         return fail(req, 401, 'Invalid token');
 
-    const userWithTeam: UserWithTeam = await getUserByToken(token);
     const team: Team = userWithTeam.team;
 
     const { idStr } = (ctx as { params: { idStr: string } }).params;

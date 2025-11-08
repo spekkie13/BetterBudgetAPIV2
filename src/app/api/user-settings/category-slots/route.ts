@@ -1,8 +1,7 @@
 import { NextRequest } from 'next/server';
 import { makeCategoryController } from "@/adapters/controllers/categoryController";
 import { CategoryService } from "@/adapters/services/categoryService";
-import { ok, fail, isRequestSuccessful } from "@/core/http/Response";
-import {preflightResponse} from "@/core/http/cors";
+import { ok, fail, preflightResponse, isRequestSuccessful } from "@/core/http/ApiHelpers";
 
 const svc = new CategoryService();
 const controller = makeCategoryController(svc);

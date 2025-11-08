@@ -1,18 +1,23 @@
-import { ApiDataResponse } from '@/core/http/ApiDataResponse';
-import { jsonWithCors } from '@/core/http/cors';
-
-export function ok<T>(req: Request, data: T, message = 'OK', status = 200) {
-    const body: ApiDataResponse<T> = { data, message, status, success: true };
-    return jsonWithCors(req, body, status);
+export interface IResponse<T> {
+    data: T;
+    status: number;
+    message: string;
+    error?: string;
+    success?: boolean;
 }
 
-export function fail(req: Request, status = 400, message: string) {
-    const body: ApiDataResponse<null> = { data: null, message, status, success: false };
-    return jsonWithCors(req, body, status);
-}
+export class Response<T> implements IResponse<T> {
+    data: T
+    status: number
+    message: string
+    error?: string
+    success?: boolean
 
-export function isRequestSuccessful(status: number | undefined): boolean {
-    if (status === undefined)
-        return false;
-    return status >= 200 && status < 300;
+    constructor(data: IResponse<T>) {
+        this.data = data.data;
+        this.error = data.error;
+        this.status = data.status;
+        this.success = data.success;
+        this.message = data.message;
+    }
 }

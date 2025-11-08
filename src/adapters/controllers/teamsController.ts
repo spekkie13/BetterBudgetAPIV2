@@ -7,32 +7,32 @@ import { addMonthsUTC, monthStartEndUtc, firstOfMonthUTC, monthToDate, toYmd } f
 import { decodeDateCursor2, encodeDateCursor } from "@/core/cursor";
 import { toCents } from "@/core/cents";
 import { TeamBodyInput, TeamPatch } from "@/db/types/teamTypes";
-import { ApiDataResponse } from "@/core/http/ApiDataResponse";
+import { Response } from "@/core/http/Response";
 
 export function makeTeamsController(svc: TeamService) {
     return {
         async createTeam(body: TeamBodyInput) {
             const created = await svc.insert({ name: body.name });
             return created ?
-                new ApiDataResponse({ data: created, status: 201, message: 'successfully created' }) :
-                new ApiDataResponse({ data: null, status: 400, message: 'No team created' });
+                new Response({ data: created, status: 201, message: 'successfully created' }) :
+                new Response({ data: null, status: 400, message: 'No team created' });
         },
 
         async updateTeam(teamId: number, body: TeamPatch) {
             const updated = await svc.updateById(teamId, body);
             return updated ?
-                new ApiDataResponse({ data: updated, status: 201, message: 'successfully created' }) :
-                new ApiDataResponse({ data: null, status: 400, message: 'No team updated' });
+                new Response({ data: updated, status: 201, message: 'successfully created' }) :
+                new Response({ data: null, status: 400, message: 'No team updated' });
         },
 
         async deleteTeam(teamId: number) {
             await svc.deleteById(teamId);
-            return new ApiDataResponse({ data: null, status: 204, message: 'successfully deleted' });
+            return new Response({ data: null, status: 204, message: 'successfully deleted' });
         },
 
         async getCategoryLines(teamId: number, categoryId: number, month: string | null, limit: number, cursor: string | null | undefined) {
             if (month === null)
-                return new ApiDataResponse({
+                return new Response({
                     data: null,
                     status: 400,
                     message: 'month is required to fetch category lines'
@@ -94,7 +94,7 @@ export function makeTeamsController(svc: TeamService) {
             const last = items.at(-1);
             const nextCursor = last ? encodeDateCursor(last.posted_at, Number(last.txn_id)) : null;
 
-            return new ApiDataResponse({
+            return new Response({
                 data: { items, nextCursor },
                 status: 200,
                 message: 'Successfully fetched category lines',
@@ -131,13 +131,13 @@ export function makeTeamsController(svc: TeamService) {
 
             const points = monthStarts.map(ms => ({ period_month: toYmd(ms), spent_cents: bucket.get(toYmd(ms)) ?? 0 }));
             return points ?
-                new ApiDataResponse({ data: points, status: 200, message: 'Successfully fetched spending trends'}) :
-                new ApiDataResponse({ data: null, status: 400, message: 'No spend trends fetched'})
+                new Response({ data: points, status: 200, message: 'Successfully fetched spending trends'}) :
+                new Response({ data: null, status: 400, message: 'No spend trends fetched'})
         },
 
         async getBudget(teamId: number, month: string | null) {
             if (month === null)
-                return new ApiDataResponse({
+                return new Response({
                     data: null,
                     status: 400,
                     message: 'month is required to fetch budget'
@@ -181,7 +181,7 @@ export function makeTeamsController(svc: TeamService) {
                 total_remaining_cents: rows.reduce((acc, r) => acc + r.remaining_cents, 0),
             };
 
-            return new ApiDataResponse({
+            return new Response({
                 status: 200,
                 data: { month, totals, categories: rows, period_month: monthToDate(month) },
                 message: 'Successfully fetched budget',
@@ -191,15 +191,15 @@ export function makeTeamsController(svc: TeamService) {
         async getTeamById(teamId: number) {
             const team = await svc.selectById(teamId);
             return team ?
-                new ApiDataResponse({ data: team, status: 200, message: 'Successfully fetched team' }) :
-                new ApiDataResponse({ data: null, status: 404, message: 'No team found' });
+                new Response({ data: team, status: 200, message: 'Successfully fetched team' }) :
+                new Response({ data: null, status: 404, message: 'No team found' });
         },
 
         async selectAll() {
             const teams = await svc.listAll()
             return (teams && teams.length > 0) ?
-                new ApiDataResponse({ data: teams, status: 200, message: 'Successfully fetched teams' }) :
-                new ApiDataResponse({ data: null, status: 404, message: 'No teams found' });
+                new Response({ data: teams, status: 200, message: 'Successfully fetched teams' }) :
+                new Response({ data: null, status: 404, message: 'No teams found' });
         }
     }
 }

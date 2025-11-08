@@ -7,21 +7,57 @@ export default function HomePage() {
 
     const log = (msg: string) => setLogs(prev => [msg, ...prev])
 
-    const createCategory = async () => {
-        const res = await fetch('/api/categories', {
+    const createExpense = async () => {
+        const res = await fetch('/api/transactions', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer 1636c757-0ecc-46df-a415-5f3859d65d87'
+            },
             body: JSON.stringify({
-                teamId: 1,
-                name: 'Test',
-                type: 'expense',
-                icon: '1',
-                color: 'blue',
-                parentId: null
+                accountId: 10,
+                amountCents: 150,
+                categoryId: 1,
+                createdBy: 1,
+                currency: "EUR",
+                memo: "Jumbo",
+                postedAt: "2025-11-07T00:00:00.000Z",
+                transactionType: "expense"
             }),
         })
         const data = await res.json()
         log(`Created expense: ${JSON.stringify(data)}`)
+    }
+
+    // const createCategory = async () => {
+    //     const res = await fetch('/api/categories', {
+    //         method: 'POST',
+    //         headers: {
+    //             'Content-Type': 'application/json',
+    //             'Authorization': 'Bearer 1636c757-0ecc-46df-a415-5f3859d65d87'
+    //         },
+    //         body: JSON.stringify({
+    //             teamId: 1,
+    //             name: 'Test Category',
+    //             type: 'expense',
+    //             color: 'blue',
+    //             icon: 'test tube',
+    //         }),
+    //     })
+    //     const data = await res.json()
+    //     log(`Created category: ${JSON.stringify(data)}`)
+    // }
+
+    const getCategories = async () => {
+        const res = await fetch('/api/categories', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer 1636c757-0ecc-46df-a415-5f3859d65d87'
+            }
+        })
+        const data = await res.json()
+        log(`Categories: ${JSON.stringify(data)}`)
     }
 
     const createBudget = async () => {
@@ -62,7 +98,8 @@ export default function HomePage() {
             <h1 className="text-2xl font-bold">API Test Page</h1>
 
             <div className="space-x-2">
-                <button onClick={createCategory} className="btn">Create Category</button>
+                <button onClick={createExpense} className="btn">Create Expense</button>
+                <button onClick={getCategories} className="btn">Get Categories</button>
                 <button onClick={createBudget} className="btn">Create Budget</button>
                 <button onClick={updateCategoryAndBudget} className="btn">Update Budget</button>
             </div>

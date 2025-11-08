@@ -2,11 +2,8 @@ import { NextRequest } from 'next/server';
 import { makeAccountsController } from "@/adapters/controllers/accountsController";
 import { AccountService } from "@/adapters/services/accountService";
 import { AccountBody, AccountInsert } from "@/db/types/accountTypes";
-import { ok, fail, isRequestSuccessful } from "@/core/http/Response";
-import { preflightResponse } from "@/core/http/cors";
-import {UserWithTeam} from "@/models/userWithTeams";
-import {getUserByToken} from "@/core/http/requestHelpers";
-import {Team} from "@/models/team";
+import { ok, fail, preflightResponse, isRequestSuccessful, getUserDataByToken } from "@/core/http/ApiHelpers";
+import { UserWithTeam, Team } from "@/models";
 
 const svc = new AccountService();
 const controller = makeAccountsController(svc);
@@ -16,10 +13,12 @@ export async function OPTIONS(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest, ctx: any) {
-    const { id } = (ctx as { params: { id: string } }).params;
-    const userWithTeam: UserWithTeam = await getUserByToken(req.headers.get('authorization'));
-    const team: Team = userWithTeam.team;
+    const userWithTeam: UserWithTeam | null = await getUserDataByToken(req);
+    if (!userWithTeam)
+        return fail(req, 401, 'Invalid token');
 
+    const team: Team = userWithTeam.team;
+    const { id } = (ctx as { params: { id: string } }).params;
     const result = await controller.getAccount(team.id, Number(id));
     return isRequestSuccessful(result.status) ?
         ok(req, result.data) :
@@ -27,10 +26,12 @@ export async function GET(req: NextRequest, ctx: any) {
 }
 
 export async function PUT(req: NextRequest, ctx: any) {
-    const { id } = (ctx as { params: { id: string } }).params;
-    const userWithTeam: UserWithTeam = await getUserByToken(req.headers.get('authorization'));
-    const team: Team = userWithTeam.team;
+    const userWithTeam: UserWithTeam | null = await getUserDataByToken(req);
+    if (!userWithTeam)
+        return fail(req, 401, 'Invalid token');
 
+    const team: Team = userWithTeam.team;
+    const { id } = (ctx as { params: { id: string } }).params;
     const reqBody = await req.json().catch(() => ({}));
     const parsedBody = AccountBody.safeParse(reqBody);
     if (!parsedBody.success)
@@ -51,10 +52,13 @@ export async function PUT(req: NextRequest, ctx: any) {
 }
 
 export async function DELETE(req: NextRequest, ctx: any) {
-    const { id } = (ctx as { params: { id: string } }).params;
-    const userWithTeam: UserWithTeam = await getUserByToken(req.headers.get('authorization'));
+    const userWithTeam: UserWithTeam | null = await getUserDataByToken(req);
+    if (!userWithTeam)
+        return fail(req, 401, 'Invalid token');
+
     const team: Team = userWithTeam.team;
 
+    const { id } = (ctx as { params: { id: string } }).params;
     const result = await controller.deleteAccount(team.id, Number(id));
     return isRequestSuccessful(result.status) ?
         ok(req, result.data) :

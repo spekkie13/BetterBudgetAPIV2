@@ -1,11 +1,9 @@
 import { NextRequest } from 'next/server';
-import { ok, fail, isRequestSuccessful } from '@/core/http/Response';
+import { ok, fail, preflightResponse, isRequestSuccessful, getUserDataByToken } from '@/core/http/ApiHelpers';
 import { makeTransactionController } from '@/adapters/controllers/transactionController';
 import { TransactionService } from '@/adapters/services/transactionService';
 import { TransactionParams } from "@/db/types/transactionTypes";
-import { preflightResponse } from "@/core/http/cors";
 import { Team, UserWithTeam } from "@/models";
-import { getUserByToken } from "@/core/http/requestHelpers";
 import { mapToInsert, parseTransactionBody } from "@/core/transaction";
 
 const svc = new TransactionService();
@@ -16,11 +14,10 @@ export async function OPTIONS(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-    const token = req.headers.get('authorization')?.split('Bearer ')[1];
-    if (!token)
+    const userWithTeam: UserWithTeam | null = await getUserDataByToken(req);
+    if (!userWithTeam)
         return fail(req, 401, 'Invalid token');
 
-    const userWithTeam: UserWithTeam = await getUserByToken(token);
     const team: Team = userWithTeam.team;
 
     const sp = new URL(req.url).searchParams;
@@ -41,11 +38,10 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-    const token = req.headers.get('authorization')?.split('Bearer ')[1];
-    if (!token)
+    const userWithTeam: UserWithTeam | null = await getUserDataByToken(req);
+    if (!userWithTeam)
         return fail(req, 401, 'Invalid token');
 
-    const userWithTeam: UserWithTeam = await getUserByToken(token);
     const team: Team = userWithTeam.team;
     try {
         const body = await req.json();

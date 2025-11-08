@@ -2,10 +2,8 @@ import { NextRequest } from 'next/server';
 import { makeUserSettingsController } from '@/adapters/controllers/userSettingsController';
 import { UserSettingsService } from "@/adapters/services/userSettingsService";
 import { UserSettingsBody, UserSettingsInsert, UserSettingsParams } from "@/db/types/userSettingsTypes";
-import { ok, fail, isRequestSuccessful } from "@/core/http/Response";
-import { preflightResponse } from "@/core/http/cors";
-import {User, UserWithTeam} from "@/models";
-import {getUserByToken} from "@/core/http/requestHelpers";
+import { ok, fail, preflightResponse, isRequestSuccessful, getUserDataByToken } from "@/core/http/ApiHelpers";
+import { User, UserWithTeam } from "@/models";
 
 const svc = new UserSettingsService();
 const controller = makeUserSettingsController(svc);
@@ -15,11 +13,10 @@ export async function OPTIONS(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-    const token = req.headers.get('authorization')?.split('Bearer ')[1];
-    if (!token)
+    const userWithTeam: UserWithTeam | null = await getUserDataByToken(req);
+    if (!userWithTeam)
         return fail(req, 401, 'Invalid token');
 
-    const userWithTeam: UserWithTeam = await getUserByToken(token);
     const user: User = userWithTeam.user;
 
     const result = await controller.getUserSetting(user.id);

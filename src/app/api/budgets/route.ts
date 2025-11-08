@@ -1,12 +1,9 @@
 import { NextRequest } from 'next/server';
 import { BudgetService } from "@/adapters/services/budgetService";
 import { makeBudgetController } from "@/adapters/controllers/budgetController";
-import {BudgetBody, BudgetParams, BudgetQuery} from "@/db/types/budgetTypes";
-import { ok, fail, isRequestSuccessful } from "@/core/http/Response";
-import {preflightResponse} from "@/core/http/cors";
-import {UserWithTeam} from "@/models/userWithTeams";
-import {getUserByToken} from "@/core/http/requestHelpers";
-import {Team} from "@/models/team";
+import { BudgetBody, BudgetParams, BudgetQuery } from "@/db/types/budgetTypes";
+import { ok, fail, preflightResponse, isRequestSuccessful, getUserDataByToken } from "@/core/http/ApiHelpers";
+import { UserWithTeam, Team } from "@/models";
 
 const svc = new BudgetService();
 const controller = makeBudgetController(svc);
@@ -16,11 +13,10 @@ export async function OPTIONS(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-    const token = req.headers.get('authorization')?.split('Bearer ')[1];
-    if (!token)
+    const userWithTeam: UserWithTeam | null = await getUserDataByToken(req);
+    if (!userWithTeam)
         return fail(req, 401, 'Invalid token');
 
-    const userWithTeam: UserWithTeam = await getUserByToken(token);
     const team: Team = userWithTeam.team;
     const sp = new URL(req.url).searchParams;
 
@@ -45,11 +41,10 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-    const token = req.headers.get('authorization')?.split('Bearer ')[1];
-    if (!token)
+    const userWithTeam: UserWithTeam | null = await getUserDataByToken(req);
+    if (!userWithTeam)
         return fail(req, 401, 'Invalid token');
 
-    const userWithTeam: UserWithTeam = await getUserByToken(token);
     const team: Team = userWithTeam.team;
 
     const body = await req.json().catch(() => ({}));
@@ -72,11 +67,10 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
-    const token = req.headers.get('authorization')?.split('Bearer ')[1];
-    if (!token)
+    const userWithTeam: UserWithTeam | null = await getUserDataByToken(req);
+    if (!userWithTeam)
         return fail(req, 401, 'Invalid token');
 
-    const userWithTeam: UserWithTeam = await getUserByToken(token);
     const team: Team = userWithTeam.team;
 
     const sp = new URL(req.url).searchParams;

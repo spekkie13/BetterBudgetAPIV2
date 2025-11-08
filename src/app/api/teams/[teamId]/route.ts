@@ -2,8 +2,7 @@ import { NextRequest } from 'next/server';
 import { makeTeamsController } from '@/adapters/controllers/teamsController';
 import { TeamBody, TeamParams, TeamPatch } from "@/db/types/teamTypes";
 import { TeamService } from "@/adapters/services/teamService";
-import { ok, fail, isRequestSuccessful } from "@/core/http/Response";
-import {preflightResponse} from "@/core/http/cors";
+import { ok, fail, preflightResponse, isRequestSuccessful } from "@/core/http/ApiHelpers";
 
 const svc = new TeamService();
 const controller = makeTeamsController(svc);
