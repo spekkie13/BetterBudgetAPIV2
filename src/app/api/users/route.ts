@@ -13,7 +13,7 @@ export async function OPTIONS(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-    const userWithTeam | null = await getUserDataByToken(req);
+    const userWithTeam: UserWithTeam | null = await getUserDataByToken(req);
     if (!userWithTeam) {
         return fail(req, 401, 'Invalid authorization');
     }
