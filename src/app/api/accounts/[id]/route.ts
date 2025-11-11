@@ -22,7 +22,7 @@ export async function GET(req: NextRequest, ctx: any) {
     const result = await controller.getAccount(team.id, Number(id));
     return isRequestSuccessful(result.status) ?
         ok(req, result.data) :
-        fail(req, result.status, result.message);
+        fail(req, result.status, result.error);
 }
 
 export async function PUT(req: NextRequest, ctx: any) {
@@ -48,7 +48,7 @@ export async function PUT(req: NextRequest, ctx: any) {
     const result = await controller.updateAccount(team.id, parsedBody.data.id, accountBody);
     return isRequestSuccessful(result.status) ?
         ok(req, result.data) :
-        fail(req, 500, 'Internal server error...');
+        fail(req, result.status, result.error);
 }
 
 export async function DELETE(req: NextRequest, ctx: any) {
@@ -62,5 +62,5 @@ export async function DELETE(req: NextRequest, ctx: any) {
     const result = await controller.deleteAccount(team.id, Number(id));
     return isRequestSuccessful(result.status) ?
         ok(req, result.data) :
-        fail(req, 500, 'Internal server error...');
+        fail(req, result.status, result.error);
 }

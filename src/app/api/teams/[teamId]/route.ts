@@ -17,7 +17,7 @@ export async function GET(req: NextRequest, ctx: any) {
     const result = await controller.getTeamById(parsed.data.id);
     return isRequestSuccessful(result.status) ?
         ok(req, result.data) :
-        fail(req, 500, 'Internal server error...');
+        fail(req, result.status, result.error);
 }
 
 export async function PUT(req: NextRequest, ctx: any) {
@@ -40,7 +40,7 @@ export async function PUT(req: NextRequest, ctx: any) {
     const result = await controller.updateTeam(params.data.id, updateBody);
     return isRequestSuccessful(result.status) ?
         ok(req, result.data) :
-        fail(req, 500, 'Internal server error...');
+        fail(req, result.status, result.error);
 }
 
 export async function DELETE(req: NextRequest, ctx: any) {
@@ -53,7 +53,7 @@ export async function DELETE(req: NextRequest, ctx: any) {
     const result = await controller.deleteTeam(parsed.data.id);
     return isRequestSuccessful(result.status) ?
         ok(req, result.data) :
-        fail(req, 500, 'Internal server error...');
+        fail(req, result.status, result.error);
 }
 
 export async function OPTIONS(req: NextRequest) {

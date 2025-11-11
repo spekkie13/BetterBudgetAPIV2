@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     const result = await controller.createUserSetting(userSettingBody);
     return isRequestSuccessful(result.status) ?
         ok(req, result.data) :
-        fail(req, 500, 'Internal server error...');
+        fail(req, result.status, result.error);
 }
 
 export async function PUT(req: NextRequest, ctx: any) {
@@ -59,7 +59,7 @@ export async function PUT(req: NextRequest, ctx: any) {
     const result = await controller.updateUserSetting(Number(userId), body);
     return isRequestSuccessful(result.status) ?
         ok(req, result.data) :
-        fail(req, 500, 'Internal server error...');
+        fail(req, result.status, result.error);
 }
 
 export async function DELETE(req: NextRequest) {
@@ -73,5 +73,5 @@ export async function DELETE(req: NextRequest) {
     const result = await controller.deleteUserSetting(parsed.data.userId);
     return isRequestSuccessful(result.status) ?
         ok(req, result.data) :
-        fail(req, 500, 'Internal server error...');
+        fail(req, result.status, result.error);
 }

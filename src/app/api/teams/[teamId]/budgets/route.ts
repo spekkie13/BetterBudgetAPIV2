@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
     const result = await controller.getBudget(team.id, queryParsed.data.periodMonth);
     return isRequestSuccessful(result.status) ?
         ok(req, result.data) :
-        fail(req, 500, 'Internal Server Error');
+        fail(req, result.status, result.error);
 }
 
 export async function OPTIONS(req: NextRequest) {

@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
         result = await controller.listAllByTeam(team.id);
     return isRequestSuccessful(result.status) ?
         ok(req, result.data) :
-        fail(req, 500, 'Internal server error...');
+        fail(req, result.status, result.error);
 }
 
 export async function POST(req: NextRequest) {
@@ -62,6 +62,6 @@ export async function POST(req: NextRequest) {
         return ok(req, resDto, 'Transaction created', 201);
     } catch (error) {
         console.error('POST /api/transactions error:', error);
-        return fail(req, 500, 'Internal server error');
+        fail(req, 500, error.message);
     }
 }

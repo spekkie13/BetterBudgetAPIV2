@@ -91,7 +91,7 @@ export async function PUT(req: NextRequest, ctx : any) {
     const result = await controller.updateTransaction(id, team.id, transactionBody);
     return isRequestSuccessful(result.status) ?
         ok(req, result.data) :
-        fail(req, 500, 'Internal server error...');
+        fail(req, result.status, result.error);
 }
 
 export async function DELETE(req: NextRequest, ctx : any) {

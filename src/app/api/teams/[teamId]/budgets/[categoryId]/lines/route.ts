@@ -41,7 +41,7 @@ export async function GET(req: NextRequest, ctx: any) {
 
     return isRequestSuccessful(result.status) ?
         ok(req, result.data) :
-        fail(req, 500, 'Internal Server Error');
+        fail(req, result.status, result.error);
 }
 
 export async function OPTIONS(req: NextRequest) {

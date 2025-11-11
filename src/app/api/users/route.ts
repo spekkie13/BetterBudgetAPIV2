@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { ok, fail, preflightResponse, isRequestSuccessful } from "@/core/http/ApiHelpers";
+import {ok, fail, preflightResponse, isRequestSuccessful, getUserDataByToken} from "@/core/http/ApiHelpers";
 import { makeUserController } from '@/adapters/controllers/userController';
 import { User, Team, UserWithTeam } from "@/models";
 import { UserBody } from "@/db/types/userTypes";
@@ -13,8 +13,8 @@ export async function OPTIONS(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-    const token = req.headers.get('authorization')?.split('Bearer ')[1];
-    if (!token) {
+    const userData = await getUserDataByToken(req);
+    if (!userData) {
         return fail(req, 401, 'Invalid authorization');
     }
 
@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
     if (userWithTeam)
         return ok(req, userWithTeam);
     else
-        return fail(req, 404, 'User not found');
+        fail(req, result.status, result.error);
 }
 
 export async function POST(req: NextRequest) {
@@ -35,9 +35,8 @@ export async function POST(req: NextRequest) {
     if (!parsed.success)
         return fail(req, 400, 'Invalid body');
 
-
     const result = await controller.createUser(parsed.data);
     return isRequestSuccessful(result.status) ?
         ok(req, result.data) :
-        fail(req, 500, 'Internal server error...');
+        fail(req, result.status, result.error);
 }

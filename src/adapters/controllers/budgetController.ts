@@ -5,7 +5,6 @@ import {Response} from "@/core/http/Response";
 export function makeBudgetController(svc: BudgetService) {
     return {
         async getBudgets(teamId: number, budgetId?: number, categoryId?: number, month?: string | null) {
-            // 1) /api/budgets?teamId=1&budgetId=123
             if (budgetId !== 0 && budgetId !== undefined && budgetId !== null) {
                 const budget = await svc.selectByIdTeam(teamId, budgetId);
                 return budget ?
@@ -13,14 +12,12 @@ export function makeBudgetController(svc: BudgetService) {
                     new Response({ data: null, status: 404, message: 'No budgets found'});
             }
 
-            // 2) /api/budgets?teamId=1&categoryId=2&month=YYYY-MM
             if (categoryId !== undefined && month) {
                 const budget = await svc.selectByMonth(teamId, month, categoryId);
                 return budget ?
                     new Response({ data: budget, status: 200, message: 'request successful'}) :
                     new Response({ data: null, status: 404, message: 'No budgets found'});                }
 
-            // 3) /api/budgets?teamId=1&categoryId=2
             if (categoryId !== 0) {
                 let rows = await svc.selectAllByTeam(teamId);
                 rows = rows.filter(r => r.categoryId === categoryId);
@@ -28,7 +25,6 @@ export function makeBudgetController(svc: BudgetService) {
                     new Response({ data: rows, status: 200, message: 'request successful'}) :
                     new Response({ data: null, status: 404, message: 'No budgets found'});                }
 
-            // 4) /api/budgets?teamId=1&month=YYYY-MM
             if (month) {
                 let rows = await svc.selectAllByTeam(teamId);
                 rows = rows.filter(r => r.periodMonth === month);
@@ -36,12 +32,10 @@ export function makeBudgetController(svc: BudgetService) {
                     new Response({ data: rows, status: 200, message: 'request successful'}) :
                     new Response({ data: null, status: 404, message: 'No budgets found'});                }
 
-            // 5) /api/budgets?teamId=1
             const rows = await svc.selectAllByTeam(teamId);
             return rows.length > 0 ?
                 new Response({ data: rows, status: 200, message: 'request successful'}) :
                 new Response({ data: null, status: 404, message: 'No budgets found'});
-
         },
 
         async createBudget(teamId: number, body: BudgetInsert) {

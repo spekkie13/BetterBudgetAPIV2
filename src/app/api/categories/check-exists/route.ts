@@ -23,7 +23,7 @@ export async function POST(req: NextRequest, ctx: any) {
     const result = await controller.ensureAllExists(team.id, [params.data.id]);
     return isRequestSuccessful(result.status) ?
         ok(req, result.data) :
-        fail(req, 500, 'Internal Server Error');
+        fail(req, result.status, result.error);
 }
 
 export async function OPTIONS(req: NextRequest) {

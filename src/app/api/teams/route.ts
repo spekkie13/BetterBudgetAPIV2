@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
 
     return isRequestSuccessful(result.status) ?
         ok(req, result.data) :
-        fail(req, 500, 'Internal server error...');
+        fail(req, result.status, result.error);
 }
 
 export async function POST(req: NextRequest) {
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
     const result = await controller.createTeam(parsed.data);
     return isRequestSuccessful(result.status) ?
         ok(req, result.data) :
-        fail(req, 500, 'Internal server error...');
+        fail(req, result.status, result.error);
 }
 
 export async function OPTIONS(req: NextRequest) {

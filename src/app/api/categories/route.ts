@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
     const result = await controller.getCategory(parsedQuery.data.teamId, parsedQuery.data.id)
     return isRequestSuccessful(result.status) ?
         ok(req, result.data) :
-        fail(req, 500, 'Internal server error...');
+        fail(req, result.status, result.error);
 }
 
 export async function PUT(req: NextRequest) {
@@ -66,7 +66,7 @@ export async function PUT(req: NextRequest) {
     const result = await controller.updateCategory(team.id, params.data.id ?? 0, categoryBody);
     return isRequestSuccessful(result.status) ?
         ok(req, result.data) :
-        fail(req, 500, 'Internal server error...');
+        fail(req, result.status, result.error);
 }
 
 export async function POST(req: NextRequest) {
@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
     const result = await controller.createCategory(team.id, categoryBody);
     return isRequestSuccessful(result.status) ?
         ok(req, result.data) :
-        fail(req, 500, 'Internal server error...');
+        fail(req, result.status, result.error);
 }
 
 export async function DELETE(req: NextRequest, ctx: any) {
@@ -113,7 +113,7 @@ export async function DELETE(req: NextRequest, ctx: any) {
     const result = await controller.deleteCategory(team.id, params.data.id);
     return isRequestSuccessful(result.status) ?
         ok(req, result.data) :
-        fail(req, 500, 'Internal server error...');
+        fail(req, result.status, result.error);
 }
 
 export async function OPTIONS(req: NextRequest) {

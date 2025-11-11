@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
     const result = await controller.getUser(user.id);
     return isRequestSuccessful(result.status) ?
         ok(req, result.data) :
-        fail(req, 500, 'Internal server error...');
+        fail(req, result.status, result.error);
 }
 
 export async function PUT(req: NextRequest) {
@@ -40,7 +40,7 @@ export async function PUT(req: NextRequest) {
     const result = await controller.updateUser(user.id, parsed.data);
     return isRequestSuccessful(result.status) ?
         ok(req, result.data) :
-        fail(req, 500, 'Internal server error...');
+        fail(req, result.status, result.error);
 }
 
 export async function DELETE(req: NextRequest) {
@@ -53,5 +53,5 @@ export async function DELETE(req: NextRequest) {
     const result = await controller.deleteUser(user.id);
     return isRequestSuccessful(result.status) ?
         ok(req, result.data, '', 204) :
-        fail(req, 500, 'Internal server error...');
+        fail(req, result.status, result.error);
 }

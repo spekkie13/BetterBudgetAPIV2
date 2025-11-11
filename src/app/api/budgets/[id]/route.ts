@@ -33,7 +33,7 @@ export async function GET(req: NextRequest, ctx: any) {
     )
     return isRequestSuccessful(result.status) ?
         ok(req, result.data) :
-        fail(req, 500, 'Internal Server Error');
+        fail(req, result.status, result.error);
 }
 
 export async function DELETE(req: NextRequest, ctx: any) {
@@ -47,5 +47,5 @@ export async function DELETE(req: NextRequest, ctx: any) {
     const result = await controller.deleteBudget(team.id, Number(id));
     return isRequestSuccessful(result.status) ?
         ok(req, result.data) :
-        fail(req, 500, 'Internal Server Error');
+        fail(req, result.status, result.error);
 }
