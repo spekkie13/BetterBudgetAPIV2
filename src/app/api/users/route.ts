@@ -13,8 +13,8 @@ export async function OPTIONS(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-    const userData = await getUserDataByToken(req);
-    if (!userData) {
+    const userWithTeam | null = await getUserDataByToken(req);
+    if (!userWithTeam) {
         return fail(req, 401, 'Invalid authorization');
     }
 
