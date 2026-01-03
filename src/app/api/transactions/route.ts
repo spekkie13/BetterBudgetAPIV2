@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
         result = await controller.listAllByTeam(team.id);
     return isRequestSuccessful(result.status) ?
         ok(req, result.data) :
-        fail(req, result.status, result.error);
+        fail(req, result.status, result.error ?? "");
 }
 
 export async function POST(req: NextRequest) {
@@ -43,25 +43,22 @@ export async function POST(req: NextRequest) {
         return fail(req, 401, 'Invalid token');
 
     const team: Team = userWithTeam.team;
-    try {
-        const body = await req.json();
-        const reqDto = parseTransactionBody(body);
-        if (!reqDto)
-            return fail(req, 400, 'Bad Request');
+    const body = await req.json();
+    const reqDto = parseTransactionBody(body);
+    if (!reqDto)
+        return fail(req, 400, 'Bad Request');
 
-        const insert = mapToInsert(team.id, reqDto);
-        const created = await controller.createTransaction(team.id, insert);
+    const insert = mapToInsert(team.id, reqDto);
+    const created = await controller.createTransaction(team.id, insert);
 
-        const resDto = {
-            ...reqDto,
-            id: created.data?.id,
-            teamId: team.id,
-            createdAt: created.data?.createdAt.toISOString(),
-            updatedAt: created.data?.updatedAt.toISOString(),
-        };
-        return ok(req, resDto, 'Transaction created', 201);
-    } catch (error) {
-        console.error('POST /api/transactions error:', error);
-        fail(req, 500, error.message);
-    }
+    const resDto = {
+        ...reqDto,
+        id: created.data?.id,
+        teamId: team.id,
+        createdAt: created.data?.createdAt.toISOString(),
+        updatedAt: created.data?.updatedAt.toISOString(),
+    };
+    return isRequestSuccessful(created.status) ?
+        ok(req, resDto) :
+        fail(req, 400, 'Bad Request');
 }

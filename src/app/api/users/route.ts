@@ -13,20 +13,18 @@ export async function OPTIONS(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-    const userWithTeam: UserWithTeam | null = await getUserDataByToken(req);
-    if (!userWithTeam) {
-        return fail(req, 401, 'Invalid authorization');
-    }
+    const userData: UserWithTeam | null = await getUserDataByToken(req);
+    if (!userData)
+        return fail(req, 401, 'Invalid token');
 
-    const userData = await controller.getUserByToken(token);
-    const user: User = User.create(userData.data);
-    const team: Team = Team.create(userData.data?.teams[0]);
+    const user: User = userData.user;
+    const team: Team = userData.team;
     const userWithTeam = new UserWithTeam(user, team);
 
     if (userWithTeam)
         return ok(req, userWithTeam);
     else
-        fail(req, result.status, result.error);
+        fail(req, 404, 'User not found');
 }
 
 export async function POST(req: NextRequest) {
@@ -38,5 +36,5 @@ export async function POST(req: NextRequest) {
     const result = await controller.createUser(parsed.data);
     return isRequestSuccessful(result.status) ?
         ok(req, result.data) :
-        fail(req, result.status, result.error);
+        fail(req, result.status, result.error ?? "");
 }
