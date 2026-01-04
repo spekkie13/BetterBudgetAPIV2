@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
         result = await controller.listAllByTeam(team.id);
     return isRequestSuccessful(result.status) ?
         ok(req, result.data) :
-        fail(req, result.status, result.error ?? "");
+        fail(req, result.status, result.error);
 }
 
 export async function POST(req: NextRequest) {

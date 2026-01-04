@@ -1,7 +1,7 @@
 export interface IResponse<T> {
     data: T;
     status: number;
-    message: string;
+    message?: string;
     error?: string;
     success?: boolean;
 }
@@ -9,7 +9,7 @@ export interface IResponse<T> {
 export class Response<T> implements IResponse<T> {
     data: T
     status: number
-    message: string
+    message?: string
     error?: string
     success?: boolean
 

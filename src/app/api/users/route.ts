@@ -36,5 +36,5 @@ export async function POST(req: NextRequest) {
     const result = await controller.createUser(parsed.data);
     return isRequestSuccessful(result.status) ?
         ok(req, result.data) :
-        fail(req, result.status, result.error ?? "");
+        fail(req, result.status, result.error);
 }

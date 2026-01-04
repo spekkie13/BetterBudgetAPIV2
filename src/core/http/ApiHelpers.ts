@@ -12,7 +12,7 @@ const ALLOWED_ORIGINS = [
     process.env.APP_ORIGIN ?? '',        // e.g. https://app.example.com
 ].filter(Boolean)
 
-const USE_CREDENTIALS = true // flip to false if you never send cookies
+const USE_CREDENTIALS = true
 
 export function preflightResponse(req: Request) {
     const origin = resolveOrigin(req)
@@ -36,7 +36,7 @@ export function ok<T>(req: Request, data: T, message = 'OK', status = 200) {
     return jsonWithCors(req, body, status);
 }
 
-export function fail(req: Request, status = 400, message: string) {
+export function fail(req: Request, status = 400, message: string | undefined) {
     const body: Response<null> = { data: null, message, status, success: false };
     return jsonWithCors(req, body, status);
 }
