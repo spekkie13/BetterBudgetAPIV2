@@ -1,4 +1,5 @@
 import {TransactionRequestDto, TransactionType} from "@/models/transaction";
+import {isValueNull} from "@/core/http/requestHelpers";
 
 export function parseTransactionBody(body: any): TransactionRequestDto | undefined {
     if (!body || typeof body !== 'object') {
@@ -24,10 +25,8 @@ export function parseTransactionBody(body: any): TransactionRequestDto | undefin
         currency: body.currency ?? 'EUR',
         postedAt: body.postedAt ?? body.date ?? new Date().toISOString(),
         memo: body.memo ?? body.description ?? null,
-        categoryId:
-            body.categoryId != null ? Number(body.categoryId) : null,
-        createdBy:
-            body.createdBy != null ? Number(body.createdBy) : null,
+        categoryId: isValueNull(body.categoryId) ? null : Number(body.categoryId),
+        createdBy: isValueNull(body.createdBy) ? null : Number(body.createdBy),
         transactionType: type,
     } as const;
 
