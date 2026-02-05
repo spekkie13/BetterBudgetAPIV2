@@ -44,7 +44,15 @@ export async function POST(req: NextRequest) {
 
     const team: Team = userWithTeam.team;
     const body = await req.json();
-    const reqDto = parseTransactionBody(body);
+    console.log(body);
+    let reqDto;
+    try {
+        reqDto = parseTransactionBody(body);
+    } catch (e: any) {
+        console.error("[parseTransactionBody] error:", e);
+        return fail(req, 400, e?.message ?? "Bad Request");
+    }
+
     if (!reqDto)
         return fail(req, 400, 'Bad Request');
 
