@@ -2,31 +2,33 @@ import {TransactionRequestDto, TransactionType} from "@/models/transaction";
 import {isValueNull} from "@/core/http/requestHelpers";
 
 export function parseTransactionBody(body: any): TransactionRequestDto | undefined {
-    if (!body || typeof body !== 'object') {
+    const payload = body?.data && typeof body.data === "object" ? body.data : body;
+
+    if (!payload || typeof payload !== 'object') {
         throw new Error('Invalid request body');
     }
 
-    if (!body.transactionType) {
+    if (!payload.transactionType) {
         throw new Error('Missing transactionType');
     }
 
-    if (body.transactionType === 'expense' && body.categoryId <= 0) {
+    if (payload.transactionType === 'expense' && payload.categoryId <= 0) {
         throw new Error('Invalid Category ID');
     }
 
-    const type = String(body.transactionType).toLowerCase() as TransactionType;
+    const type = String(payload.transactionType).toLowerCase() as TransactionType;
     if (!['income', 'expense', 'transfer'].includes(type)) {
-        throw new Error(`Unsupported transactionType: ${body.transactionType}`);
+        throw new Error(`Unsupported transactionType: ${payload.transactionType}`);
     }
 
     const base = {
-        accountId: Number(body.accountId ?? body.fromAccountID),
-        amountCents: Number(body.amountCents),
-        currency: body.currency ?? 'EUR',
-        postedAt: body.postedAt ?? body.date ?? new Date().toISOString(),
-        memo: body.memo ?? body.description ?? null,
-        categoryId: isValueNull(body.categoryId) ? null : Number(body.categoryId),
-        createdBy: isValueNull(body.createdBy) ? null : Number(body.createdBy),
+        accountId: Number(payload.accountId ?? payload.fromAccountID),
+        amountCents: Number(payload.amountCents),
+        currency: payload.currency ?? 'EUR',
+        postedAt: payload.postedAt ?? payload.date ?? new Date().toISOString(),
+        memo: payload.memo ?? payload.description ?? null,
+        categoryId: isValueNull(payload.categoryId) ? null : Number(payload.categoryId),
+        createdBy: isValueNull(payload.createdBy) ? null : Number(payload.createdBy),
         transactionType: type,
     } as const;
 
@@ -43,8 +45,8 @@ export function parseTransactionBody(body: any): TransactionRequestDto | undefin
             return {
                 ...base,
                 transactionType: TransactionType.Transfer,
-                fromAccountId: Number(body.fromAccountId ?? body.fromAccountID),
-                toAccountId: Number(body.toAccountId ?? body.toAccountID),
+                fromAccountId: Number(payload.fromAccountId ?? payload.fromAccountID),
+                toAccountId: Number(payload.toAccountId ?? payload.toAccountID),
             };
     }
 }
