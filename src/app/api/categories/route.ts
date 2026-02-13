@@ -76,13 +76,14 @@ export async function POST(req: NextRequest) {
 
     const team: Team = userWithTeam.team;
 
-    const reqBody = await req.json().catch(() => ({}));
+    let reqBody = await req.json().catch(() => ({}));
+    reqBody = { ...reqBody, teamId: team.id };
     const parsedBody = CategoryBody.safeParse(reqBody);
     if (!parsedBody.success)
         return fail(req, 400, 'Invalid body')
 
     const categoryBody: CategoryInsert = {
-        teamId: team.id,
+        teamId: parsedBody.data.teamId,
         name: parsedBody.data.name ?? "",
         color: parsedBody.data.color ?? "",
         type: parsedBody.data.type as 'income' | 'expense' | 'transfer',
