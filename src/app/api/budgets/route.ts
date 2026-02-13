@@ -47,7 +47,8 @@ export async function POST(req: NextRequest) {
 
     const team: Team = userWithTeam.team;
 
-    const body = await req.json().catch(() => ({}));
+    let body = await req.json().catch(() => ({}));
+    body = { ...body, teamId: team.id };
     const parsedBody = BudgetBody.safeParse(body);
     if (!parsedBody.success)
         return fail(req, 400, 'Invalid Body');
