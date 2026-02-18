@@ -19,15 +19,14 @@ export async function GET(req: NextRequest, ctx: any) {
 
     const team: Team = userWithTeam.team;
 
-    const { id, categoryId, month } = (ctx as { params: { id: string; categoryId: string; month: string; } }).params;
+    const { categoryId, month } = (ctx as { params: { categoryId: string; month: string; } }).params;
 
-    const params = BudgetQuery.safeParse({ id: id, categoryId: categoryId, periodMonth: month });
+    const params = BudgetQuery.safeParse({ categoryId: categoryId, periodMonth: month });
     if (!params.success)
         return fail(req, 400, 'Invalid parameters')
 
     const result = await controller.getBudgets(
         team.id,
-        params.data.id,
         params.data.categoryId,
         params.data.periodMonth
     )

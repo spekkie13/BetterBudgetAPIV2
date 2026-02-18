@@ -77,7 +77,7 @@ function jsonWithCors(req: Request, data: any, status = 200) {
         res.headers.set('Access-Control-Allow-Origin', origin)
         if (USE_CREDENTIALS) res.headers.set('Access-Control-Allow-Credentials', 'true')
     }
-    // Safe to include on non-preflight responses
+
     res.headers.set('Vary', 'Origin')
     return res
 }
