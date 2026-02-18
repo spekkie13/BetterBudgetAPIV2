@@ -10,7 +10,6 @@ export type BudgetInsert = InferInsertModel<typeof budgets>;
 export type BudgetPatch = Partial<Pick<BudgetInsert, 'categoryId' | 'periodMonth' | 'amountCents' | 'rollover'>>;
 
 export const BudgetQuery = z.object({
-    id: zMaybeId,
     categoryId: zMaybeId,
     periodMonth: zMonth,
 })
@@ -23,19 +22,13 @@ export function makeBudgetKey(teamId: number, categoryId: number, month: string 
 }
 
 /** Parse route input to verify correctness */
-export const BudgetParams = z.object({ id: zMaybeId });
+export const BudgetParams = z.object({ id: zId });
 export type BudgetParamsInput = z.infer<typeof BudgetParams>;
 
 /** Collection query */
 export const BudgetBody = z.object({
-    id: zMaybeId,
     categoryId: zId,
     periodMonth: zMonth,
     amountCents: zCents,
     rollover: zBoolish.default(false),
-}).refine(
-    (val) =>
-        ['teamId', 'id', 'categoryId', 'periodMonth', 'amountCents'].some((k) =>
-            Object.prototype.hasOwnProperty.call(val, k)
-        ),
-);
+});

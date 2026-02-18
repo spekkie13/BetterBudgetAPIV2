@@ -4,14 +4,7 @@ import {Response} from "@/core/http/Response";
 
 export function makeBudgetController(svc: BudgetService) {
     return {
-        async getBudgets(teamId: number, budgetId?: number, categoryId?: number, month?: string | null) {
-            if (budgetId !== 0 && budgetId !== undefined && budgetId !== null) {
-                const budget = await svc.selectByIdTeam(teamId, budgetId);
-                return budget ?
-                    new Response({ data: budget, status: 200, message: 'request successful'}) :
-                    new Response({ data: null, status: 404, message: 'No budgets found'});
-            }
-
+        async getBudgets(teamId: number, categoryId?: number, month?: string | null) {
             if (categoryId !== undefined && month) {
                 const budget = await svc.selectByMonth(teamId, month, categoryId);
                 return budget ?

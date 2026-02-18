@@ -21,7 +21,6 @@ export async function GET(req: NextRequest) {
     const sp = new URL(req.url).searchParams;
 
     const parsedQuery = BudgetQuery.safeParse({
-        budgetId: sp.get("id"),
         categoryId: sp.get("categoryId") ?? 0,
         periodMonth: sp.get("periodMonth"),
     });
@@ -30,7 +29,6 @@ export async function GET(req: NextRequest) {
 
     const result = await controller.getBudgets(
         team.id,
-        parsedQuery.data.id,
         parsedQuery.data.categoryId,
         parsedQuery.data.periodMonth
     );
