@@ -1,4 +1,4 @@
-import {BadRequestError} from "@/model/errors/base";
+import {BadRequestError} from "@/models/errors/base";
 
 export class CategoryInUseError extends BadRequestError {
     constructor(categoryId: number, reason: 'budgets' | 'transactions' | 'both') {

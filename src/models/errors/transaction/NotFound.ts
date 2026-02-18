@@ -1,4 +1,4 @@
-import { NotFoundError } from '@/model/errors/base';
+import { NotFoundError } from '@/models/errors/base';
 
 export class TransactionNotFoundError extends NotFoundError {
     constructor(id: number) {

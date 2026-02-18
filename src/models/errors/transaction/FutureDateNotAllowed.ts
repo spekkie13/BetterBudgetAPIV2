@@ -1,4 +1,4 @@
-import {ValidationError} from "@/model/errors/base";
+import {ValidationError} from "@/models/errors/base";
 
 export class FutureDateNotAllowedError extends ValidationError {
     constructor(date: string) {

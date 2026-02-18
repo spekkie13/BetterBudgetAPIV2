@@ -1,4 +1,4 @@
-import {TransactionRequestDto, TransactionType} from "@/models/transaction";
+import {TransactionRequestDto, TransactionType} from "@/models";
 import {isValueNull} from "@/core/http/requestHelpers";
 
 export function parseTransactionBody(body: any): TransactionRequestDto | undefined {

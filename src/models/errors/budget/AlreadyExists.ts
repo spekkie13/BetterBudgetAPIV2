@@ -1,4 +1,4 @@
-import {ConflictError} from "@/model/errors/base";
+import {ConflictError} from "@/models/errors/base";
 
 export class BudgetAlreadyExistsError extends ConflictError {
     constructor(categoryId: number, period: string) {

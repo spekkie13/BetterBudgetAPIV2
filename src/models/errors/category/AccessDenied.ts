@@ -1,4 +1,4 @@
-import {ForbiddenError} from "@/model/errors/base";
+import {ForbiddenError} from "@/models/errors/base";
 
 export class CategoryAccessDeniedError extends ForbiddenError {
     constructor(categoryId: number) {

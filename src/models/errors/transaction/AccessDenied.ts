@@ -1,4 +1,4 @@
-import {ForbiddenError} from "@/model/errors/base";
+import {ForbiddenError} from "@/models/errors/base";
 
 export class TransactionAccessDeniedError extends ForbiddenError {
     constructor(transactionId: number) {

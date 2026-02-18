@@ -1,5 +1,4 @@
-import {Team} from "@/models/team";
-import {User} from "@/models/user";
+import { Team, User } from "@/models";
 
 export class UserWithTeam {
     user: User;
