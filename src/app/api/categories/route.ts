@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
     try {
-        const userWithTeam: UserWithTeam | null = await getUserDataByToken(req);
+        const userWithTeam: UserWithTeam = await getUserDataByToken(req);
         if (!userWithTeam)
             throw new InvalidTokenError();
 
@@ -102,7 +102,7 @@ export async function PUT(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
     try {
-        const userWithTeam: UserWithTeam | null = await getUserDataByToken(req);
+        const userWithTeam: UserWithTeam = await getUserDataByToken(req);
         if (!userWithTeam)
             return fail(req, 401, 'Invalid token');
 
@@ -143,7 +143,7 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE(req: NextRequest, ctx: any) {
     try {
-        const userWithTeam: UserWithTeam | null = await getUserDataByToken(req);
+        const userWithTeam: UserWithTeam = await getUserDataByToken(req);
         if (!userWithTeam)
             throw new InvalidTokenError();
 

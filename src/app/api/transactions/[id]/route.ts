@@ -59,7 +59,7 @@ export async function GET(req: NextRequest, ctx : any) {
 
 export async function PUT(req: NextRequest, ctx : any) {
     try {
-        const userWithTeam: UserWithTeam | null = await getUserDataByToken(req);
+        const userWithTeam: UserWithTeam = await getUserDataByToken(req);
         if (!userWithTeam)
             throw new InvalidTokenError();
 
@@ -121,11 +121,13 @@ export async function PUT(req: NextRequest, ctx : any) {
 
 export async function DELETE(req: NextRequest, ctx : any) {
     try {
-        const userWithTeam: UserWithTeam | null = await getUserDataByToken(req);
+        const userWithTeam: UserWithTeam = await getUserDataByToken(req);
         if (!userWithTeam)
-            return fail(req, 401, 'Invalid token');
+            throw new InvalidTokenError();
 
         const team: Team = userWithTeam.team;
+        if (!team)
+            throw new TeamNotFoundError();
 
         const { idStr } = (ctx as { params: { idStr: string } }).params;
         const id = Number(idStr);

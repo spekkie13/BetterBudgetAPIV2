@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { ok, fail, preflightResponse, getUserDataByToken} from "@/core/http/ApiHelpers";
 import { UserBody } from "@/db/types/userTypes";
 import { UserWithTeam, User } from "@/models";
-import {AppError, ZodValidationError} from "@/models/errors";
+import {AppError, InvalidTokenError, UserNotFoundError, ZodValidationError} from "@/models/errors";
 import {Response} from "@/core/http/Response";
 import {userService} from "@/service/userService";
 
@@ -30,11 +30,13 @@ export async function GET(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
     try {
-        const userWithTeam: UserWithTeam | null = await getUserDataByToken(req);
+        const userWithTeam: UserWithTeam = await getUserDataByToken(req);
         if (!userWithTeam)
-            return fail(req, 401, 'Invalid token');
+            throw new InvalidTokenError();
 
         const user: User = userWithTeam.user;
+        if (!user)
+            throw new UserNotFoundError();
 
         const body = await req.json().catch(() => ({}));
         const parsed = UserBody.safeParse(body);
