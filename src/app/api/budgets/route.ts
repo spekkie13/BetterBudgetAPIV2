@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
         const sp = new URL(req.url).searchParams;
 
         const params = BudgetQuery.safeParse({
-            categoryId: sp.get("categoryId"),
+            categoryId: sp.get("categoryId") ? Number(sp.get("categoryId")) : undefined,
             periodMonth: sp.get("periodMonth"),
         });
         if (!params.success) {
