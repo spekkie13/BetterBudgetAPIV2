@@ -149,7 +149,7 @@ export async function DELETE(req: NextRequest, ctx: any) {
 
         const team: Team = userWithTeam.team;
         if (!team)
-            return new TeamNotFoundError();
+            throw new TeamNotFoundError();
 
         const { id } = (ctx as { params: { id: string } }).params;
         const params = CategoryParams.safeParse({ id: id });
