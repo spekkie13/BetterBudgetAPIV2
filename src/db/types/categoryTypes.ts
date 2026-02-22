@@ -23,7 +23,6 @@ export type CategoryParamsInput = z.infer<typeof CategoryParams>;
 /** Collection query */
 export const CategoryBody = z.object({
     id: zMaybeId,
-    teamId: zTeamId,
     name: zName,
     type: zType50,
     color: z.string().trim().min(1).optional(),

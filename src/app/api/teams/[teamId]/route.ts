@@ -1,59 +1,94 @@
 import { NextRequest } from 'next/server';
-import { makeTeamsController } from '@/adapters/controllers/teamsController';
 import { TeamBody, TeamParams, TeamPatch } from "@/db/types/teamTypes";
-import { TeamService } from "@/adapters/services/teamService";
-import { ok, fail, preflightResponse, isRequestSuccessful } from "@/core/http/ApiHelpers";
-
-const svc = new TeamService();
-const controller = makeTeamsController(svc);
+import { ok, fail, preflightResponse } from "@/core/http/ApiHelpers";
+import {teamService} from "@/service/teamService";
+import {AppError, ZodValidationError} from "@/models/errors";
+import {Response} from "@/core/http/Response";
 
 export async function GET(req: NextRequest, ctx: any) {
-    const { id } = (ctx as { params: { id: string } }).params;
+    try {
+        const { id } = (ctx as { params: { id: string } }).params;
 
-    const parsed = TeamParams.safeParse({ id: id });
-    if (!parsed.success)
-        return fail(req, 400, 'Invalid ID');
+        const parsedParams = TeamParams.safeParse({ id: id });
+        if (!parsedParams.success) {
+            const errors = parsedParams.error.issues.map(err => ({
+                field: err.path.join('.'),
+                message: err.message
+            }));
+            throw new ZodValidationError(errors);
+        }
 
-    const result = await controller.getTeamById(parsed.data.id);
-    return isRequestSuccessful(result.status) ?
-        ok(req, result.data) :
-        fail(req, result.status, result.error);
+        const team = await teamService.getTeamById(parsedParams.data.id);
+        return ok(req, team);
+    } catch (error) {
+        if (error instanceof AppError) {
+            const response : Response<null> = error.toApiResponse(error.statusCode, error.message);
+            return fail(req, error.statusCode, response.error);
+        }
+        console.error('Unexpected error:', error);
+        return fail(req, 500, 'Internal server error');
+    }
 }
 
 export async function PUT(req: NextRequest, ctx: any) {
-    const { id } = (ctx as { params: { id: string } }).params;
+    try {
+        const { id } = (ctx as { params: { id: string } }).params;
 
-    const params = TeamParams.safeParse({ id: id });
-    if (!params.success)
-        return fail(req, 400, 'Invalid ID');
+        const parsedParams = TeamParams.safeParse({ id: id });
+        if (!parsedParams.success) {
+            const errors = parsedParams.error.issues.map(err => ({
+                field: err.path.join('.'),
+                message: err.message
+            }));
+            throw new ZodValidationError(errors);
+        }
 
-    const body = await req.json().catch(() => ({}));
-    const bodyParsed = TeamBody.safeParse(body);
-    if (!bodyParsed.success)
-        return fail(req, 400, 'Missing/Invalid name');
+        const body = await req.json().catch(() => ({}));
+        const parsedBody = TeamBody.safeParse(body);
+        if (!parsedBody.success) {
+            const errors = parsedBody.error.issues.map(err => ({
+                field: err.path.join('.'),
+                message: err.message
+            }));
+            throw new ZodValidationError(errors);
+        }
 
-    const updateBody: TeamPatch = {
-        id: params.data.id,
-        name: bodyParsed.data.name ?? "",
-        createdAt: new Date(bodyParsed.data.createdAt) ?? new Date(),
+        const updateBody: TeamPatch = {
+            id: parsedParams.data.id,
+            name: parsedBody.data.name ?? "",
+            createdAt: new Date(parsedBody.data.createdAt) ?? new Date(),
+        }
+
+        const updatedTeam = await teamService.updateTeam(parsedParams.data.id, updateBody);
+        return ok(req, updatedTeam);
+    } catch (error) {
+        if (error instanceof AppError) {
+            const response : Response<null> = error.toApiResponse(error.statusCode, error.message);
+            return fail(req, error.statusCode, response.error);
+        }
+        console.error('Unexpected error:', error);
+        return fail(req, 500, 'Internal server error');
     }
-    const result = await controller.updateTeam(params.data.id, updateBody);
-    return isRequestSuccessful(result.status) ?
-        ok(req, result.data) :
-        fail(req, result.status, result.error);
 }
 
 export async function DELETE(req: NextRequest, ctx: any) {
-    const { id } = (ctx as { params: { id: string } }).params;
+    try {
+        const { id } = (ctx as { params: { id: string } }).params;
 
-    const parsed = TeamParams.safeParse({ id: id });
-    if (!parsed.success)
-        return fail(req, 400, 'Invalid ID');
+        const parsed = TeamParams.safeParse({ id: id });
+        if (!parsed.success)
+            return fail(req, 400, 'Invalid ID');
 
-    const result = await controller.deleteTeam(parsed.data.id);
-    return isRequestSuccessful(result.status) ?
-        ok(req, result.data) :
-        fail(req, result.status, result.error);
+        await teamService.deleteTeam(parsed.data.id);
+        return ok(req, 200, 'Successfully deleted');
+    } catch (error) {
+        if (error instanceof AppError) {
+            const response : Response<null> = error.toApiResponse(error.statusCode, error.message);
+            return fail(req, error.statusCode, response.error);
+        }
+        console.error('Unexpected error:', error);
+        return fail(req, 500, 'Internal server error');
+    }
 }
 
 export async function OPTIONS(req: NextRequest) {

@@ -65,11 +65,8 @@ export interface TransactionInsert {
     toAccountId?: number | null;
 }
 
-export function mapToInsert(
-    teamId: number,
-    dto: TransactionRequestDto
-): TransactionInsert | undefined {
-    const base: TransactionInsert = {
+export function mapToInsert(teamId: number, dto: TransactionRequestDto): TransactionInsert {
+    return {
         teamId,
         accountId: dto.accountId,
         amountCents: dto.amountCents,
@@ -80,17 +77,4 @@ export function mapToInsert(
         createdBy: dto.createdBy ?? null,
         transactionType: dto.transactionType,
     };
-
-    switch (dto.transactionType) {
-        case 'income':
-            return base;
-        case 'expense':
-            return base;
-        case 'transfer':
-            return {
-                ...base,
-                fromAccountId: dto.fromAccountId ?? null,
-                toAccountId: dto.toAccountId ?? null,
-            };
-    }
 }

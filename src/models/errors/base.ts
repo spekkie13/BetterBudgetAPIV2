@@ -11,7 +11,7 @@ export class AppError extends Error {
         Error.captureStackTrace(this, this.constructor);
     }
 
-    static toApiResponse(status: number, error: string): Response<null> {
+    toApiResponse(status: number, error: string): Response<null> {
         return new Response<null>({
             data: null,
             status: status,
@@ -34,6 +34,14 @@ export class NotFoundError extends AppError {
             id ? `${resource} with id ${id} not found` : `${resource} not found`,
             404
         );
+    }
+}
+
+export class NotFoundForTeamError extends AppError {
+    constructor(resource: string, teamId?: number | string) {
+        super(
+            teamId ? `${resource} not found for team with id ${teamId}` : `${resource} not found`,
+        )
     }
 }
 

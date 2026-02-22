@@ -1,120 +1,179 @@
 import { NextRequest } from 'next/server';
-import { CategoryService } from "@/adapters/services/categoryService";
-import { makeCategoryController } from "@/adapters/controllers/categoryController";
+import { categoryService } from "@/service/categoryService";
 import { CategoryBody, CategoryInsert, CategoryParams, CategoryQuery } from "@/db/types/categoryTypes";
-import { ok, fail, preflightResponse, isRequestSuccessful, getUserDataByToken } from "@/core/http/ApiHelpers";
+import { ok, fail, preflightResponse, getUserDataByToken } from "@/core/http/ApiHelpers";
 import { UserWithTeam, Team } from "@/models";
-
-const svc = new CategoryService();
-const controller = makeCategoryController(svc);
+import {AppError, BadRequestError, InvalidTokenError, TeamNotFoundError, ZodValidationError} from "@/models/errors";
+import {Response} from "@/core/http/Response";
 
 export async function GET(req: NextRequest) {
-    const userWithTeam: UserWithTeam | null = await getUserDataByToken(req);
-    if (!userWithTeam)
-        return fail(req, 401, 'Invalid token');
+    try {
+        const userWithTeam: UserWithTeam = await getUserDataByToken(req);
+        if (!userWithTeam)
+            throw new InvalidTokenError();
 
-    const team: Team = userWithTeam.team;
+        const team: Team = userWithTeam.team;
+        if (!team)
+            throw new TeamNotFoundError();
 
-    const searchParams = new URL(req.url).searchParams;
-    const id = searchParams.get("id");
-    const type = searchParams.get("type");
+        const searchParams = new URL(req.url).searchParams;
+        const id = searchParams.get("id");
+        const type = searchParams.get("type");
 
-    const parsedQuery = CategoryQuery.safeParse({
-        teamId: team.id,
-        id: id,
-        type: type
-    });
+        const parsedQuery = CategoryQuery.safeParse({
+            teamId: team.id,
+            id: id,
+            type: type
+        });
 
-    if (!parsedQuery.success)
-        return fail(req, 400, 'Invalid Params')
+        if (!parsedQuery.success) {
+            const errors = parsedQuery.error.issues.map(err => ({
+                field: err.path.join('.'),
+                message: err.message
+            }));
+            throw new ZodValidationError(errors);
+        }
 
-    const result = await controller.getCategory(parsedQuery.data.teamId, parsedQuery.data.id)
-    return isRequestSuccessful(result.status) ?
-        ok(req, result.data) :
-        fail(req, result.status, result.error);
+        const category = await categoryService.getCategoryById(parsedQuery.data.teamId, parsedQuery.data.id)
+        return ok(req, category);
+    } catch (error) {
+        if (error instanceof AppError) {
+            const response : Response<null> = error.toApiResponse(error.statusCode, error.message);
+            return fail(req, error.statusCode, response.error);
+        }
+        console.error('Unexpected error:', error);
+        return fail(req, 500, 'Internal server error');
+    }
 }
 
 export async function PUT(req: NextRequest) {
-    const userWithTeam: UserWithTeam | null = await getUserDataByToken(req);
-    if (!userWithTeam)
-        return fail(req, 401, 'Invalid token');
+    try {
+        const userWithTeam: UserWithTeam | null = await getUserDataByToken(req);
+        if (!userWithTeam)
+            throw new InvalidTokenError();
 
-    const team: Team = userWithTeam.team;
+        const team: Team = userWithTeam.team;
+        if (!team)
+            throw new TeamNotFoundError();
 
-    const sp = new URL(req.url).searchParams;
-    const id = sp.get("id");
+        const sp = new URL(req.url).searchParams;
+        const id = sp.get("id");
 
-    const params = CategoryParams.safeParse({ id: id });
-    if (!params.success)
-        return fail(req, 400, 'Invalid Params')
+        const params = CategoryParams.safeParse({ id: id });
+        if (!params.success) {
+            const errors = params.error.issues.map(err => ({
+                field: err.path.join('.'),
+                message: err.message
+            }));
+            throw new ZodValidationError(errors);
+        }
 
-    const reqBody = await req.json().catch(() => ({}));
-    const parsedBody = CategoryBody.safeParse(reqBody);
-    if (!parsedBody.success)
-        return fail(req, 400, 'Invalid Body')
+        const reqBody = await req.json().catch(() => ({}));
+        const parsedBody = CategoryBody.safeParse(reqBody);
+        if (!parsedBody.success) {
+            const errors = parsedBody.error.issues.map(err => ({
+                field: err.path.join('.'),
+                message: err.message
+            }));
+            throw new ZodValidationError(errors);
+        }
 
-    const categoryBody: CategoryInsert = {
-        id: params.data.id,
-        teamId: team.id,
-        name: parsedBody.data.name ?? "",
-        color: parsedBody.data.color ?? "",
-        type: parsedBody.data.type as 'income' | 'expense' | 'transfer',
-        icon: parsedBody.data.icon ?? "",
-        parentId: parsedBody.data.parentId ?? 0,
-    };
+        const categoryBody: CategoryInsert = {
+            id: params.data.id,
+            teamId: team.id,
+            name: parsedBody.data.name ?? "",
+            color: parsedBody.data.color ?? "",
+            type: parsedBody.data.type as 'income' | 'expense' | 'transfer',
+            icon: parsedBody.data.icon ?? "",
+            parentId: parsedBody.data.parentId ?? 0,
+        };
 
-    const result = await controller.updateCategory(team.id, params.data.id ?? 0, categoryBody);
-    return isRequestSuccessful(result.status) ?
-        ok(req, result.data) :
-        fail(req, result.status, result.error);
+        const updatedCategory = await categoryService.updateCategory(team.id, params.data.id ?? 0, categoryBody);
+        return ok(req, updatedCategory);
+    } catch(error) {
+        if (error instanceof AppError) {
+            const response : Response<null> = error.toApiResponse(error.statusCode, error.message);
+            return fail(req, error.statusCode, response.error);
+        }
+        console.error('Unexpected error:', error);
+        return fail(req, 500, 'Internal server error');
+    }
 }
 
 export async function POST(req: NextRequest) {
-    const userWithTeam: UserWithTeam | null = await getUserDataByToken(req);
-    if (!userWithTeam)
-        return fail(req, 401, 'Invalid token');
+    try {
+        const userWithTeam: UserWithTeam | null = await getUserDataByToken(req);
+        if (!userWithTeam)
+            return fail(req, 401, 'Invalid token');
 
-    const team: Team = userWithTeam.team;
+        const team: Team = userWithTeam.team;
+        if (!team)
+            throw new TeamNotFoundError();
 
-    let reqBody = await req.json().catch(() => ({}));
-    reqBody = { ...reqBody, teamId: team.id };
-    const parsedBody = CategoryBody.safeParse(reqBody);
-    if (!parsedBody.success)
-        return fail(req, 400, 'Invalid body')
+        const reqBody = await req.json().catch(() => ({}));
+        const parsedBody = CategoryBody.safeParse(reqBody);
+        if (!parsedBody.success) {
+            const errors = parsedBody.error.issues.map(err => ({
+                field: err.path.join('.'),
+                message: err.message
+            }));
+            throw new ZodValidationError(errors);
+        }
 
-    const categoryBody: CategoryInsert = {
-        teamId: parsedBody.data.teamId,
-        name: parsedBody.data.name ?? "",
-        color: parsedBody.data.color ?? "",
-        type: parsedBody.data.type as 'income' | 'expense' | 'transfer',
-        icon: parsedBody.data.icon ?? "",
-        parentId: parsedBody.data.parentId,
-    };
+        const categoryBody: CategoryInsert = {
+            teamId: team.id,
+            name: parsedBody.data.name ?? "",
+            color: parsedBody.data.color ?? "",
+            type: parsedBody.data.type as 'income' | 'expense' | 'transfer',
+            icon: parsedBody.data.icon ?? "",
+            parentId: parsedBody.data.parentId,
+        };
 
-    const result = await controller.createCategory(team.id, categoryBody);
-    return isRequestSuccessful(result.status) ?
-        ok(req, result.data) :
-        fail(req, result.status, result.error);
+        const createdCategory = await categoryService.createCategory(categoryBody);
+        return ok(req, createdCategory);
+    } catch (error) {
+        if (error instanceof AppError) {
+            const response : Response<null> = error.toApiResponse(error.statusCode, error.message);
+            return fail(req, error.statusCode, response.error);
+        }
+        console.error('Unexpected error:', error);
+        return fail(req, 500, 'Internal server error');
+    }
 }
 
 export async function DELETE(req: NextRequest, ctx: any) {
-    const userWithTeam: UserWithTeam | null = await getUserDataByToken(req);
-    if (!userWithTeam)
-        return fail(req, 401, 'Invalid token');
+    try {
+        const userWithTeam: UserWithTeam | null = await getUserDataByToken(req);
+        if (!userWithTeam)
+            throw new InvalidTokenError();
 
-    const team: Team = userWithTeam.team;
+        const team: Team = userWithTeam.team;
+        if (!team)
+            return new TeamNotFoundError();
 
-    const { id } = (ctx as { params: { id: string } }).params;
-    const params = CategoryParams.safeParse({ id: id });
-    if (!params.success)
-        return fail(req, 400, 'Invalid params');
-    if (params.data.id === undefined)
-        return fail(req, 400, 'Invalid Id');
+        const { id } = (ctx as { params: { id: string } }).params;
+        const params = CategoryParams.safeParse({ id: id });
 
-    const result = await controller.deleteCategory(team.id, params.data.id);
-    return isRequestSuccessful(result.status) ?
-        ok(req, result.data) :
-        fail(req, result.status, result.error);
+        if (!params.success) {
+            const errors = params.error.issues.map(err => ({
+                field: err.path.join('.'),
+                message: err.message
+            }));
+            throw new ZodValidationError(errors);
+        }
+        if (params.data.id === undefined)
+            throw new BadRequestError('Invalid Params for delete category route');
+
+        await categoryService.deleteCategory(team.id, params.data.id);
+        return ok(req, 200, 'Successfully deleted');
+    } catch (error) {
+        if (error instanceof AppError) {
+            const response : Response<null> = error.toApiResponse(error.statusCode, error.message);
+            return fail(req, error.statusCode, response.error);
+        }
+        console.error('Unexpected error:', error);
+        return fail(req, 500, 'Internal server error');
+    }
 }
 
 export async function OPTIONS(req: NextRequest) {

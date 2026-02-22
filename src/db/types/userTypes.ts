@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import {zEmail, zId, zName, zTeamId} from "@/db/types/common";
+import {zDateTime, zEmail, zId, zName, zTeamId} from "@/db/types/common";
 import {InferSelectModel} from "drizzle-orm";
 import {users} from "@/db/schema";
 
@@ -23,15 +23,10 @@ export type UserParamsInput = z.infer<typeof UserParams>;
 /** Collection query */
 export const UserBody = z.object({
     id: zId,
-    supabaseUid: z.string().trim().min(1),
-    teamId: zTeamId,
     email: zEmail,
-    username: z.string().trim().min(1),
     name: zName,
-}).refine(
-    (val) =>
-        ['teamId', 'email', 'username', 'name'].some((k) =>
-            Object.prototype.hasOwnProperty.call(val, k)
-        ),
-);
+    supabaseUid: z.string().trim().min(1),
+    username: z.string().trim().min(1),
+    createdAt: zDateTime
+})
 export type UserBodyInput = z.infer<typeof UserBody>;

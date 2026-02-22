@@ -1,7 +1,6 @@
 import {bigint, bigserial, boolean, index, integer, pgTable, text, timestamp, varchar} from "drizzle-orm/pg-core";
 import {teams} from "@/db/schema/teams";
 import {accounts} from "@/db/schema/accounts";
-import {currencyCode} from "@/db/schema/_base";
 import {categories} from "@/db/schema/categories";
 import {users} from "@/db/schema/users";
 
@@ -10,7 +9,7 @@ export const txn = pgTable('txn', {
     teamId: integer('team_id').notNull().references(() => teams.id, { onDelete: 'cascade' }),
     accountId: integer('account_id').notNull().references(() => accounts.id, { onDelete: 'restrict' }),
     amountCents: bigint('amount_cents', { mode: 'number' }).notNull(),
-    currency: currencyCode('currency').notNull(),
+    currency: varchar('currency').notNull(),
     postedAt: timestamp('posted_at', { withTimezone: true }).notNull(),
     payee: varchar('payee', { length: 255 }),
     memo: text('memo'),

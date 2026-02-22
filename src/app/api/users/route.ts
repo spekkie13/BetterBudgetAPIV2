@@ -1,40 +1,56 @@
 import { NextRequest } from 'next/server';
-import {ok, fail, preflightResponse, isRequestSuccessful, getUserDataByToken} from "@/core/http/ApiHelpers";
-import { makeUserController } from '@/adapters/controllers/userController';
-import { User, Team, UserWithTeam } from "@/models";
+import {ok, fail, preflightResponse, getUserDataByToken} from "@/core/http/ApiHelpers";
+import { Team, UserWithTeam } from "@/models";
 import { UserBody } from "@/db/types/userTypes";
-import { UserService } from "@/adapters/services/userService";
-
-const svc = new UserService();
-const controller = makeUserController(svc);
+import {AppError, InvalidTokenError, TeamNotFoundError, ZodValidationError} from "@/models/errors";
+import {Response} from "@/core/http/Response";
+import {userService} from "@/service/userService";
 
 export async function OPTIONS(req: NextRequest) {
     return preflightResponse(req);
 }
 
 export async function GET(req: NextRequest) {
-    const userData: UserWithTeam | null = await getUserDataByToken(req);
-    if (!userData)
-        return fail(req, 401, 'Invalid token');
+    try {
+        const userWithTeam: UserWithTeam = await getUserDataByToken(req);
+        if (!userWithTeam)
+            throw new InvalidTokenError();
 
-    const user: User = userData.user;
-    const team: Team = userData.team;
-    const userWithTeam = new UserWithTeam(user, team);
+        const team: Team = userWithTeam.team;
+        if (!team)
+            throw new TeamNotFoundError();
 
-    if (userWithTeam)
         return ok(req, userWithTeam);
-    else
-        fail(req, 404, 'User not found');
+    } catch (error) {
+        if (error instanceof AppError) {
+            const response : Response<null> = error.toApiResponse(error.statusCode, error.message);
+            return fail(req, error.statusCode, response.error);
+        }
+        console.error('Unexpected error:', error);
+        return fail(req, 500, 'Internal server error');
+    }
 }
 
 export async function POST(req: NextRequest) {
-    const body = await req.json().catch(() => ({}));
-    const parsed = UserBody.safeParse(body);
-    if (!parsed.success)
-        return fail(req, 400, 'Invalid body');
+    try {
+        const body = await req.json().catch(() => ({}));
+        const parsed = UserBody.safeParse(body);
+        if (!parsed.success) {
+            const errors = parsed.error.issues.map(err => ({
+                field: err.path.join('.'),
+                message: err.message
+            }));
+            throw new ZodValidationError(errors);
+        }
 
-    const result = await controller.createUser(parsed.data);
-    return isRequestSuccessful(result.status) ?
-        ok(req, result.data) :
-        fail(req, result.status, result.error);
+        const createdUser = await userService.createUser(parsed.data);
+        return ok(req, createdUser);
+    } catch (error) {
+        if (error instanceof AppError) {
+            const response : Response<null> = error.toApiResponse(error.statusCode, error.message);
+            return fail(req, error.statusCode, response.error);
+        }
+        console.error('Unexpected error:', error);
+        return fail(req, 500, 'Internal server error');
+    }
 }
