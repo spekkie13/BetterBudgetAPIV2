@@ -1,10 +1,18 @@
 import {TransactionPatch, TransactionRow} from "@/db/types/transactionTypes";
 import {transactionRepository} from "@/repository/transactionRepo";
 import {TransactionInsert} from "@/core/transaction";
+import {BadRequestError} from "@/models/errors";
 
 export class TransactionService {
     async selectTransactionsByType(teamId: number, type: string) : Promise<TransactionRow[]> {
-        return await transactionRepository.selectByType(teamId, type);
+        switch (type) {
+            case "income":
+                return await transactionRepository.selectIncomes(teamId);
+            case "expense":
+                return await transactionRepository.selectExpenses(teamId);
+        }
+
+        throw new BadRequestError('Invalid transaction type');
     }
 
     async selectTransactionById(teamId: number, id: number) : Promise<TransactionRow> {

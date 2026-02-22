@@ -15,22 +15,14 @@ export class TransactionRepo {
         return row;
     }
 
-    async selectByType(teamId: number, type: string) : Promise<TransactionRow[]> {
-        const rows = await db
-            .select()
-            .from(txn)
-            .where(
-                and(
-                    eq(txn.teamId, teamId),
-                )
-            );
+    async selectIncomes(teamId: number) : Promise<TransactionRow[]> {
+        const transactions = await this.selectByTeam(teamId);
+        return transactions.filter(t => t.amountCents > 0);
+    }
 
-        console.log(type);
-        if (rows.length === 0) {
-            throw new TransactionNotFoundError(teamId);
-        }
-
-        return rows;
+    async selectExpenses(teamId: number) : Promise<TransactionRow[]> {
+        const transactions = await this.selectByTeam(teamId);
+        return transactions.filter(t => t.amountCents < 0);
     }
 
     async selectById(teamId: number, id: number): Promise<TransactionRow> {
