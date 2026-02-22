@@ -1,5 +1,5 @@
 import { db } from '@/db/client';
-import {and, desc, eq, lt} from "drizzle-orm";
+import {and, eq} from "drizzle-orm";
 import {budgets} from "@/db/schema/budgets"
 import {BudgetInsert, BudgetPatch, BudgetRow} from "@/db/types/budgetTypes";
 import {BudgetNotFoundError} from "@/models/errors/budget/NotFound";
@@ -121,38 +121,22 @@ export class BudgetRepository {
         return rows;
     }
 
-    async selectByMonthAndCategory(teamId: number, month: string, categoryId: number): Promise<BudgetRow[]> {
-        const rows = await db
+    async selectByMonthAndCategory(teamId: number, month: string, categoryId: number): Promise<BudgetRow> {
+        const [row] = await db
             .select()
             .from(budgets)
             .where(and(
                 eq(budgets.teamId, teamId),
                 eq(budgets.categoryId, categoryId),
                 eq(budgets.periodMonth, month),
-            ));
+            ))
+            .limit(1);
 
-        if (!rows) {
+        if (!row) {
             throw new BudgetNotFoundForTeamError(teamId);
         }
 
-        return rows;
-    }
-
-    async findLatestForCategory(teamId: number, categoryId: number, beforeMonth: string): Promise<BudgetRow | null> {
-        const [row] = await db
-            .select()
-            .from(budgets)
-            .where(
-                and(
-                    eq(budgets.teamId, teamId),
-                    eq(budgets.categoryId, categoryId),
-                    lt(budgets.periodMonth, beforeMonth)  // Before the target month
-                )
-            )
-            .orderBy(desc(budgets.periodMonth))  // Latest first
-            .limit(1);
-
-        return row ?? null;
+        return row;
     }
 }
 
