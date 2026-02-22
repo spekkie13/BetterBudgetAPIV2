@@ -4,6 +4,7 @@ import { budgetService } from "@/service/budgetService";
 import { BudgetQuery } from "@/db/types/budgetTypes";
 import { UserWithTeam, Team } from "@/models";
 import { InvalidTokenError, TeamNotFoundError, AppError, ZodValidationError } from "@/models/errors";
+import {Response} from "@/core/http/Response";
 
 export async function OPTIONS(req: NextRequest) {
     return preflightResponse(req);
@@ -39,10 +40,10 @@ export async function GET(req: NextRequest, ctx: any) {
         return ok(req, budgets);
     } catch (error) {
         if (error instanceof AppError) {
-            return error.toApiResponse(error.statusCode, error.message);
+            const response : Response<null> = error.toApiResponse(error.statusCode, error.message);
+            return fail(req, error.statusCode, response.error);
         }
-
-        console.log('unexpected error: ', error);
+        console.error('Unexpected error:', error);
         return fail(req, 500, 'Internal server error');
     }
 
@@ -61,10 +62,10 @@ export async function DELETE(req: NextRequest, ctx: any) {
         return ok(req, {}, "Budget deleted");
     } catch (error) {
         if (error instanceof AppError) {
-            return error.toApiResponse(error.statusCode, error.message);
+            const response : Response<null> = error.toApiResponse(error.statusCode, error.message);
+            return fail(req, error.statusCode, response.error);
         }
-
-        console.log('unexpected error: ', error);
+        console.error('Unexpected error:', error);
         return fail(req, 500, 'Internal server error');
     }
 }
