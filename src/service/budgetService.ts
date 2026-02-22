@@ -23,7 +23,7 @@ export class BudgetService {
         return await budgetRepository.getById(teamId, id);
     }
 
-    async getBudgets(teamId: number, month?: string|null, categoryId?: number): Promise<BudgetRow[]> {
+    async getBudgets(teamId: number, month?: string|null, categoryId?: number): Promise<BudgetRow|BudgetRow[]> {
         if (categoryId && month) {
             return await budgetRepository.selectByMonthAndCategory(teamId, monthToDate(month), categoryId);
         }
