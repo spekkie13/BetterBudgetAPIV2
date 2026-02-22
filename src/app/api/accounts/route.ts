@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { AccountBody, AccountInsert } from "@/db/types/accountTypes";
 import { ok, fail, preflightResponse, getUserDataByToken } from "@/core/http/ApiHelpers";
 import { UserWithTeam, Team } from "@/models";
-import {AppError, InvalidTokenError, TeamNotFoundError} from "@/models/errors";
+import {AppError, InvalidTokenError, TeamNotFoundError, ZodValidationError} from "@/models/errors";
 import {Response} from "@/core/http/Response";
 import {accountService} from "@/service/accountService";
 
@@ -47,8 +47,13 @@ export async function POST(req: NextRequest) {
 
         const reqBody = await req.json().catch(() => ({}));
         const parsedBody = AccountBody.safeParse(reqBody);
-        if (!parsedBody.success)
-            return fail(req, 400, 'Invalid Body');
+        if (!parsedBody.success) {
+            const errors = parsedBody.error.issues.map(err => ({
+                field: err.path.join('.'),
+                message: err.message
+            }));
+            throw new ZodValidationError(errors);
+        }
 
         const accountBody: AccountInsert = {
             teamId: team.id,

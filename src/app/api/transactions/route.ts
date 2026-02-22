@@ -3,7 +3,7 @@ import { ok, fail, preflightResponse, getUserDataByToken } from '@/core/http/Api
 import { TransactionParams } from "@/db/types/transactionTypes";
 import { Team, UserWithTeam } from "@/models";
 import { mapToInsert, parseTransactionBody } from "@/core/transaction";
-import {AppError} from "@/models/errors";
+import {AppError, BadRequestError, ZodValidationError} from "@/models/errors";
 import {Response} from "@/core/http/Response";
 import {transactionService} from "@/service/transactionService";
 
@@ -23,8 +23,13 @@ export async function GET(req: NextRequest) {
         const parsed = TransactionParams.safeParse({
             type: sp.get('type'),
         });
-        if (!parsed.success)
-            return fail(req, 400, 'Invalid parameters');
+        if (!parsed.success) {
+            const errors = parsed.error.issues.map(err => ({
+                field: err.path.join('.'),
+                message: err.message
+            }));
+            throw new ZodValidationError(errors);
+        }
 
         let transactions;
         if (parsed.data.type !== undefined && parsed.data.type !== null)
@@ -61,7 +66,7 @@ export async function POST(req: NextRequest) {
         }
 
         if (!reqDto)
-            return fail(req, 400, 'Bad Request');
+            throw new BadRequestError('Could not parse transaction body');
 
         const insert = mapToInsert(team.id, reqDto);
         const created = await transactionService.createTransaction(insert);

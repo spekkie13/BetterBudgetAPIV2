@@ -76,8 +76,13 @@ export async function DELETE(req: NextRequest, ctx: any) {
         const { id } = (ctx as { params: { id: string } }).params;
 
         const parsed = TeamParams.safeParse({ id: id });
-        if (!parsed.success)
-            return fail(req, 400, 'Invalid ID');
+        if (!parsed.success) {
+            const errors = parsed.error.issues.map(err => ({
+                field: err.path.join('.'),
+                message: err.message
+            }));
+            throw new ZodValidationError(errors);
+        }
 
         await teamService.deleteTeam(parsed.data.id);
         return ok(req, 200, 'Successfully deleted');

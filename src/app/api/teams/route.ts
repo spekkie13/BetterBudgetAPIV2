@@ -9,8 +9,13 @@ export async function GET(req: NextRequest) {
     try {
         const sp = new URL(req.url).searchParams;
         const parsed = TeamQuery.safeParse({ teamId: sp.get('teamId') ?? undefined });
-        if (!parsed.success)
-            return fail(req, 400, 'Invalid Team ID');
+        if (!parsed.success) {
+            const errors = parsed.error.issues.map(err => ({
+                field: err.path.join('.'),
+                message: err.message
+            }));
+            throw new ZodValidationError(errors);
+        }
 
         let teams;
         if (parsed.data.id !== undefined)

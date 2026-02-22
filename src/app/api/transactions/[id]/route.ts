@@ -22,9 +22,6 @@ export async function GET(req: NextRequest, ctx : any) {
 
         const { id } = (ctx as { params: { id: string } }).params;
         const sp = new URL(req.url).searchParams;
-        if (!Number.isInteger(id))
-            return fail(req, 400, 'Invalid id');
-
         const parsed = TransactionParams.safeParse({
             type: sp.get('type'),
         });
