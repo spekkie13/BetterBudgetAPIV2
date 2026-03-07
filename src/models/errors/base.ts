@@ -1,24 +1,11 @@
-import { Response } from '@/core/http/Response';
-
 export class AppError extends Error {
     constructor(
         message: string,
         public readonly statusCode: number = 500,
-        public readonly isOperational: boolean = true,
     ) {
         super(message);
         this.name = this.constructor.name;
         Error.captureStackTrace(this, this.constructor);
-    }
-
-    toApiResponse(status: number, error: string): Response<null> {
-        return new Response<null>({
-            data: null,
-            status: status,
-            message: "",
-            error: error,
-            success: false
-        });
     }
 }
 
@@ -41,6 +28,7 @@ export class NotFoundForTeamError extends AppError {
     constructor(resource: string, teamId?: number | string) {
         super(
             teamId ? `${resource} not found for team with id ${teamId}` : `${resource} not found`,
+            404,
         )
     }
 }
