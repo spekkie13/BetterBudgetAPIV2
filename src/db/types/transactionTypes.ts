@@ -1,11 +1,11 @@
-import {InferSelectModel} from "drizzle-orm";
+import {InferInsertModel, InferSelectModel} from "drizzle-orm";
 import {txn} from "@/db/schema";
 import {z} from "zod";
 import {zBoolish, zCents, zCurrency, zDateTime, zId, zMaybeId, zTeamId, zType50} from "@/db/types/common";
 
 /** all db Transaction types */
 export type TransactionRow = InferSelectModel<typeof txn>;
-export type TransactionInsert = InferSelectModel<typeof txn>;
+export type TransactionInsert = InferInsertModel<typeof txn>;
 export type TransactionPatch = Partial<Pick<TransactionInsert, 'amountCents' | 'currency' | 'postedAt' | 'payee' | 'memo' | 'categoryId' | 'isTransfer' | 'transferGroupId' | 'createdBy' | 'createdAt' | 'updatedAt' | 'deletedAt'>>;
 
 export const TransactionQuery = z.object({

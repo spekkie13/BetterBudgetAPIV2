@@ -34,8 +34,8 @@ export class AccountRepository {
             .from(accounts)
             .where(eq(accounts.teamId, teamId));
 
-        if (includeArchived)
-            rows.filter(row => row.isArchived)
+        if (!includeArchived)
+            return rows.filter(row => !row.isArchived);
 
         return rows;
     }
