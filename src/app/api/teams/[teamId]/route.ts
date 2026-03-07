@@ -1,13 +1,14 @@
 import { NextRequest } from 'next/server';
 import { TeamBody, TeamParams, TeamPatch } from "@/db/types/teamTypes";
-import { ok, fail, preflightResponse } from "@/core/http/ApiHelpers";
+import {ok, preflightResponse, toApiResponse} from "@/core/http/ApiHelpers";
 import {teamService} from "@/service/teamService";
 import {AppError, ZodValidationError} from "@/models/errors";
-import {Response} from "@/core/http/Response";
 
-export async function GET(req: NextRequest, ctx: any) {
+type RouteContext = { params: { teamId: string } };
+
+export async function GET(req: NextRequest, { params }: RouteContext) {
     try {
-        const { id } = (ctx as { params: { id: string } }).params;
+        const { teamId: id } = params;
 
         const parsedParams = TeamParams.safeParse({ id: id });
         if (!parsedParams.success) {
@@ -22,17 +23,16 @@ export async function GET(req: NextRequest, ctx: any) {
         return ok(req, team);
     } catch (error) {
         if (error instanceof AppError) {
-            const response : Response<null> = error.toApiResponse(error.statusCode, error.message);
-            return fail(req, error.statusCode, response.error);
+            return toApiResponse(req, error);
         }
         console.error('Unexpected error:', error);
-        return fail(req, 500, 'Internal server error');
+        throw error;
     }
 }
 
-export async function PUT(req: NextRequest, ctx: any) {
+export async function PUT(req: NextRequest, { params }: RouteContext) {
     try {
-        const { id } = (ctx as { params: { id: string } }).params;
+        const { teamId: id } = params;
 
         const parsedParams = TeamParams.safeParse({ id: id });
         if (!parsedParams.success) {
@@ -63,17 +63,16 @@ export async function PUT(req: NextRequest, ctx: any) {
         return ok(req, updatedTeam);
     } catch (error) {
         if (error instanceof AppError) {
-            const response : Response<null> = error.toApiResponse(error.statusCode, error.message);
-            return fail(req, error.statusCode, response.error);
+            return toApiResponse(req, error);
         }
         console.error('Unexpected error:', error);
-        return fail(req, 500, 'Internal server error');
+        throw error;
     }
 }
 
-export async function DELETE(req: NextRequest, ctx: any) {
+export async function DELETE(req: NextRequest, { params }: RouteContext) {
     try {
-        const { id } = (ctx as { params: { id: string } }).params;
+        const { teamId: id } = params;
 
         const parsed = TeamParams.safeParse({ id: id });
         if (!parsed.success) {
@@ -85,14 +84,13 @@ export async function DELETE(req: NextRequest, ctx: any) {
         }
 
         await teamService.deleteTeam(parsed.data.id);
-        return ok(req, 200, 'Successfully deleted');
+        return ok(req, {}, 'Successfully deleted', 204);
     } catch (error) {
         if (error instanceof AppError) {
-            const response : Response<null> = error.toApiResponse(error.statusCode, error.message);
-            return fail(req, error.statusCode, response.error);
+            return toApiResponse(req, error);
         }
         console.error('Unexpected error:', error);
-        return fail(req, 500, 'Internal server error');
+        throw error;
     }
 }
 

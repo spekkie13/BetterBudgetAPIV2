@@ -1,7 +1,7 @@
 import {InferInsertModel, InferSelectModel} from "drizzle-orm";
 import {teams} from "@/db/schema";
 import {z} from "zod";
-import {zDateTime, zId, zName} from "@/db/types/common";
+import {zDateTime, zId, zMaybeId, zName} from "@/db/types/common";
 
 /** all db Team types */
 export type TeamRow = InferSelectModel<typeof teams>;
@@ -9,9 +9,7 @@ export type TeamInsert = InferInsertModel<typeof teams>;
 export type TeamPatch = Partial<Pick<TeamInsert, 'id' | 'name' | 'createdAt'>>;
 
 export const TeamQuery = z.object({
-    id: zId,
-    name: zName,
-    createdAt: zDateTime,
+    id: zMaybeId,
 });
 export type TeamQueryInput = z.infer<typeof TeamQuery>;
 
