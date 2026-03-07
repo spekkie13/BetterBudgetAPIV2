@@ -7,7 +7,7 @@ export class BudgetService {
         return await budgetRepository.create(data);
     }
 
-    async updateBudget(teamId: number, id: number, data: BudgetPatch) {
+    async updateBudget(teamId: number, id: number, data: BudgetPatch): Promise<BudgetRow> {
        return await budgetRepository.updateById(teamId, id, data);
     }
 
@@ -33,7 +33,7 @@ export class BudgetService {
         }
 
         if (month) {
-            return await budgetRepository.selectByMonth(teamId, month);
+            return await budgetRepository.selectByMonth(teamId, monthToDate(month));
         }
 
         return await budgetRepository.listByTeam(teamId);

@@ -3,7 +3,7 @@ import {and, eq} from "drizzle-orm";
 import {budgets} from "@/db/schema/budgets"
 import {BudgetInsert, BudgetPatch, BudgetRow} from "@/db/types/budgetTypes";
 import {BudgetNotFoundError} from "@/models/errors/budget/NotFound";
-import {BudgetNotFoundForTeamError} from "@/models/errors/budget/NotFoundForTeam";
+import {BudgetNotFoundForTeamError} from "@/models/errors";
 
 export class BudgetRepository {
     async create(data: BudgetInsert) : Promise<BudgetRow> {
@@ -31,15 +31,10 @@ export class BudgetRepository {
     }
 
     async listByTeam(teamId: number): Promise<BudgetRow[]> {
-        const rows = await db
+        return await db
             .select()
             .from(budgets)
             .where(eq(budgets.teamId, teamId));
-
-        if(rows.length === 0)
-            throw new BudgetNotFoundForTeamError(teamId);
-
-        return rows;
     }
 
     async updateById(teamId: number, id: number, data: BudgetPatch): Promise<BudgetRow> {
@@ -60,7 +55,7 @@ export class BudgetRepository {
         return row;
     }
 
-    async deleteById(teamId: number, id: number) {
+    async deleteById(teamId: number, id: number): Promise<void> {
         await db
             .delete(budgets)
             .where(
@@ -90,35 +85,23 @@ export class BudgetRepository {
     }
 
     async selectByMonth(teamId: number, month: string): Promise<BudgetRow[]> {
-        const rows = await db
+        return await db
             .select()
             .from(budgets)
             .where(and(
                 eq(budgets.teamId, teamId),
                 eq(budgets.periodMonth, month),
             ));
-
-        if (!rows) {
-            throw new BudgetNotFoundForTeamError(teamId);
-        }
-
-        return rows;
     }
 
     async selectByCategory(teamId: number, categoryId: number): Promise<BudgetRow[]> {
-        const rows = await db
+        return await db
             .select()
             .from(budgets)
             .where(and(
                 eq(budgets.teamId, teamId),
                 eq(budgets.categoryId, categoryId),
             ));
-
-        if (!rows) {
-            throw new BudgetNotFoundForTeamError(teamId);
-        }
-
-        return rows;
     }
 
     async selectByMonthAndCategory(teamId: number, month: string, categoryId: number): Promise<BudgetRow> {
