@@ -2,11 +2,10 @@ import {TransactionPatch, TransactionRow} from "@/db/types/transactionTypes";
 import {db} from "@/db/client";
 import {txn} from "@/db/schema";
 import {and, eq} from "drizzle-orm";
-import {TransactionInsert} from "@/core/transaction";
-import {TransactionNotFoundError} from "@/models/errors";
+import {TransactionCreateInput} from "@/core/transaction";
 
 export class TransactionRepo {
-    async create(transaction: TransactionInsert) : Promise<TransactionRow> {
+    async create(transaction: TransactionCreateInput) : Promise<TransactionRow> {
         const [row] = await db
             .insert(txn)
             .values(transaction)
@@ -41,18 +40,22 @@ export class TransactionRepo {
     }
 
     async selectByTeam(teamId: number): Promise<TransactionRow[]> {
-        const rows = await db
+        return await db
+            .select()
+            .from(txn)
+            .where(eq(txn.teamId, teamId));
+    }
+
+    async selectTransfers(teamId: number): Promise<TransactionRow[]> {
+        return await db
             .select()
             .from(txn)
             .where(
-                eq(txn.teamId, teamId),
+                and(
+                    eq(txn.teamId, teamId),
+                    eq(txn.isTransfer, true),
+                )
             );
-
-        if (rows.length === 0) {
-            throw new TransactionNotFoundError(teamId);
-        }
-
-        return rows;
     }
 
     async updateById(teamId: number, id: number, transaction: TransactionPatch) : Promise<TransactionRow> {

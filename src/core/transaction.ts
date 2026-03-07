@@ -1,8 +1,8 @@
 import {TransactionRequestDto, TransactionType} from "@/models";
 import {isValueNull} from "@/core/http/requestHelpers";
 
-export function parseTransactionBody(body: any): TransactionRequestDto | undefined {
-    const payload = body?.data && typeof body.data === "object" ? body.data : body;
+export function parseTransactionBody(body: unknown): TransactionRequestDto | undefined {
+    const payload = (body as any)?.data && typeof (body as any).data === "object" ? (body as any).data : body as Record<string, unknown>;
 
     if (!payload || typeof payload !== 'object') {
         throw new Error('Invalid request body');
@@ -51,7 +51,7 @@ export function parseTransactionBody(body: any): TransactionRequestDto | undefin
     }
 }
 
-export interface TransactionInsert {
+export interface TransactionCreateInput {
     teamId: number;
     accountId: number;
     amountCents: number;
@@ -61,11 +61,12 @@ export interface TransactionInsert {
     categoryId?: number | null;
     createdBy?: number | null;
     transactionType: string;
+    isTransfer?: boolean;
     fromAccountId?: number | null;
     toAccountId?: number | null;
 }
 
-export function mapToInsert(teamId: number, dto: TransactionRequestDto): TransactionInsert {
+export function mapToInsert(teamId: number, dto: TransactionRequestDto): TransactionCreateInput {
     return {
         teamId,
         accountId: dto.accountId,
@@ -76,5 +77,8 @@ export function mapToInsert(teamId: number, dto: TransactionRequestDto): Transac
         categoryId: dto.categoryId ?? null,
         createdBy: dto.createdBy ?? null,
         transactionType: dto.transactionType,
+        isTransfer: dto.transactionType === TransactionType.Transfer,
+        fromAccountId: 'fromAccountId' in dto ? dto.fromAccountId : null,
+        toAccountId: 'toAccountId' in dto ? dto.toAccountId : null,
     };
 }
