@@ -1,5 +1,85 @@
-// Shared helpers
-function wrap(dataSchema: object) {
+// ── OpenAPI 3.0.3 types ───────────────────────────────────────────────────────
+
+type SchemaType = 'string' | 'integer' | 'number' | 'boolean' | 'array' | 'object' | 'null';
+
+interface Schema {
+    $ref?: string;
+    type?: SchemaType;
+    format?: string;
+    example?: unknown;
+    description?: string;
+    nullable?: boolean;
+    enum?: unknown[];
+    items?: Schema;
+    properties?: Record<string, Schema>;
+    required?: string[];
+    oneOf?: Schema[];
+}
+
+interface MediaType {
+    schema: Schema;
+}
+
+interface RequestBody {
+    required: boolean;
+    content: Record<string, MediaType>;
+}
+
+interface Response {
+    description: string;
+    content?: Record<string, MediaType>;
+}
+
+interface Parameter {
+    name: string;
+    in: 'path' | 'query' | 'header' | 'cookie';
+    required: boolean;
+    description: string;
+    schema: Schema;
+}
+
+type SecurityRequirement = Record<string, string[]>;
+
+interface Operation {
+    tags: string[];
+    summary: string;
+    security?: SecurityRequirement[];
+    parameters?: Parameter[];
+    requestBody?: RequestBody;
+    responses: Record<number, Response>;
+}
+
+interface PathItem {
+    get?: Operation;
+    post?: Operation;
+    put?: Operation;
+    patch?: Operation;
+    delete?: Operation;
+    options?: Operation;
+}
+
+interface SecurityScheme {
+    type: string;
+    scheme: string;
+    bearerFormat?: string;
+    description?: string;
+}
+
+interface OpenApiSpec {
+    openapi: string;
+    info: { title: string; version: string; description: string };
+    servers: Array<{ url: string; description: string }>;
+    tags: Array<{ name: string }>;
+    components: {
+        securitySchemes: Record<string, SecurityScheme>;
+        schemas: Record<string, Schema>;
+    };
+    paths: Record<string, PathItem>;
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function wrap(dataSchema: Schema): Schema {
     return {
         type: 'object',
         properties: {
@@ -12,11 +92,11 @@ function wrap(dataSchema: object) {
     };
 }
 
-function ok(dataSchema: object, description = 'Success') {
+function ok(dataSchema: Schema, description = 'Success'): Response {
     return { description, content: { 'application/json': { schema: wrap(dataSchema) } } };
 }
 
-function err(description: string) {
+function err(description: string): Response {
     return {
         description,
         content: {
@@ -27,25 +107,25 @@ function err(description: string) {
     };
 }
 
-function strParam(name: string, loc: 'path' | 'query', description: string, required = true) {
+function strParam(name: string, loc: 'path' | 'query', description: string, required = true): Parameter {
     return { name, in: loc, required, description, schema: { type: 'string' } };
 }
 
-function intParam(name: string, loc: 'path' | 'query', description: string, required = true) {
+function intParam(name: string, loc: 'path' | 'query', description: string, required = true): Parameter {
     return { name, in: loc, required, description, schema: { type: 'integer' } };
 }
 
-function body(ref: string) {
-    return { required: true, content: { 'application/json': { schema: { $ref: `#/components/schemas/${ref}` } } } };
+function body(schemaRef: string): RequestBody {
+    return { required: true, content: { 'application/json': { schema: { $ref: `#/components/schemas/${schemaRef}` } } } };
 }
 
-function ref(name: string) {
+function ref(name: string): Schema {
     return { $ref: `#/components/schemas/${name}` };
 }
 
-const bearer = [{ BearerAuth: [] }];
+const bearer: SecurityRequirement[] = [{ BearerAuth: [] }];
 
-const errs = {
+const errs: Record<number, Response> = {
     400: err('Bad Request'),
     401: err('Unauthorized – missing or invalid Bearer token'),
     403: err('Forbidden'),
@@ -54,7 +134,7 @@ const errs = {
 
 // ── Schemas ───────────────────────────────────────────────────────────────────
 
-const schemas: Record<string, object> = {
+const schemas: Record<string, Schema> = {
     User: {
         type: 'object',
         properties: {
@@ -236,7 +316,7 @@ const schemas: Record<string, object> = {
 
 // ── Paths ─────────────────────────────────────────────────────────────────────
 
-const paths: Record<string, object> = {
+const paths: Record<string, PathItem> = {
     '/api/users': {
         get: {
             tags: ['Users'],
@@ -628,7 +708,7 @@ const paths: Record<string, object> = {
 
 // ── Spec export ───────────────────────────────────────────────────────────────
 
-export const openApiSpec = {
+export const openApiSpec: OpenApiSpec = {
     openapi: '3.0.3',
     info: {
         title: 'BetterBudget API',
