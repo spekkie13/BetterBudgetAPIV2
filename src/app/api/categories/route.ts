@@ -1,10 +1,9 @@
 import { NextRequest } from 'next/server';
 import { categoryService } from "@/service/categoryService";
 import { CategoryBody, CategoryInsert, CategoryParams, CategoryQuery } from "@/db/types/categoryTypes";
-import { ok, fail, preflightResponse, getUserDataByToken } from "@/core/http/ApiHelpers";
+import {ok, preflightResponse, getUserDataByToken, toApiResponse} from "@/core/http/ApiHelpers";
 import { UserWithTeam, Team } from "@/models";
 import {AppError, BadRequestError, InvalidTokenError, TeamNotFoundError, ZodValidationError} from "@/models/errors";
-import {Response} from "@/core/http/Response";
 
 export async function GET(req: NextRequest) {
     try {
@@ -38,11 +37,10 @@ export async function GET(req: NextRequest) {
         return ok(req, category);
     } catch (error) {
         if (error instanceof AppError) {
-            const response : Response<null> = error.toApiResponse(error.statusCode, error.message);
-            return fail(req, error.statusCode, response.error);
+            return toApiResponse(req, error);
         }
         console.error('Unexpected error:', error);
-        return fail(req, 500, 'Internal server error');
+        throw error;
     }
 }
 
@@ -92,11 +90,10 @@ export async function PUT(req: NextRequest) {
         return ok(req, updatedCategory);
     } catch(error) {
         if (error instanceof AppError) {
-            const response : Response<null> = error.toApiResponse(error.statusCode, error.message);
-            return fail(req, error.statusCode, response.error);
+            return toApiResponse(req, error);
         }
         console.error('Unexpected error:', error);
-        return fail(req, 500, 'Internal server error');
+        throw error;
     }
 }
 
@@ -104,7 +101,7 @@ export async function POST(req: NextRequest) {
     try {
         const userWithTeam: UserWithTeam = await getUserDataByToken(req);
         if (!userWithTeam)
-            return fail(req, 401, 'Invalid token');
+            throw new InvalidTokenError();
 
         const team: Team = userWithTeam.team;
         if (!team)
@@ -133,15 +130,14 @@ export async function POST(req: NextRequest) {
         return ok(req, createdCategory);
     } catch (error) {
         if (error instanceof AppError) {
-            const response : Response<null> = error.toApiResponse(error.statusCode, error.message);
-            return fail(req, error.statusCode, response.error);
+            return toApiResponse(req, error);
         }
         console.error('Unexpected error:', error);
-        return fail(req, 500, 'Internal server error');
+        throw error;
     }
 }
 
-export async function DELETE(req: NextRequest, ctx: any) {
+export async function DELETE(req: NextRequest) {
     try {
         const userWithTeam: UserWithTeam = await getUserDataByToken(req);
         if (!userWithTeam)
@@ -151,28 +147,27 @@ export async function DELETE(req: NextRequest, ctx: any) {
         if (!team)
             throw new TeamNotFoundError();
 
-        const { id } = (ctx as { params: { id: string } }).params;
-        const params = CategoryParams.safeParse({ id: id });
+        const id = new URL(req.url).searchParams.get("id");
+        const parsedParams = CategoryParams.safeParse({ id: id });
 
-        if (!params.success) {
-            const errors = params.error.issues.map(err => ({
+        if (!parsedParams.success) {
+            const errors = parsedParams.error.issues.map(err => ({
                 field: err.path.join('.'),
                 message: err.message
             }));
             throw new ZodValidationError(errors);
         }
-        if (params.data.id === undefined)
+        if (parsedParams.data.id === undefined)
             throw new BadRequestError('Invalid Params for delete category route');
 
-        await categoryService.deleteCategory(team.id, params.data.id);
-        return ok(req, 200, 'Successfully deleted');
+        await categoryService.deleteCategory(team.id, parsedParams.data.id);
+        return ok(req, {}, 'Successfully deleted', 204);
     } catch (error) {
         if (error instanceof AppError) {
-            const response : Response<null> = error.toApiResponse(error.statusCode, error.message);
-            return fail(req, error.statusCode, response.error);
+            return toApiResponse(req, error);
         }
         console.error('Unexpected error:', error);
-        return fail(req, 500, 'Internal server error');
+        throw error;
     }
 }
 
