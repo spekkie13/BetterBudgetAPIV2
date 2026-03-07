@@ -1,12 +1,22 @@
 import { z } from 'zod';
 import {zDateTime, zEmail, zId, zName, zTeamId} from "@/db/types/common";
-import {InferSelectModel} from "drizzle-orm";
+import {InferInsertModel, InferSelectModel} from "drizzle-orm";
 import {users} from "@/db/schema";
 
-/** all db Transaction types */
+/** all db User types */
 export type UserRow = InferSelectModel<typeof users>;
-export type UserInsert = InferSelectModel<typeof users>;
+export type UserInsert = InferInsertModel<typeof users>;
 export type UserPatch = Partial<Pick<UserInsert, 'email' | 'username' | 'name'>>;
+
+export interface UserWithTeamsRow {
+    id: number;
+    token: string;
+    email: string;
+    username: string;
+    name: string;
+    createdAt: Date;
+    teams: { id: number; name: string }[];
+}
 
 export const UserQuery = z.object({
     userId: zId,
