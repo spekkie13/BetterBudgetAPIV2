@@ -1,10 +1,10 @@
 import { TeamInsert, TeamPatch, TeamRow } from "@/db/types/teamTypes";
 import { db } from "@/db/client";
 import { teams } from "@/db/schema";
-import { and, eq } from "drizzle-orm";
-import {TeamNotFoundError} from "@/models/errors";
+import { eq } from "drizzle-orm";
+import { ITeamRepository } from "@/repository/interfaces/ITeamRepository";
 
-export class TeamRepository {
+export class TeamRepository implements ITeamRepository {
     async create(data: TeamInsert) : Promise<TeamRow> {
         const [row] = await db
             .insert(teams)
@@ -45,16 +45,10 @@ export class TeamRepository {
     }
 
     async selectAll(): Promise<TeamRow[]> {
-        const rows = await db
+        return await db
             .select()
             .from(teams)
             .limit(500);
-
-        if (rows.length === 0) {
-            throw new TeamNotFoundError()
-        }
-
-        return rows;
     }
 }
 

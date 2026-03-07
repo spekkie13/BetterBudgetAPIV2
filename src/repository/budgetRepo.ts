@@ -3,9 +3,9 @@ import {and, eq} from "drizzle-orm";
 import {budgets} from "@/db/schema/budgets"
 import {BudgetInsert, BudgetPatch, BudgetRow} from "@/db/types/budgetTypes";
 import {BudgetNotFoundError} from "@/models/errors/budget/NotFound";
-import {BudgetNotFoundForTeamError} from "@/models/errors";
+import {IBudgetRepository} from "@/repository/interfaces/IBudgetRepository";
 
-export class BudgetRepository {
+export class BudgetRepository implements IBudgetRepository {
     async create(data: BudgetInsert) : Promise<BudgetRow> {
         const [row] = await db
             .insert(budgets)

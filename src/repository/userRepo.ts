@@ -2,8 +2,9 @@ import {memberships, teams, users} from "@/db/schema";
 import {db} from "@/db/client";
 import {eq} from "drizzle-orm";
 import {UserInsert, UserPatch, UserRow, UserWithTeamsRow} from "@/db/types/userTypes";
+import {IUserRepository} from "@/repository/interfaces/IUserRepository";
 
-export class UserRepository {
+export class UserRepository implements IUserRepository {
     async selectByToken(token: string): Promise<UserWithTeamsRow | null> {
         const [u] = await db.select({
             id: users.id,

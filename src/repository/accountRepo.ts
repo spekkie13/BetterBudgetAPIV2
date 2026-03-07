@@ -2,8 +2,9 @@ import {AccountInsert, AccountPatch, AccountRow} from "@/db/types/accountTypes";
 import {db} from "@/db/client";
 import {accounts} from "@/db/schema";
 import {and, eq} from "drizzle-orm";
+import {IAccountRepository} from "@/repository/interfaces/IAccountRepository";
 
-export class AccountRepository {
+export class AccountRepository implements IAccountRepository {
     async create(data: AccountInsert) : Promise<AccountRow> {
         const [row] = await db
             .insert(accounts)

@@ -3,8 +3,9 @@ import {db} from "@/db/client";
 import {txn} from "@/db/schema";
 import {and, eq} from "drizzle-orm";
 import {TransactionCreateInput} from "@/core/transaction";
+import {ITransactionRepository} from "@/repository/interfaces/ITransactionRepository";
 
-export class TransactionRepo {
+export class TransactionRepo implements ITransactionRepository {
     async create(transaction: TransactionCreateInput) : Promise<TransactionRow> {
         const [row] = await db
             .insert(txn)
