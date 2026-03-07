@@ -5,7 +5,7 @@ import { Team, UserWithTeam } from "@/models";
 import { AppError, InvalidTokenError, TeamNotFoundError, ZodValidationError } from "@/models/errors";
 import { transactionService } from "@/service/transactionService";
 
-type RouteContext = { params: { id: string } };
+type RouteContext = { params: Promise<{ id: string }> };
 
 export async function OPTIONS(req: NextRequest) {
     return preflightResponse(req);
@@ -21,7 +21,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
         if (!team)
             throw new TeamNotFoundError();
 
-        const { id } = params;
+        const { id } = await params;
         const sp = new URL(req.url).searchParams;
         const parsed = TransactionParams.safeParse({
             type: sp.get('type'),
@@ -64,7 +64,8 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
         if (!team)
             throw new TeamNotFoundError();
 
-        const id : number = Number(params.id);
+        const { id: idStr } = await params;
+        const id : number = Number(idStr);
 
         const parsedParams = TransactionParams.safeParse({ id: id });
         if (!parsedParams.success) {
@@ -124,7 +125,8 @@ export async function DELETE(req: NextRequest, { params }: RouteContext) {
         if (!team)
             throw new TeamNotFoundError();
 
-        const id = Number(params.id);
+        const { id: idStr } = await params;
+        const id = Number(idStr);
 
         await transactionService.deleteTransaction(team.id, id);
         return ok(req, {}, 'Transaction deleted', 204);

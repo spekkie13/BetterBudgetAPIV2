@@ -4,11 +4,11 @@ import {ok, preflightResponse, toApiResponse} from "@/core/http/ApiHelpers";
 import {teamService} from "@/service/teamService";
 import {AppError, ZodValidationError} from "@/models/errors";
 
-type RouteContext = { params: { teamId: string } };
+type RouteContext = { params: Promise<{ teamId: string }> };
 
 export async function GET(req: NextRequest, { params }: RouteContext) {
     try {
-        const { teamId: id } = params;
+        const { teamId: id } = await params;
 
         const parsedParams = TeamParams.safeParse({ id: id });
         if (!parsedParams.success) {
@@ -32,7 +32,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
 
 export async function PUT(req: NextRequest, { params }: RouteContext) {
     try {
-        const { teamId: id } = params;
+        const { teamId: id } = await params;
 
         const parsedParams = TeamParams.safeParse({ id: id });
         if (!parsedParams.success) {
@@ -72,7 +72,7 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
 
 export async function DELETE(req: NextRequest, { params }: RouteContext) {
     try {
-        const { teamId: id } = params;
+        const { teamId: id } = await params;
 
         const parsed = TeamParams.safeParse({ id: id });
         if (!parsed.success) {

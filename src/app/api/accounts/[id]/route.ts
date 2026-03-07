@@ -5,7 +5,7 @@ import { UserWithTeam, Team } from "@/models";
 import {AppError, InvalidTokenError, TeamNotFoundError, ZodValidationError} from "@/models/errors";
 import {accountService} from "@/service/accountService";
 
-type RouteContext = { params: { id: string } };
+type RouteContext = { params: Promise<{ id: string }> };
 
 export async function OPTIONS(req: NextRequest) {
     return preflightResponse(req);
@@ -21,7 +21,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
         if (!team)
             throw new TeamNotFoundError();
 
-        const { id } = params;
+        const { id } = await params;
         const account = await accountService.getAccountById(team.id, Number(id));
         return ok(req, account);
     } catch (error) {
@@ -43,7 +43,7 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
         if (!team)
             throw new TeamNotFoundError();
 
-        const { id } = params;
+        const { id } = await params;
         const reqBody = await req.json().catch(() => ({}));
         const parsedBody = AccountBody.safeParse(reqBody);
         if (!parsedBody.success) {
@@ -84,7 +84,7 @@ export async function DELETE(req: NextRequest, { params }: RouteContext) {
         if (!team)
             throw new TeamNotFoundError();
 
-        const { id } = params;
+        const { id } = await params;
         await accountService.deleteAccount(team.id, Number(id));
         return ok(req, {}, 'Deleted account');
     } catch (error) {
