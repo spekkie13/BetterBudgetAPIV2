@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Response } from '@/core/http/Response';
-import {userService} from "@/service/userService";
+import { userService } from "@/service/userService";
 import { Team, User, UserWithTeam } from "@/models";
-import {InvalidTokenError} from "@/models/errors/user/InvalidToken";
-import {UserNotFoundError} from "@/models/errors/user/NotFound";
+import {AppError, InvalidTokenError, UserNotFoundError} from "@/models/errors";
+import { UserWithTeamsRow } from "@/db/types/userTypes";
 
 const ALLOWED_ORIGINS = [
     'http://localhost:3000',
@@ -15,10 +15,10 @@ const ALLOWED_ORIGINS = [
 
 const USE_CREDENTIALS = true
 
-export function preflightResponse(req: Request) {
-    const origin = resolveOrigin(req)
-    const reqMethod = req.headers.get('access-control-request-method') || 'GET,POST,PUT,PATCH,DELETE,OPTIONS'
-    const reqHeaders = req.headers.get('access-control-request-headers') || 'Content-Type, Authorization'
+export function preflightResponse(req: Request): NextResponse {
+    const origin : string = resolveOrigin(req)
+    const reqMethod : string = req.headers.get('access-control-request-method') || 'GET,POST,PUT,PATCH,DELETE,OPTIONS'
+    const reqHeaders : string = req.headers.get('access-control-request-headers') || 'Content-Type, Authorization'
 
     const headers: Record<string, string> = {
         'Access-Control-Allow-Origin': origin || 'null',
@@ -32,22 +32,27 @@ export function preflightResponse(req: Request) {
     return new NextResponse(null, { status: 204, headers })
 }
 
-export function ok<T>(req: Request, data: T, message = 'OK', status = 200) {
+export function toApiResponse(request: NextRequest, error: AppError): NextResponse {
+    const response = new Response({
+        data: error,
+        status: error.statusCode,
+        error: error.message,
+        success: false,
+    });
+    return jsonWithCors(request, response, error.statusCode)
+}
+
+export function ok<T>(req: Request, data: T, message = 'OK', status = 200): NextResponse {
     const body: Response<T> = { data, message, status, success: true };
     return jsonWithCors(req, body, status);
 }
 
-export function fail(req: Request, status: number = 400, message: string | undefined) {
-    const body: Response<null> = { data: null, message, status, success: false };
-    return jsonWithCors(req, body, status);
-}
-
 export async function getUserDataByToken(req: NextRequest) : Promise<UserWithTeam> {
-    const token = req.headers.get('authorization')?.split('Bearer ')[1];
+    const token: string | undefined = req.headers.get('authorization')?.split('Bearer ')[1];
     if (!token)
         throw new InvalidTokenError();
 
-    let userData = await userService.getUserByToken(token);
+    let userData : UserWithTeamsRow | null = await userService.getUserByToken(token);
     if (!userData)
         throw new UserNotFoundError();
 
@@ -57,15 +62,13 @@ export async function getUserDataByToken(req: NextRequest) : Promise<UserWithTea
     return new UserWithTeam(user, team);
 }
 
-function resolveOrigin(req: Request) {
-    const origin = req.headers.get('origin') ?? ''
-    // If you truly never use credentials you could return '*' here,
-    // but since you plan to add auth later, keep an allow-list:
+function resolveOrigin(req: Request): string {
+    const origin : string = req.headers.get('origin') ?? ''
     return ALLOWED_ORIGINS.includes(origin) ? origin : ''
 }
 
-function jsonWithCors(req: Request, data: any, status = 200) {
-    const origin = req ? resolveOrigin(req) : ''
+export function jsonWithCors(req: Request, data: Response<unknown>, status = 200): NextResponse {
+    const origin : string = req ? resolveOrigin(req) : ''
     const res = NextResponse.json(data, { status })
 
     if (origin) {

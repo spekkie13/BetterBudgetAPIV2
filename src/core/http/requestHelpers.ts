@@ -1,3 +1,3 @@
-export function isValueNull<T>(value: T) {
+export function isValueNull<T>(value: T): boolean {
     return value === null || value === undefined;
 }

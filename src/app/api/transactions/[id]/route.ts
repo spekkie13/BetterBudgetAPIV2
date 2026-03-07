@@ -1,16 +1,17 @@
 import { NextRequest } from 'next/server';
 import { TransactionBody, TransactionInsert, TransactionParams } from "@/db/types/transactionTypes";
-import { ok, fail, preflightResponse, getUserDataByToken } from "@/core/http/ApiHelpers";
+import { ok, preflightResponse, getUserDataByToken, toApiResponse } from "@/core/http/ApiHelpers";
 import { Team, UserWithTeam } from "@/models";
-import {AppError, InvalidTokenError, TeamNotFoundError, ZodValidationError} from "@/models/errors";
-import {Response} from "@/core/http/Response";
-import {transactionService} from "@/service/transactionService";
+import { AppError, InvalidTokenError, TeamNotFoundError, ZodValidationError } from "@/models/errors";
+import { transactionService } from "@/service/transactionService";
+
+type RouteContext = { params: { id: string } };
 
 export async function OPTIONS(req: NextRequest) {
     return preflightResponse(req);
 }
 
-export async function GET(req: NextRequest, ctx : any) {
+export async function GET(req: NextRequest, { params }: RouteContext) {
     try {
         const userWithTeam: UserWithTeam = await getUserDataByToken(req);
         if (!userWithTeam)
@@ -20,7 +21,7 @@ export async function GET(req: NextRequest, ctx : any) {
         if (!team)
             throw new TeamNotFoundError();
 
-        const { id } = (ctx as { params: { id: string } }).params;
+        const { id } = params;
         const sp = new URL(req.url).searchParams;
         const parsed = TransactionParams.safeParse({
             type: sp.get('type'),
@@ -46,15 +47,14 @@ export async function GET(req: NextRequest, ctx : any) {
         return ok(req, transactions);
     } catch (error) {
         if (error instanceof AppError) {
-            const response : Response<null> = error.toApiResponse(error.statusCode, error.message);
-            return fail(req, error.statusCode, response.error);
+            return toApiResponse(req, error);
         }
         console.error('Unexpected error:', error);
-        return fail(req, 500, 'Internal server error');
+        throw error;
     }
 }
 
-export async function PUT(req: NextRequest, ctx : any) {
+export async function PUT(req: NextRequest, { params }: RouteContext) {
     try {
         const userWithTeam: UserWithTeam = await getUserDataByToken(req);
         if (!userWithTeam)
@@ -64,12 +64,11 @@ export async function PUT(req: NextRequest, ctx : any) {
         if (!team)
             throw new TeamNotFoundError();
 
-        const { idStr } = (ctx as { params: { idStr: string } }).params;
-        const id = Number(idStr);
+        const id : number = Number(params.id);
 
-        const params = TransactionParams.safeParse({ id: id });
-        if (!params.success) {
-            const errors = params.error.issues.map(err => ({
+        const parsedParams = TransactionParams.safeParse({ id: id });
+        if (!parsedParams.success) {
+            const errors = parsedParams.error.issues.map(err => ({
                 field: err.path.join('.'),
                 message: err.message
             }));
@@ -87,7 +86,7 @@ export async function PUT(req: NextRequest, ctx : any) {
         }
 
         const transactionBody: TransactionInsert = {
-            id: params.data.id ?? 0,
+            id: parsedParams.data.id ?? 0,
             teamId: team.id,
             accountId: parsedBody.data.accountId,
             amountCents: parsedBody.data.amountCents ?? 0,
@@ -104,19 +103,18 @@ export async function PUT(req: NextRequest, ctx : any) {
             deletedAt: new Date(parsedBody.data.deletedAt ?? ""),
         }
 
-        const updatedTransaction = await transactionService.updateTransaction(id, team.id, transactionBody);
+        const updatedTransaction = await transactionService.updateTransaction(team.id, id, transactionBody);
         return ok(req, updatedTransaction);
     } catch (error) {
         if (error instanceof AppError) {
-            const response : Response<null> = error.toApiResponse(error.statusCode, error.message);
-            return fail(req, error.statusCode, response.error);
+            return toApiResponse(req, error);
         }
         console.error('Unexpected error:', error);
-        return fail(req, 500, 'Internal server error');
+        throw error;
     }
 }
 
-export async function DELETE(req: NextRequest, ctx : any) {
+export async function DELETE(req: NextRequest, { params }: RouteContext) {
     try {
         const userWithTeam: UserWithTeam = await getUserDataByToken(req);
         if (!userWithTeam)
@@ -126,17 +124,15 @@ export async function DELETE(req: NextRequest, ctx : any) {
         if (!team)
             throw new TeamNotFoundError();
 
-        const { idStr } = (ctx as { params: { idStr: string } }).params;
-        const id = Number(idStr);
+        const id = Number(params.id);
 
         await transactionService.deleteTransaction(team.id, id);
-        return ok(req, 204, 'Transaction deleted');
+        return ok(req, {}, 'Transaction deleted', 204);
     } catch (error) {
         if (error instanceof AppError) {
-            const response : Response<null> = error.toApiResponse(error.statusCode, error.message);
-            return fail(req, error.statusCode, response.error);
+            return toApiResponse(req, error);
         }
         console.error('Unexpected error:', error);
-        return fail(req, 500, 'Internal server error');
+        throw error;
     }
 }

@@ -1,10 +1,9 @@
 import { NextRequest } from 'next/server';
 import { AccountBody, AccountInsert } from "@/db/types/accountTypes";
-import { ok, fail, preflightResponse, getUserDataByToken } from "@/core/http/ApiHelpers";
+import {ok, preflightResponse, getUserDataByToken, toApiResponse} from "@/core/http/ApiHelpers";
 import { UserWithTeam, Team } from "@/models";
-import {AppError, InvalidTokenError, TeamNotFoundError, ZodValidationError} from "@/models/errors";
-import {Response} from "@/core/http/Response";
-import {accountService} from "@/service/accountService";
+import { AppError, InvalidTokenError, TeamNotFoundError, ZodValidationError } from "@/models/errors";
+import { accountService } from "@/service/accountService";
 
 export async function OPTIONS(req: NextRequest) {
     return preflightResponse(req);
@@ -27,11 +26,10 @@ export async function GET(req: NextRequest) {
         return ok(req, accounts);
     } catch (error) {
         if (error instanceof AppError) {
-            const response : Response<null> = error.toApiResponse(error.statusCode, error.message);
-            return fail(req, error.statusCode, response.error);
+            return toApiResponse(req, error);
         }
         console.error('Unexpected error:', error);
-        return fail(req, 500, 'Internal server error');
+        throw error;
     }
 }
 
@@ -66,10 +64,9 @@ export async function POST(req: NextRequest) {
         return ok(req, createdAccount);
     } catch (error) {
         if (error instanceof AppError) {
-            const response : Response<null> = error.toApiResponse(error.statusCode, error.message);
-            return fail(req, error.statusCode, response.error);
+            return toApiResponse(req, error);
         }
         console.error('Unexpected error:', error);
-        return fail(req, 500, 'Internal server error');
+        throw error;
     }
 }

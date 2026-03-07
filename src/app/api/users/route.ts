@@ -1,9 +1,8 @@
 import { NextRequest } from 'next/server';
-import {ok, fail, preflightResponse, getUserDataByToken} from "@/core/http/ApiHelpers";
+import {ok, preflightResponse, getUserDataByToken, toApiResponse} from "@/core/http/ApiHelpers";
 import { Team, UserWithTeam } from "@/models";
 import { UserBody } from "@/db/types/userTypes";
 import {AppError, InvalidTokenError, TeamNotFoundError, ZodValidationError} from "@/models/errors";
-import {Response} from "@/core/http/Response";
 import {userService} from "@/service/userService";
 
 export async function OPTIONS(req: NextRequest) {
@@ -23,11 +22,10 @@ export async function GET(req: NextRequest) {
         return ok(req, userWithTeam);
     } catch (error) {
         if (error instanceof AppError) {
-            const response : Response<null> = error.toApiResponse(error.statusCode, error.message);
-            return fail(req, error.statusCode, response.error);
+            return toApiResponse(req, error);
         }
         console.error('Unexpected error:', error);
-        return fail(req, 500, 'Internal server error');
+        throw error;
     }
 }
 
@@ -47,10 +45,9 @@ export async function POST(req: NextRequest) {
         return ok(req, createdUser);
     } catch (error) {
         if (error instanceof AppError) {
-            const response : Response<null> = error.toApiResponse(error.statusCode, error.message);
-            return fail(req, error.statusCode, response.error);
+            return toApiResponse(req, error);
         }
         console.error('Unexpected error:', error);
-        return fail(req, 500, 'Internal server error');
+        throw error;
     }
 }

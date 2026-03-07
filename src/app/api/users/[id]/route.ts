@@ -1,9 +1,8 @@
 import { NextRequest } from 'next/server';
-import { ok, fail, preflightResponse, getUserDataByToken} from "@/core/http/ApiHelpers";
+import {ok, preflightResponse, getUserDataByToken, toApiResponse} from "@/core/http/ApiHelpers";
 import { UserBody } from "@/db/types/userTypes";
 import { UserWithTeam, User } from "@/models";
 import {AppError, InvalidTokenError, UserNotFoundError, ZodValidationError} from "@/models/errors";
-import {Response} from "@/core/http/Response";
 import {userService} from "@/service/userService";
 
 export async function OPTIONS(req: NextRequest) {
@@ -14,17 +13,16 @@ export async function GET(req: NextRequest) {
     try {
         const userWithTeam: UserWithTeam = await getUserDataByToken(req);
         if (!userWithTeam)
-            return fail(req, 401, 'Invalid token');
+            throw new InvalidTokenError();
 
         const user: User = userWithTeam.user;
         return ok(req, user);
     } catch (error) {
         if (error instanceof AppError) {
-            const response : Response<null> = error.toApiResponse(error.statusCode, error.message);
-            return fail(req, error.statusCode, response.error);
+            return toApiResponse(req, error);
         }
         console.error('Unexpected error:', error);
-        return fail(req, 500, 'Internal server error');
+        throw error;
     }
 }
 
@@ -51,11 +49,10 @@ export async function PUT(req: NextRequest) {
         return ok(req, updatedUser);
     } catch (error) {
         if (error instanceof AppError) {
-            const response : Response<null> = error.toApiResponse(error.statusCode, error.message);
-            return fail(req, error.statusCode, response.error);
+            return toApiResponse(req, error);
         }
         console.error('Unexpected error:', error);
-        return fail(req, 500, 'Internal server error');
+        throw error;
     }
 }
 
@@ -63,7 +60,7 @@ export async function DELETE(req: NextRequest) {
     try {
         const userWithTeam: UserWithTeam = await getUserDataByToken(req);
         if (!userWithTeam)
-            return fail(req, 401, 'Invalid token');
+            throw new InvalidTokenError();
 
         const user: User = userWithTeam.user;
 
@@ -71,10 +68,9 @@ export async function DELETE(req: NextRequest) {
         return ok(req, {}, 'User deleted');
     } catch (error) {
         if (error instanceof AppError) {
-            const response : Response<null> = error.toApiResponse(error.statusCode, error.message);
-            return fail(req, error.statusCode, response.error);
+            return toApiResponse(req, error);
         }
         console.error('Unexpected error:', error);
-        return fail(req, 500, 'Internal server error');
+        throw error;
     }
 }

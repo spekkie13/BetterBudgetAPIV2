@@ -1,9 +1,8 @@
 import { NextRequest } from 'next/server';
 import { BudgetBody, BudgetParams, BudgetQuery } from "@/db/types/budgetTypes";
 import { budgetService } from "@/service/budgetService";
-import { ok, fail, preflightResponse, getUserDataByToken } from "@/core/http/ApiHelpers";
+import {ok, preflightResponse, getUserDataByToken, toApiResponse} from "@/core/http/ApiHelpers";
 import { UserWithTeam, Team } from "@/models";
-import { Response } from "@/core/http/Response";
 import { AppError, InvalidTokenError, TeamNotFoundError, ZodValidationError } from "@/models/errors";
 
 export async function OPTIONS(req: NextRequest) {
@@ -43,11 +42,10 @@ export async function GET(req: NextRequest) {
         return ok(req, budgets);
     } catch (error) {
         if (error instanceof AppError) {
-            const response : Response<null> = error.toApiResponse(error.statusCode, error.message);
-            return fail(req, error.statusCode, response.error);
+            return toApiResponse(req, error);
         }
         console.error('Unexpected error:', error);
-        return fail(req, 500, 'Internal server error');
+        throw error;
     }
 }
 
@@ -83,11 +81,10 @@ export async function POST(req: NextRequest) {
         return ok(req, createdBudget);
     } catch (error) {
         if (error instanceof AppError) {
-            const response : Response<null> = error.toApiResponse(error.statusCode, error.message);
-            return fail(req, error.statusCode, response.error);
+            return toApiResponse(req, error);
         }
         console.error('Unexpected error:', error);
-        return fail(req, 500, 'Internal server error');
+        throw error;
     }
 }
 
@@ -131,10 +128,9 @@ export async function PUT(req: NextRequest) {
         return ok(req, updatedBudget);
     } catch (error) {
         if (error instanceof AppError) {
-            const response : Response<null> = error.toApiResponse(error.statusCode, error.message);
-            return fail(req, error.statusCode, response.error);
+            return toApiResponse(req, error);
         }
         console.error('Unexpected error:', error);
-        return fail(req, 500, 'Internal server error');
+        throw error;
     }
 }

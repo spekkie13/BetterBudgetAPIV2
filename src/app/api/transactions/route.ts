@@ -1,10 +1,9 @@
 import { NextRequest } from 'next/server';
-import { ok, fail, preflightResponse, getUserDataByToken } from '@/core/http/ApiHelpers';
+import {ok, preflightResponse, getUserDataByToken, toApiResponse} from '@/core/http/ApiHelpers';
 import { TransactionParams } from "@/db/types/transactionTypes";
 import { Team, UserWithTeam } from "@/models";
 import { mapToInsert, parseTransactionBody } from "@/core/transaction";
-import {AppError, BadRequestError, ZodValidationError} from "@/models/errors";
-import {Response} from "@/core/http/Response";
+import {AppError, BadRequestError, InvalidTokenError, ZodValidationError} from "@/models/errors";
 import {transactionService} from "@/service/transactionService";
 
 export async function OPTIONS(req: NextRequest) {
@@ -15,7 +14,7 @@ export async function GET(req: NextRequest) {
     try {
         const userWithTeam: UserWithTeam = await getUserDataByToken(req);
         if (!userWithTeam)
-            return fail(req, 401, 'Invalid token');
+            throw new InvalidTokenError();
 
         const team: Team = userWithTeam.team;
 
@@ -40,11 +39,10 @@ export async function GET(req: NextRequest) {
         return ok(req, transactions);
     } catch (error) {
         if (error instanceof AppError) {
-            const response : Response<null> = error.toApiResponse(error.statusCode, error.message);
-            return fail(req, error.statusCode, response.error);
+            return toApiResponse(req, error);
         }
         console.error('Unexpected error:', error);
-        return fail(req, 500, 'Internal server error');
+        throw error;
     }
 }
 
@@ -52,17 +50,15 @@ export async function POST(req: NextRequest) {
     try {
         const userWithTeam: UserWithTeam = await getUserDataByToken(req);
         if (!userWithTeam)
-            return fail(req, 401, 'Invalid token');
+            throw new InvalidTokenError();
 
         const team: Team = userWithTeam.team;
         const body = await req.json();
-        console.log(body);
         let reqDto;
         try {
             reqDto = parseTransactionBody(body);
         } catch (e: any) {
-            console.error("[parseTransactionBody] error:", e);
-            return fail(req, 400, e?.message ?? "Bad Request");
+            throw new BadRequestError(e?.message ?? "Bad Request");
         }
 
         if (!reqDto)
@@ -82,10 +78,9 @@ export async function POST(req: NextRequest) {
         return ok(req, resDto);
     } catch (error) {
         if (error instanceof AppError) {
-            const response : Response<null> = error.toApiResponse(error.statusCode, error.message);
-            return fail(req, error.statusCode, response.error);
+            return toApiResponse(req, error);
         }
         console.error('Unexpected error:', error);
-        return fail(req, 500, 'Internal server error');
+        throw error;
     }
 }
