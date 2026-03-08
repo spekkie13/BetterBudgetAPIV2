@@ -4,6 +4,7 @@ import {budgets} from "@/db/schema/budgets"
 import {BudgetInsert, BudgetPatch, BudgetRow} from "@/db/types/budgetTypes";
 import {BudgetNotFoundError} from "@/models/errors/budget/NotFound";
 import {IBudgetRepository} from "@/repository/interfaces/IBudgetRepository";
+import {BudgetNotFoundForTeamError} from "@/models/errors";
 
 export class BudgetRepository implements IBudgetRepository {
     async create(data: BudgetInsert) : Promise<BudgetRow> {
