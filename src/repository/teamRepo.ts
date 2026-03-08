@@ -37,11 +37,7 @@ export class TeamRepository implements ITeamRepository {
     async deleteById(id: number) : Promise<void> {
         await db
             .delete(teams)
-            .where(
-                and(
-                    eq(teams.id, id),
-                )
-            );
+            .where(eq(teams.id, id));
     }
 
     async selectAll(): Promise<TeamRow[]> {
