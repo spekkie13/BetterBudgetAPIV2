@@ -25,6 +25,6 @@ describe('monthToDate', () => {
   });
 
   it('returns the same value when given a YYYY-MM-01 string', () => {
-    expect(monthToDate('2024-03-01')).toBe('2024-03-01-01');
+    expect(monthToDate('2024-03-01')).toBe('2024-03-01');
   });
 });
