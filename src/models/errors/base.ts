@@ -28,7 +28,7 @@ export class NotFoundForTeamError extends AppError {
     constructor(resource: string, teamId?: number | string) {
         super(
             teamId ? `${resource} not found for team with id ${teamId}` : `${resource} not found`,
-            404,
+            404
         )
     }
 }
