@@ -1,15 +1,15 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { BudgetBody, BudgetParams, BudgetQuery } from "@/db/types/budgetTypes";
 import { budgetService } from "@/service/budgetService";
 import {ok, preflightResponse, getUserDataByToken, toApiResponse} from "@/core/http/ApiHelpers";
 import { UserWithTeam, Team } from "@/models";
 import { AppError, InvalidTokenError, TeamNotFoundError, ZodValidationError } from "@/models/errors";
 
-export async function OPTIONS(req: NextRequest) {
+export async function OPTIONS(req: NextRequest): Promise<NextResponse> {
     return preflightResponse(req);
 }
 
-export async function GET(req: NextRequest) {
+export async function GET(req: NextRequest): Promise<NextResponse> {
     try {
         const userWithTeam: UserWithTeam = await getUserDataByToken(req);
         if (!userWithTeam)
@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
     }
 }
 
-export async function POST(req: NextRequest) {
+export async function POST(req: NextRequest): Promise<NextResponse> {
     try {
         const userWithTeam: UserWithTeam = await getUserDataByToken(req);
         if (!userWithTeam)
@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
     }
 }
 
-export async function PUT(req: NextRequest) {
+export async function PUT(req: NextRequest): Promise<NextResponse> {
     try {
         const userWithTeam: UserWithTeam = await getUserDataByToken(req);
         if (!userWithTeam)
@@ -126,6 +126,37 @@ export async function PUT(req: NextRequest) {
 
         const updatedBudget = await budgetService.updateBudget(team.id, parsedParams.data.id, budgetBody);
         return ok(req, updatedBudget);
+    } catch (error) {
+        if (error instanceof AppError) {
+            return toApiResponse(req, error);
+        }
+        console.error('Unexpected error:', error);
+        throw error;
+    }
+}
+
+export async function DELETE(req: NextRequest): Promise<NextResponse> {
+    try {
+        const userWithTeam: UserWithTeam = await getUserDataByToken(req);
+        if (!userWithTeam)
+            throw new InvalidTokenError();
+
+        const team: Team = userWithTeam.team;
+        if (!team)
+            throw new TeamNotFoundError();
+
+        const sp = new URL(req.url).searchParams;
+        const parsedParams = BudgetParams.safeParse({ id: sp.get("id") });
+        if (!parsedParams.success) {
+            const errors = parsedParams.error.issues.map(err => ({
+                field: err.path.join('.'),
+                message: err.message
+            }));
+            throw new ZodValidationError(errors);
+        }
+
+        await budgetService.deleteBudget(team.id, parsedParams.data.id);
+        return ok(req, null);
     } catch (error) {
         if (error instanceof AppError) {
             return toApiResponse(req, error);

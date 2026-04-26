@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { db } from '@/db/client';
 import { makeChain } from '../helpers/mockChain';
+import { UserAlreadyExistsError } from '@/models/errors';
 
 vi.mock('@/db/client', () => ({
   db: {
@@ -8,6 +9,7 @@ vi.mock('@/db/client', () => ({
     insert: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
+    transaction: vi.fn(),
   },
 }));
 
@@ -114,6 +116,41 @@ describe('UserRepository', () => {
 
       await expect(repo.delete(1)).resolves.toBeUndefined();
       expect(db.delete).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('provision', () => {
+    const input = { supabaseUid: 'supabase-uid-abc', email: 'test@example.com', username: 'testuser', name: 'Test User' };
+
+    it('runs a transaction inserting user, team, and membership and returns both rows', async () => {
+      vi.mocked(db.transaction).mockImplementation(async (cb: any) => {
+        const tx = {
+          insert: vi.fn()
+            .mockReturnValueOnce(makeChain([mockUserRow]))
+            .mockReturnValueOnce(makeChain([mockTeamRow]))
+            .mockReturnValueOnce(makeChain([])),
+        };
+        return cb(tx);
+      });
+
+      const result = await repo.provision(input);
+
+      expect(db.transaction).toHaveBeenCalledTimes(1);
+      expect(result.userRow).toEqual(mockUserRow);
+      expect(result.teamRow).toEqual(mockTeamRow);
+    });
+
+    it('throws UserAlreadyExistsError on PG unique constraint violation', async () => {
+      vi.mocked(db.transaction).mockRejectedValue({ code: '23505' });
+
+      await expect(repo.provision(input)).rejects.toBeInstanceOf(UserAlreadyExistsError);
+    });
+
+    it('rethrows unexpected errors from the transaction', async () => {
+      const boom = new Error('connection refused');
+      vi.mocked(db.transaction).mockRejectedValue(boom);
+
+      await expect(repo.provision(input)).rejects.toBe(boom);
     });
   });
 });

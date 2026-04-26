@@ -5,7 +5,7 @@ import { Team, User, UserWithTeam } from "@/models";
 import {AppError, InvalidTokenError, UserNotFoundError} from "@/models/errors";
 import { UserWithTeamsRow } from "@/db/types/userTypes";
 
-const ALLOWED_ORIGINS = [
+const ALLOWED_ORIGINS: string[] = [
     'http://localhost:3000',
     'http://localhost:8081',
     'http://127.0.0.1:3000',
@@ -13,7 +13,7 @@ const ALLOWED_ORIGINS = [
     process.env.APP_ORIGIN ?? '',        // e.g. https://app.example.com
 ].filter(Boolean)
 
-const USE_CREDENTIALS = true
+const USE_CREDENTIALS: boolean = true
 
 export function preflightResponse(req: Request): NextResponse {
     const origin : string = resolveOrigin(req)
@@ -61,9 +61,9 @@ export async function getUserDataByToken(req: NextRequest) : Promise<UserWithTea
         throw new UserNotFoundError();
 
     let user: User = User.create(userData);
-    let team: Team = Team.create(userData.teams[0])
+    const teams: Team[] = userData.teams.map(t => Team.create(t));
 
-    return new UserWithTeam(user, team);
+    return new UserWithTeam(user, teams);
 }
 
 function resolveOrigin(req: Request): string {

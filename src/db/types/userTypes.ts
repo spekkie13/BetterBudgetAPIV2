@@ -40,3 +40,11 @@ export const UserBody = z.object({
     createdAt: zDateTime
 })
 export type UserBodyInput = z.infer<typeof UserBody>;
+
+export const ProvisionBody = z.object({
+    supabaseUid: z.string().trim().min(1),
+    email: zEmail,
+    username: z.string().trim().min(1),
+    name: zName,
+});
+export type ProvisionBodyInput = z.infer<typeof ProvisionBody>;

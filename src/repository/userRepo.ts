@@ -1,8 +1,10 @@
 import {memberships, teams, users} from "@/db/schema";
 import {db} from "@/db/client";
 import {eq} from "drizzle-orm";
-import {UserInsert, UserPatch, UserRow, UserWithTeamsRow} from "@/db/types/userTypes";
+import {UserInsert, UserPatch, UserRow, UserWithTeamsRow, ProvisionBodyInput} from "@/db/types/userTypes";
 import {IUserRepository} from "@/repository/interfaces/IUserRepository";
+import {TeamRow} from "@/db/types/teamTypes";
+import {UserAlreadyExistsError} from "@/models/errors";
 
 export class UserRepository implements IUserRepository {
     async selectByToken(token: string): Promise<UserWithTeamsRow | null> {
@@ -49,6 +51,22 @@ export class UserRepository implements IUserRepository {
         await db
             .delete(users)
             .where(eq(users.id, id));
+    }
+
+    async provision(data: ProvisionBodyInput): Promise<{ userRow: UserRow; teamRow: TeamRow }> {
+        try {
+            return await db.transaction(async (tx) => {
+                const [userRow] = await tx.insert(users).values(data).returning();
+                const [teamRow] = await tx.insert(teams).values({ name: `${data.name}'s Budget` }).returning();
+                await tx.insert(memberships).values({ userId: userRow.id, teamId: teamRow.id, role: 'owner' });
+                return { userRow, teamRow };
+            });
+        } catch (err: unknown) {
+            if (typeof err === 'object' && err !== null && (err as { code?: string }).code === '23505') {
+                throw new UserAlreadyExistsError(data.email);
+            }
+            throw err;
+        }
     }
 }
 
