@@ -5,6 +5,7 @@ import type { ITransactionRepository } from '@/repository/interfaces/ITransactio
 
 const mockRepo: ITransactionRepository = {
   create: vi.fn(),
+  createMany: vi.fn(),
   selectById: vi.fn(),
   selectByTeam: vi.fn(),
   selectIncomes: vi.fn(),

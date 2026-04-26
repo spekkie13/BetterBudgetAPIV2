@@ -15,6 +15,15 @@ export class TransactionRepo implements ITransactionRepository {
         return row;
     }
 
+    async createMany(transactions: TransactionCreateInput[]): Promise<TransactionRow[]> {
+        if (transactions.length === 0) return [];
+        return db
+            .insert(txn)
+            .values(transactions)
+            .onConflictDoNothing({ target: txn.importHash })
+            .returning();
+    }
+
     async selectIncomes(teamId: number) : Promise<TransactionRow[]> {
         const transactions = await this.selectByTeam(teamId);
         return transactions.filter(t => t.amountCents > 0);

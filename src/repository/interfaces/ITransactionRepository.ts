@@ -3,6 +3,7 @@ import { TransactionCreateInput } from '@/core/transaction';
 
 export interface ITransactionRepository {
     create(transaction: TransactionCreateInput): Promise<TransactionRow>;
+    createMany(transactions: TransactionCreateInput[]): Promise<TransactionRow[]>;
     selectIncomes(teamId: number): Promise<TransactionRow[]>;
     selectExpenses(teamId: number): Promise<TransactionRow[]>;
     selectTransfers(teamId: number): Promise<TransactionRow[]>;

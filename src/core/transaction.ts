@@ -58,12 +58,14 @@ export interface TransactionCreateInput {
     currency: string;
     postedAt: Date;
     memo?: string | null;
+    payee?: string | null;
     categoryId?: number | null;
     createdBy?: number | null;
     transactionType: string;
     isTransfer?: boolean;
     fromAccountId?: number | null;
     toAccountId?: number | null;
+    importHash?: string | null;
 }
 
 export function mapToInsert(teamId: number, dto: TransactionRequestDto): TransactionCreateInput {

@@ -42,6 +42,14 @@ export class TransactionService {
     async createTransaction(transaction: TransactionCreateInput) : Promise<TransactionRow> {
         return await this.repo.create(transaction);
     }
+
+    async importTransactions(transactions: TransactionCreateInput[]): Promise<{ imported: number; deduped: number }> {
+        const inserted = await this.repo.createMany(transactions);
+        return {
+            imported: inserted.length,
+            deduped: transactions.length - inserted.length,
+        };
+    }
 }
 
 export const transactionService = new TransactionService(transactionRepository);

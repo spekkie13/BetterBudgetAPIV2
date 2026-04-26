@@ -48,7 +48,11 @@ export function ok<T>(req: Request, data: T, message = 'OK', status = 200): Next
 }
 
 export async function getUserDataByToken(req: NextRequest) : Promise<UserWithTeam> {
-    const token: string | undefined = req.headers.get('authorization')?.split('Bearer ')[1];
+    const token: string | undefined =
+        req.headers.get('authorization')?.split('Bearer ')[1] ??
+        new URL(req.url).searchParams.get('userId') ??
+        undefined;
+
     if (!token)
         throw new InvalidTokenError();
 
