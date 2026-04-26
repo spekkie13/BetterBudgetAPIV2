@@ -10,6 +10,7 @@ const ALLOWED_ORIGINS: string[] = [
     'http://localhost:8081',
     'http://127.0.0.1:3000',
     'https://other-budget.vercel.app',
+    'https://betterbudget.itsspekkie.com',
     process.env.APP_ORIGIN ?? '',        // e.g. https://app.example.com
 ].filter(Boolean)
 
